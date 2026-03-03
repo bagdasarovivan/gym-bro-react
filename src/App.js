@@ -47,6 +47,13 @@ function getWeightOptions(exName) {
   return t === 'heavy' ? HEAVY_WEIGHTS : t === 'timed' ? TIME_OPTIONS : LIGHT_WEIGHTS
 }
 
+function formatMonth(m) {
+  if (!m) return ''
+  const [y,mo] = m.split('-')
+  const s = new Date(parseInt(y), parseInt(mo)-1).toLocaleDateString('ru', {month:'long', year:'numeric'})
+  return s.charAt(0).toUpperCase() + s.slice(1)
+}
+
 function formatDateShort(d) {
   return new Date(d).toLocaleDateString('ru', { day:'numeric', month:'long' })
 }
@@ -329,7 +336,7 @@ function LineChart({ data, period, setPeriod }) {
   )
 }
 
-function DropdownPicker({ options, value, onChange, unit = '', label = '' }) {
+function DropdownPicker({ options, value, onChange, unit = '', label = '', labelFn = null }) {
   const [open, setOpen] = useState(false)
   const ref = useRef(null)
 
@@ -350,7 +357,7 @@ function DropdownPicker({ options, value, onChange, unit = '', label = '' }) {
     <div className="dpicker-wrap" ref={ref}>
       {label && <div className="dpicker-label">{label}</div>}
       <button className={`dpicker-btn${open?' open':''}`} onClick={() => setOpen(o => !o)}>
-        <span className="dpicker-val">{value} <span className="dpicker-unit">{unit}</span></span>
+        <span className="dpicker-val">{labelFn ? labelFn(value) : value}{!labelFn && unit && <span className="dpicker-unit"> {unit}</span>}</span>
         <span className="dpicker-chevron">⌄</span>
       </button>
       {open && (
@@ -428,6 +435,7 @@ export default function App() {
   const [streak, setStreak] = useState(0)
   const [history, setHistory] = useState([])
   const [openDays, setOpenDays] = useState({})
+  const [historyMonth, setHistoryMonth] = useState('')
   const [copiedDay, setCopiedDay] = useState(null)
   const [editModal, setEditModal] = useState(null)
   const [lastSession, setLastSession] = useState(null)
@@ -646,18 +654,14 @@ export default function App() {
               <>
                 <div style={{flex:1}}>
                   <div className="timer-lbl">Таймер отдыха</div>
-                  <div style={{display:'flex',alignItems:'center',gap:8,marginTop:6}}>
-                    {[30,60,90,120,180].map(t => (
-                      <button key={t} onClick={() => setTimerDuration(t)}
-                        style={{padding:'4px 10px',borderRadius:99,fontSize:12,fontWeight:700,border:'none',cursor:'pointer',
-                          background: timerDuration===t ? '#30D158' : '#2c2c2e',
-                          color: timerDuration===t ? '#000' : 'rgba(255,255,255,0.5)'}}>
-                        {t}s
-                      </button>
-                    ))}
-                  </div>
+                  <DropdownPicker
+                    options={Array.from({length:50},(_,i)=>(i+1)*5)}
+                    value={timerDuration}
+                    onChange={v=>setTimerDuration(v)}
+                    unit="сек"
+                  />
                 </div>
-                <button className="timer-start" onClick={() => setTimerSecs(timerDuration)}>▶</button>
+                <button className="timer-start" style={{marginLeft:12,flexShrink:0}} onClick={() => setTimerSecs(timerDuration)}>▶ Старт</button>
               </>
             )}
           </div>
@@ -711,37 +715,74 @@ export default function App() {
         </div>
       )}
 
-      {tab === 'history' && (
-        <div className="section">
-          {Object.keys(grouped).length === 0 && <div style={{opacity:0.5,marginTop:20}}>Нет записей</div>}
-          {Object.entries(grouped).map(([date, ws]) => {
-            const isOpen = openDays[date]
-            return (
-              <div key={date} className="day-group">
-                <button className={`day-hdr${isOpen?' open':''}`} onClick={() => setOpenDays(p=>({...p,[date]:!p[date]}))}>
-                  <span>{formatDateShort(date)}</span>
-                  <span className={`day-chev${isOpen?' open':''}`}>▼</span>
-                </button>
-                {isOpen && (
-                  <div className="day-body">
-                    <div className="day-actions">
-                      <button className={`day-action-btn${copiedDay===date?' ok':''}`} onClick={() => copyDay(date,ws)}>{copiedDay===date?'✅ Скопировано':'📋 Копировать'}</button>
-                      <button className="day-action-btn" onClick={() => setEditModal({date,workouts:ws.map(w=>({...w,sets:w.sets?[...w.sets]:[]}))})}> ✏️ Редактировать</button>
-                      <button className="day-action-btn del" onClick={() => deleteDay(date,ws)}>🗑 Удалить</button>
-                    </div>
-                    {ws.map(w => (
-                      <div key={w.id} className="hist-card">
-                        <div className="hist-ex">{w.exercises?.name}</div>
-                        <div className="chips">{w.sets?.sort((a,b)=>a.set_no-b.set_no).map((s,i) => <span key={i} className="chip">{s.time_sec>0?`${s.time_sec}s`:`${s.weight}×${s.reps}`}</span>)}</div>
-                      </div>
-                    ))}
+      {tab === 'history' && (() => {
+        // Build list of available months from history
+        const allMonths = [...new Set(history.map(w => w.workout_date.slice(0,7)))].sort().reverse()
+        const activeMonth = historyMonth || allMonths[0] || ''
+        const filtered = history.filter(w => w.workout_date.startsWith(activeMonth))
+        const filteredGrouped = filtered.reduce((acc,w) => { if(!acc[w.workout_date]) acc[w.workout_date]=[]; acc[w.workout_date].push(w); return acc }, {})
+        const workoutDaysCount = Object.keys(filteredGrouped).length
+        const monthLabel = (m) => {
+          if (!m) return ''
+          const [y,mo] = m.split('-')
+          return new Date(y, mo-1).toLocaleDateString('ru', {month:'long', year:'numeric'})
+        }
+        return (
+          <div className="section">
+            {/* Month selector */}
+            {allMonths.length > 0 && (
+              <div style={{marginBottom:16}}>
+                <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',gap:12}}>
+                  <div style={{flex:1}}>
+                    <DropdownPicker
+                      options={allMonths}
+                      value={activeMonth}
+                      onChange={v=>{setHistoryMonth(v);setOpenDays({})}}
+                      unit=""
+                      label="Месяц"
+                      labelFn={formatMonth}
+                    />
                   </div>
-                )}
+                  <div style={{background:'#1c1c1e',borderRadius:12,padding:'10px 14px',textAlign:'center',flexShrink:0,minWidth:72}}>
+                    <div style={{fontSize:22,fontWeight:800,color:'#30D158'}}>{workoutDaysCount}</div>
+                    <div style={{fontSize:10,opacity:0.4,marginTop:2,textTransform:'uppercase',letterSpacing:'0.5px'}}>трен.</div>
+                  </div>
+                </div>
               </div>
-            )
-          })}
-        </div>
-      )}
+            )}
+            {Object.keys(filteredGrouped).length === 0 && <div style={{opacity:0.5,marginTop:20}}>Нет записей</div>}
+            {Object.entries(filteredGrouped).map(([date, ws]) => {
+              const isOpen = openDays[date]
+              return (
+                <div key={date} className="day-group">
+                  <button className={`day-hdr${isOpen?' open':''}`} onClick={() => setOpenDays(p=>({...p,[date]:!p[date]}))}>
+                    <span>{formatDateShort(date)}</span>
+                    <div style={{display:'flex',alignItems:'center',gap:8}}>
+                      <span style={{fontSize:12,opacity:0.4}}>{ws.length} упр.</span>
+                      <span className={`day-chev${isOpen?' open':''}`}>▼</span>
+                    </div>
+                  </button>
+                  {isOpen && (
+                    <div className="day-body">
+                      <div className="day-actions">
+                        <button className={`day-action-btn${copiedDay===date?' ok':''}`} onClick={() => copyDay(date,ws)}>{copiedDay===date?'✅ Скопировано':'📋 Копировать'}</button>
+                        <button className="day-action-btn" onClick={() => setEditModal({date,workouts:ws.map(w=>({...w,sets:w.sets?[...w.sets]:[]}))})}> ✏️ Редактировать</button>
+                        <button className="day-action-btn del" onClick={() => deleteDay(date,ws)}>🗑 Удалить</button>
+                      </div>
+                      {ws.map(w => (
+                        <div key={w.id} className="hist-card">
+                          <div className="hist-ex">{w.exercises?.name}</div>
+                          <div className="chips">{w.sets?.sort((a,b)=>a.set_no-b.set_no).map((s,i) => <span key={i} className="chip">{s.time_sec>0?`${s.time_sec}s`:`${s.weight}×${s.reps}`}</span>)}</div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )
+            })}
+          </div>
+        )
+      })()}
 
       {tab === 'progress' && (
         <div className="section">
