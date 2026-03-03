@@ -72,7 +72,7 @@ function todayLabel() {
 function buildCopyText(date, workouts) {
   const lines = [`📅 ${date} · ${workouts.length} exercises`]
   workouts.forEach(w => {
-    const sets = w.sets?.sort((a,b) => a.set_no-b.set_no)
+    const sets = w.sets?.sort((a,b) => b.set_no-a.set_no)
       .map(s => s.time_sec > 0 ? `${s.time_sec}s` : `${s.weight}×${s.reps}`).join(', ')
     lines.push(`${w.exercises?.name}: ${sets}`)
   })
@@ -99,7 +99,7 @@ input[type=number]::-webkit-inner-spin-button{-webkit-appearance:none}
 .onboard-btn{width:100%;padding:16px;background:#fff;border:none;border-radius:16px;font-size:16px;font-weight:700;color:#000;cursor:pointer}
 .section{padding:20px 20px}
 .date-label{font-size:13px;opacity:0.35;font-weight:500;margin-bottom:16px;text-transform:capitalize;letter-spacing:0.1px}
-.back-btn{background:none;border:none;color:#0A84FF;font-size:15px;cursor:pointer;padding:0;margin-bottom:16px;display:flex;align-items:center;gap:5px;font-weight:400}
+.back-btn{background:#1c1c1e;border:none;color:rgba(255,255,255,0.7);font-size:14px;font-weight:600;cursor:pointer;padding:8px 14px;margin-bottom:20px;display:inline-flex;align-items:center;gap:6px;border-radius:99px;transition:all 0.15s}.back-btn:active{background:#2c2c2e;color:white}
 .ex-selector-btn{width:100%;background:#1c1c1e;border:none;border-radius:14px;padding:16px 18px;color:white;font-size:16px;font-weight:500;cursor:pointer;display:flex;align-items:center;justify-content:space-between;transition:all 0.15s;text-align:left;margin-bottom:20px}
 .ex-selector-btn:active{background:#2c2c2e}
 .ex-header{display:flex;align-items:center;gap:14px;margin-bottom:16px}
@@ -131,11 +131,12 @@ input[type=number]::-webkit-inner-spin-button{-webkit-appearance:none}
 .set-btns{display:flex;gap:10px;margin:10px 0 24px}
 .set-btn{flex:1;padding:12px;background:#1c1c1e;border:none;border-radius:12px;color:rgba(255,255,255,0.7);font-size:14px;font-weight:500;cursor:pointer;transition:all 0.15s}
 .set-btn:active{background:#2c2c2e}
-.timer-card{background:#1c1c1e;border:none;border-radius:20px;padding:16px 18px;margin-bottom:20px;display:flex;align-items:center;justify-content:space-between}
-.timer-lbl{font-size:12px;opacity:0.4;margin-bottom:2px;font-weight:500}
-.timer-num{font-size:36px;font-weight:700;color:#FF9F0A;font-variant-numeric:tabular-nums;letter-spacing:-1px}
-.timer-skip{background:#2c2c2e;border:none;border-radius:12px;padding:10px 18px;color:#FF9F0A;font-size:14px;font-weight:600;cursor:pointer}
-.timer-start{background:rgba(48,209,88,0.15);border:none;border-radius:12px;padding:10px 18px;color:#30D158;font-size:14px;font-weight:600;cursor:pointer}
+.timer-card{background:linear-gradient(135deg,rgba(255,159,10,0.1),rgba(255,159,10,0.05));border:1px solid rgba(255,159,10,0.2);border-radius:20px;padding:16px 18px;margin-bottom:20px;display:flex;align-items:center;gap:14px}
+.timer-card.idle{background:#1c1c1e;border:1px solid rgba(255,255,255,0.06)}
+.timer-lbl{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.5px;opacity:0.5;margin-bottom:4px}
+.timer-num{font-size:40px;font-weight:800;color:#FF9F0A;font-variant-numeric:tabular-nums;letter-spacing:-2px;line-height:1}
+.timer-skip{background:rgba(255,159,10,0.15);border:1px solid rgba(255,159,10,0.25);border-radius:12px;padding:10px 16px;color:#FF9F0A;font-size:14px;font-weight:700;cursor:pointer;flex-shrink:0}
+.timer-start{background:#30D158;border:none;border-radius:12px;padding:10px 18px;color:#000;font-size:14px;font-weight:700;cursor:pointer;flex-shrink:0}
 .save-btn{width:100%;padding:16px;background:#30D158;border:none;border-radius:16px;font-size:17px;font-weight:700;color:#000;cursor:pointer;transition:all 0.2s;letter-spacing:-0.2px}
 .save-btn:active{background:#28B84A}
 .save-btn.done{background:#30D158}
@@ -357,7 +358,7 @@ function DropdownPicker({ options, value, onChange, unit = '', label = '', label
     <div className="dpicker-wrap" ref={ref}>
       {label && <div className="dpicker-label">{label}</div>}
       <button className={`dpicker-btn${open?' open':''}`} onClick={() => setOpen(o => !o)}>
-        <span className="dpicker-val">{labelFn ? labelFn(value) : value}{!labelFn && unit && <span className="dpicker-unit"> {unit}</span>}</span>
+        <span className="dpicker-val">{labelFn ? (value ? labelFn(value) : '') : value}{!labelFn && unit && <span className="dpicker-unit"> {unit}</span>}</span>
         <span className="dpicker-chevron">⌄</span>
       </button>
       {open && (
@@ -546,7 +547,7 @@ export default function App() {
 
   useEffect(() => {
     if (timerSecs === null) { clearInterval(timerRef.current); return }
-    if (timerSecs <= 0) { setTimerSecs(null); return }
+    if (timerSecs <= 0) { setTimerSecs(null); if (navigator.vibrate) navigator.vibrate([200,100,200,100,400]); return }
     timerRef.current = setInterval(() => setTimerSecs(s => s<=1?null:s-1), 1000)
     return () => clearInterval(timerRef.current)
   }, [timerSecs])
@@ -632,7 +633,7 @@ export default function App() {
 
       <div className="header">
         <div className="header-left">
-          <img src="/gymbro_logo.ico" alt="logo" className="header-logo" onError={e=>e.target.style.display='none'}/>
+          <img src="/gymbro_logo.png" alt="logo" className="header-logo" onError={e=>e.target.style.display='none'}/>
           <h1>Gym BRO</h1>
         </div>
         {streak >= 1 && <div className="streak-badge">{streak}🔥</div>}
@@ -641,14 +642,14 @@ export default function App() {
       {tab === 'add' && (
         <div className="section">
           <div className="date-label">{todayLabel()}</div>
-          <div className="timer-card">
+          <div className={`timer-card${timerSecs===null?' idle':''}`}>
             {timerSecs !== null ? (
               <>
-                <div>
-                  <div className="timer-lbl">⏱ Отдых</div>
+                <div style={{flex:1}}>
+                  <div className="timer-lbl">Отдых</div>
                   <div className="timer-num">{Math.floor(timerSecs/60)}:{String(timerSecs%60).padStart(2,'0')}</div>
                 </div>
-                <button className="timer-skip" onClick={() => setTimerSecs(null)}>Стоп ✕</button>
+                <button className="timer-skip" onClick={() => setTimerSecs(null)}>✕ Стоп</button>
               </>
             ) : (
               <>
@@ -661,7 +662,7 @@ export default function App() {
                     unit="сек"
                   />
                 </div>
-                <button className="timer-start" style={{marginLeft:12,flexShrink:0}} onClick={() => setTimerSecs(timerDuration)}>▶ Старт</button>
+                <button className="timer-start" onClick={() => setTimerSecs(timerDuration)}>▶ Старт</button>
               </>
             )}
           </div>
@@ -672,7 +673,7 @@ export default function App() {
             </button>
           ) : (
             <>
-              <button className="back-btn" onClick={() => setSelectedEx(null)}>← Назад</button>
+              <button className="back-btn" onClick={() => setSelectedEx(null)}>‹ Упражнения</button>
               <div className="ex-header">
                 {EXERCISE_IMAGES[selectedEx]
                   ? <img src={EXERCISE_IMAGES[selectedEx]} alt={selectedEx} className="ex-image" onError={e=>e.target.style.display='none'}/>
