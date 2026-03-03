@@ -546,9 +546,16 @@ export default function App() {
   useEffect(() => {
     if (!user) return
     supabase.from('user_favorites').select('exercise_name').eq('user_id', user.id)
-      .then(({ data }) => {
-        if (data?.length) setFavorites(data.map(r => r.exercise_name))
-        else setFavorites(DEFAULT_FAVORITES)
+      .then(async ({ data }) => {
+        if (data && data.length > 0) {
+          // Has saved favorites — load them
+          setFavorites(data.map(r => r.exercise_name))
+        } else if (data && data.length === 0) {
+          // First time user — insert defaults to DB and set them
+          const inserts = DEFAULT_FAVORITES.map(name => ({ user_id: user.id, exercise_name: name }))
+          await supabase.from('user_favorites').insert(inserts)
+          setFavorites(DEFAULT_FAVORITES)
+        }
       })
     // Show onboard only once per user
     const key = 'gbOnboarded_' + user.id
@@ -801,15 +808,29 @@ export default function App() {
           <img src="/gymbro_logo.png" alt="logo" className="header-logo" onError={e=>e.target.style.display='none'}/>
           <h1>Gym BRO</h1>
         </div>
-        {streak >= 1 && <div style={{display:'flex',alignItems:'center',gap:8}}>
-          <div className="streak-badge">{streak}🔥</div>
-          <button onClick={handleSignOut} title="Выйти" style={{
+        <div style={{display:'flex',alignItems:'center',gap:8}}>
+          <button onClick={() => setShowTimerModal(true)} style={{
+            background:(timerSecs!==null||stopwatchRunning)?'rgba(255,159,10,0.15)':'rgba(255,255,255,0.08)',
+            border:(timerSecs!==null||stopwatchRunning)?'1px solid rgba(255,159,10,0.4)':'1px solid rgba(255,255,255,0.1)',
+            borderRadius:99,padding:'6px 12px',cursor:'pointer',
+            color:(timerSecs!==null||stopwatchRunning)?'#FF9F0A':'rgba(255,255,255,0.8)',
+            fontSize:(timerSecs!==null||stopwatchRunning)?13:18,
+            fontWeight:700,fontVariantNumeric:'tabular-nums',border:'none',
+            display:'flex',alignItems:'center'
+          }}>
+            {(timerSecs!==null||stopwatchRunning)
+              ? (timerSecs!==null
+                  ? `⏱ ${Math.floor(timerSecs/60)}:${String(timerSecs%60).padStart(2,'0')}`
+                  : `⏲ ${Math.floor(stopwatchSecs/60)}:${String(stopwatchSecs%60).padStart(2,'0')}`)
+              : '⏱'}
+          </button>
+          {streak >= 1 && <div className="streak-badge">{streak}🔥</div>}
+          <button onClick={handleSignOut} style={{
             background:'rgba(255,255,255,0.08)',border:'1px solid rgba(255,255,255,0.1)',
             borderRadius:99,padding:'5px 11px',cursor:'pointer',
-            color:'rgba(255,255,255,0.6)',fontSize:13,fontWeight:600,
-            display:'flex',alignItems:'center',gap:4
+            color:'rgba(255,255,255,0.5)',fontSize:12,fontWeight:600
           }}>Выйти</button>
-        </div>}
+        </div>
       </div>
 
       {tab === 'add' && (
