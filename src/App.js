@@ -222,7 +222,24 @@ input[type=number]::-webkit-inner-spin-button{-webkit-appearance:none}
 .nav-item{flex:1;display:flex;flex-direction:column;align-items:center;gap:4px;cursor:pointer;transition:opacity 0.15s;padding:4px 0}
 .nav-icon{font-size:22px}
 .nav-lbl{font-size:10px;font-weight:600;letter-spacing:0.2px}
-@media(max-width:480px){.nav-bar{width:100%}}`
+@media(max-width:480px){.nav-bar{width:100%}}
+.auth-screen{min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:24px;background:#000}
+.auth-card{width:100%;max-width:380px;background:#1c1c1e;border-radius:24px;padding:32px 24px}
+.auth-logo{width:64px;height:64px;border-radius:16px;object-fit:cover;margin:0 auto 20px;display:block}
+.auth-logo-ph{width:64px;height:64px;border-radius:16px;background:#2c2c2e;margin:0 auto 20px;display:flex;align-items:center;justify-content:center;font-size:32px}
+.auth-title{font-size:28px;font-weight:800;text-align:center;margin-bottom:6px;letter-spacing:-0.5px}
+.auth-sub{font-size:14px;opacity:0.4;text-align:center;margin-bottom:28px}
+.auth-inp-lbl{font-size:12px;font-weight:600;opacity:0.4;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px}
+.auth-inp{width:100%;background:#2c2c2e;border:none;border-radius:12px;padding:14px 16px;color:white;font-size:16px;outline:none;margin-bottom:14px}
+.auth-inp:focus{box-shadow:0 0 0 2px rgba(48,209,88,0.4)}
+.auth-btn{width:100%;padding:15px;background:#30D158;border:none;border-radius:14px;font-size:16px;font-weight:700;color:#000;cursor:pointer;margin-top:4px;transition:opacity 0.15s}
+.auth-btn:disabled{opacity:0.5}
+.auth-err{background:rgba(255,59,48,0.1);border:1px solid rgba(255,59,48,0.25);border-radius:10px;padding:10px 14px;font-size:13px;color:#FF453A;margin-bottom:14px;text-align:center}
+.auth-switch{text-align:center;margin-top:18px;font-size:14px;opacity:0.5}
+.auth-switch button{background:none;border:none;color:#30D158;font-size:14px;font-weight:600;cursor:pointer;padding:0;margin-left:4px}
+.auth-user-bar{display:flex;align-items:center;gap:8px}
+.auth-signout{background:none;border:none;color:rgba(255,255,255,0.35);font-size:12px;cursor:pointer;padding:4px 8px;border-radius:8px}
+.auth-signout:hover{color:rgba(255,255,255,0.7)}`
 
 function LineChart({ data, period, setPeriod }) {
   const [tooltip, setTooltip] = useState(null)
@@ -429,10 +446,17 @@ function EditModal({ data, onClose, onSave }) {
 }
 
 export default function App() {
+  const [user, setUser] = useState(undefined) // undefined = loading, null = not logged in
+  const [authMode, setAuthMode] = useState('login') // 'login' | 'register'
+  const [authEmail, setAuthEmail] = useState('')
+  const [authPassword, setAuthPassword] = useState('')
+  const [authError, setAuthError] = useState('')
+  const [authLoading, setAuthLoading] = useState(false)
+
   const [tab, setTab] = useState('add')
   const exercises = EXERCISES.map((name, i) => ({ id: i, name }))
-  const [favorites, setFavorites] = useState(() => { try { return JSON.parse(localStorage.getItem('gbFavs')) || DEFAULT_FAVORITES } catch { return DEFAULT_FAVORITES } })
-  const [showOnboard, setShowOnboard] = useState(() => !localStorage.getItem('gbOnboarded'))
+  const [favorites, setFavorites] = useState(DEFAULT_FAVORITES)
+  const [showOnboard, setShowOnboard] = useState(false)
   const [selectedEx, setSelectedEx] = useState(null)
   const [sets, setSets] = useState([{ weight: 0, reps: 0 }])
   const [saved, setSaved] = useState(false)
@@ -461,7 +485,49 @@ export default function App() {
   const timerRef = useRef(null)
   const historyLoaded = useRef(false)
 
+  const handleAuth = async () => {
+    setAuthLoading(true); setAuthError('')
+    if (authMode === 'login') {
+      const { error } = await supabase.auth.signInWithPassword({ email: authEmail, password: authPassword })
+      if (error) setAuthError(error.message === 'Invalid login credentials' ? 'Неверный email или пароль' : error.message)
+    } else {
+      const { error } = await supabase.auth.signUp({ email: authEmail, password: authPassword })
+      if (error) setAuthError(error.message.includes('already registered') ? 'Этот email уже зарегистрирован' : error.message)
+    }
+    setAuthLoading(false)
+  }
+
+  const handleSignOut = async () => {
+    await supabase.auth.signOut()
+    setFavorites(DEFAULT_FAVORITES)
+    setHistory([]); setPrs([]); setStats(null)
+  }
+
   useEffect(() => { const s = document.createElement('style'); s.textContent = CSS; document.head.appendChild(s); return () => document.head.removeChild(s) }, [])
+
+  // Auth listener
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setUser(session?.user ?? null)
+    })
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      setUser(session?.user ?? null)
+    })
+    return () => subscription.unsubscribe()
+  }, [])
+
+  // Load favorites from supabase when user logs in
+  useEffect(() => {
+    if (!user) return
+    supabase.from('user_favorites').select('exercise_name').eq('user_id', user.id)
+      .then(({ data }) => {
+        if (data?.length) setFavorites(data.map(r => r.exercise_name))
+        else setFavorites(DEFAULT_FAVORITES)
+      })
+    // Show onboard only once per user
+    const key = 'gbOnboarded_' + user.id
+    if (!localStorage.getItem(key)) setShowOnboard(true)
+  }, [user])
 
   useEffect(() => {
     const weighted = EXERCISES.find(e => !['Crunches','Plank','Push-Ups','Pull-Ups'].includes(e))
@@ -562,8 +628,18 @@ export default function App() {
   const addSet = () => { setSets(prev => { const last = prev[prev.length-1]; return [...prev, { weight: last.weight, reps: last.reps }] }) }
   const removeSet = () => sets.length > 1 && setSets(sets.slice(0,-1))
   const updateSet = (i, f, v) => { const n=[...sets]; n[i][f]=v; setSets(n) }
-  const toggleFav = (name) => { setFavorites(prev => { const next=prev.includes(name)?prev.filter(f=>f!==name):[...prev,name]; localStorage.setItem('gbFavs',JSON.stringify(next)); return next }) }
-
+  const toggleFav = async (name) => {
+    const isFavNow = favorites.includes(name)
+    const newFavs = isFavNow ? favorites.filter(f => f !== name) : [...favorites, name]
+    setFavorites(newFavs)
+    if (user) {
+      if (isFavNow) {
+        await supabase.from('user_favorites').delete().eq('user_id', user.id).eq('exercise_name', name)
+      } else {
+        await supabase.from('user_favorites').insert({ user_id: user.id, exercise_name: name })
+      }
+    }
+  }
   const saveWorkout = async () => {
     const filled = sets.filter(s => s.weight > 0 && s.reps > 0)
     if (!filled.length) return
@@ -620,6 +696,40 @@ export default function App() {
   const exType = EXERCISE_TYPE[selectedEx] || 'light'
   const isFav = favorites.includes(selectedEx)
 
+  // Loading state
+  if (user === undefined) return (
+    <div style={{minHeight:'100vh',background:'#000',display:'flex',alignItems:'center',justifyContent:'center'}}>
+      <div style={{fontSize:40}}>💪</div>
+    </div>
+  )
+
+  // Auth screen
+  if (user === null) return (
+    <div className="auth-screen">
+      <div className="auth-card">
+        <img src="/gymbro_logo.png" alt="logo" className="auth-logo" onError={e=>{e.target.style.display='none'}}/>
+        <div className="auth-title">Gym BRO</div>
+        <div className="auth-sub">{authMode==='login' ? 'Войди в свой аккаунт' : 'Создай новый аккаунт'}</div>
+        {authError && <div className="auth-err">{authError}</div>}
+        <div className="auth-inp-lbl">Email</div>
+        <input className="auth-inp" type="email" placeholder="твой@email.com" value={authEmail}
+          onChange={e=>setAuthEmail(e.target.value)} onKeyDown={e=>e.key==='Enter'&&handleAuth()}/>
+        <div className="auth-inp-lbl">Пароль</div>
+        <input className="auth-inp" type="password" placeholder="минимум 6 символов" value={authPassword}
+          onChange={e=>setAuthPassword(e.target.value)} onKeyDown={e=>e.key==='Enter'&&handleAuth()}/>
+        <button className="auth-btn" onClick={handleAuth} disabled={authLoading || !authEmail || !authPassword}>
+          {authLoading ? '...' : authMode==='login' ? 'Войти' : 'Зарегистрироваться'}
+        </button>
+        <div className="auth-switch">
+          {authMode==='login' ? 'Нет аккаунта?' : 'Уже есть аккаунт?'}
+          <button onClick={()=>{setAuthMode(m=>m==='login'?'register':'login');setAuthError('')}}>
+            {authMode==='login' ? 'Регистрация' : 'Войти'}
+          </button>
+        </div>
+      </div>
+    </div>
+  )
+
   return (
     <div className="app">
       {showOnboard && (
@@ -633,7 +743,7 @@ export default function App() {
                 <div key={text} className="onboard-feature"><span style={{fontSize:20,width:36,textAlign:'center'}}>{icon}</span><span>{text}</span></div>
               ))}
             </div>
-            <button className="onboard-btn" onClick={() => { localStorage.setItem('gbOnboarded','1'); setShowOnboard(false) }}>Начать тренироваться 🚀</button>
+            <button className="onboard-btn" onClick={() => { if(user) localStorage.setItem('gbOnboarded_'+user.id,'1'); setShowOnboard(false) }}>Начать тренироваться 🚀</button>
           </div>
         </div>
       )}
@@ -643,7 +753,10 @@ export default function App() {
           <img src="/gymbro_logo.png" alt="logo" className="header-logo" onError={e=>e.target.style.display='none'}/>
           <h1>Gym BRO</h1>
         </div>
-        {streak >= 1 && <div className="streak-badge">{streak}🔥</div>}
+        {streak >= 1 && <div style={{display:'flex',alignItems:'center',gap:8}}>
+          <div className="streak-badge">{streak}🔥</div>
+          <button className="auth-signout" onClick={handleSignOut} title="Выйти">⎋</button>
+        </div>}
       </div>
 
       {tab === 'add' && (
