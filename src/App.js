@@ -11,77 +11,100 @@ const REPS_OPTIONS = Array.from({ length: 51 }, (_, i) => i)
 const TIME_OPTIONS = Array.from({ length: 51 }, (_, i) => i * 5)
 
 const EXERCISE_TYPE = {
-  'Bench Press':'heavy','Squat':'heavy','Deadlift':'heavy','Romanian Deadlift':'heavy',
-  'Overhead Press':'heavy','Leg Press':'heavy','Barbell Row':'heavy','Lat Pulldown':'heavy',
-  'Seated Cable Row':'heavy','Incline Dumbbell Press':'light','Dumbbell Bench':'light',
-  'Dumbbell Flyes':'light','Flat Dumbbell Flyes':'light','Lunges':'light','Leg Curl':'light',
-  'Leg Extension':'light','Push-Ups':'light','Pull-Ups':'light','Crunches':'light',
-  'Hyperextension':'light','Biceps':'light','Triceps':'light','Plank':'timed',
-  'Arnold Press':'light','Cable Fly':'light','Bulgarian Split Squat':'light',
-  'Hammer Curl':'light','Skull Crushers':'light','Face Pull':'light',
-  'Hip Thrust':'heavy','Shrugs':'heavy','Dips':'light','T-Bar Row':'heavy',
+  'Жим лёжа':'heavy','Приседания':'heavy','Становая тяга':'heavy','Румынская тяга':'heavy',
+  'Жим над головой':'heavy','Жим ногами':'heavy','Тяга штанги в наклоне':'heavy','Тяга вниз':'heavy',
+  'Тяга сидя':'heavy','Жим гантелей наклон':'light','Жим гантелей лёжа':'light',
+  'Разводка гантелей':'light','Разводка лёжа':'light','Выпады':'light','Сгибание ног':'light',
+  'Разгибание ног':'light','Отжимания':'light','Подтягивания':'light','Скручивания':'light',
+  'Гиперэкстензия':'light','Бицепс':'light','Трицепс':'light','Планка':'timed',
+  'Жим Арнольда':'light','Кроссовер':'light','Болгарские выпады':'light',
+  'Молотки':'light','Французский жим':'light','Тяга к лицу':'light',
+  'Ягодичный мост':'heavy','Шраги':'heavy','Отжимания на брусьях':'light','Тяга Т-штанги':'heavy',
 }
 
 const EXERCISE_IMAGES = {
-  'Bench Press':'/images/bench.png','Squat':'/images/squat.png','Deadlift':'/images/deadlift.png',
-  'Overhead Press':'/images/ohp.png','Biceps':'/images/biceps.png','Triceps':'/images/triceps.png',
-  'Dumbbell Flyes':'/images/dumbbell_flyes.png','Romanian Deadlift':'/images/romanian_deadlift.png',
-  'Incline Dumbbell Press':'/images/incline_dumbbell_press.png','Lat Pulldown':'/images/lat_pulldown.png',
-  'Seated Cable Row':'/images/seated_cable_row.png','Dumbbell Bench':'/images/dumbbell_bench.png',
-  'Push-Ups':'/images/push_ups.png','Leg Press':'/images/leg_press.png','Lunges':'/images/lunges.png',
-  'Leg Curl':'/images/leg_curl.png','Leg Extension':'/images/leg_extension.png',
-  'Barbell Row':'/images/barbell_row.png','Pull-Ups':'/images/pull_ups.png','Plank':'/images/plank.png',
-  'Crunches':'/images/crunches.png','Flat Dumbbell Flyes':'/images/flat_dumbbell_flyes.png',
-  'Hyperextension':'/images/hyperextension.png',
-  'Arnold Press':'/images/arnold_press.png','Cable Fly':'/images/cable_fly.png',
-  'Bulgarian Split Squat':'/images/bulgarian_split_squat.png','Hammer Curl':'/images/hammer_curl.png',
-  'Skull Crushers':'/images/skull_crushers.png','Face Pull':'/images/face_pull.png',
-  'Hip Thrust':'/images/hip_thrust.png','Shrugs':'/images/shrugs.png',
-  'Dips':'/images/dips.png','T-Bar Row':'/images/t_bar_row.png',
+  'Жим лёжа':'/images/bench.png','Приседания':'/images/squat.png','Становая тяга':'/images/deadlift.png',
+  'Жим над головой':'/images/ohp.png','Бицепс':'/images/biceps.png','Трицепс':'/images/triceps.png',
+  'Разводка гантелей':'/images/dumbbell_flyes.png','Румынская тяга':'/images/romanian_deadlift.png',
+  'Жим гантелей наклон':'/images/incline_dumbbell_press.png','Тяга вниз':'/images/lat_pulldown.png',
+  'Тяга сидя':'/images/seated_cable_row.png','Жим гантелей лёжа':'/images/dumbbell_bench.png',
+  'Отжимания':'/images/push_ups.png','Жим ногами':'/images/leg_press.png','Выпады':'/images/lunges.png',
+  'Сгибание ног':'/images/leg_curl.png','Разгибание ног':'/images/leg_extension.png',
+  'Тяга штанги в наклоне':'/images/barbell_row.png','Подтягивания':'/images/pull_ups.png','Планка':'/images/plank.png',
+  'Скручивания':'/images/crunches.png','Разводка лёжа':'/images/flat_dumbbell_flyes.png',
+  'Гиперэкстензия':'/images/hyperextension.png',
+  'Жим Арнольда':'/images/arnold_press.png','Кроссовер':'/images/cable_fly.png',
+  'Болгарские выпады':'/images/bulgarian_split_squat.png','Молотки':'/images/hammer_curl.png',
+  'Французский жим':'/images/skull_crushers.png','Тяга к лицу':'/images/face_pull.png',
+  'Ягодичный мост':'/images/hip_thrust.png','Шраги':'/images/shrugs.png',
+  'Отжимания на брусьях':'/images/dips.png','Тяга Т-штанги':'/images/t_bar_row.png',
 }
 
 
 
 const EXERCISE_MUSCLES = {
-  'Bench Press':       ['chest','triceps','shoulders'],
-  'Incline Dumbbell Press': ['chest','shoulders','triceps'],
-  'Dumbbell Bench':    ['chest','triceps','shoulders'],
-  'Dumbbell Flyes':    ['chest','shoulders'],
-  'Flat Dumbbell Flyes':['chest','shoulders'],
-  'Cable Fly':         ['chest','shoulders'],
-  'Push-Ups':          ['chest','triceps','shoulders'],
-  'Overhead Press':    ['shoulders','triceps','traps'],
-  'Arnold Press':      ['shoulders','triceps'],
+  'Жим лёжа':       ['chest','triceps','shoulders'],
+  'Жим гантелей наклон': ['chest','shoulders','triceps'],
+  'Жим гантелей лёжа':    ['chest','triceps','shoulders'],
+  'Разводка гантелей':    ['chest','shoulders'],
+  'Разводка лёжа':['chest','shoulders'],
+  'Кроссовер':         ['chest','shoulders'],
+  'Отжимания':          ['chest','triceps','shoulders'],
+  'Жим над головой':    ['shoulders','triceps','traps'],
+  'Жим Арнольда':      ['shoulders','triceps'],
   'Lateral Raise':     ['shoulders'],
-  'Face Pull':         ['shoulders','upper_back','traps'],
-  'Shrugs':            ['traps','upper_back'],
-  'Squat':             ['quads','glutes','lower_back','hamstrings'],
-  'Bulgarian Split Squat':['quads','glutes','hamstrings'],
-  'Leg Press':         ['quads','glutes'],
-  'Leg Extension':     ['quads'],
-  'Lunges':            ['quads','glutes','hamstrings'],
-  'Deadlift':          ['lower_back','glutes','hamstrings','traps','lats'],
-  'Romanian Deadlift': ['hamstrings','glutes','lower_back'],
-  'Hip Thrust':        ['glutes','hamstrings'],
-  'Leg Curl':          ['hamstrings'],
-  'Barbell Row':       ['lats','upper_back','biceps','traps'],
-  'Seated Cable Row':  ['lats','upper_back','biceps'],
-  'Lat Pulldown':      ['lats','biceps','upper_back'],
-  'T-Bar Row':         ['lats','upper_back','biceps'],
-  'Pull-Ups':          ['lats','biceps','upper_back'],
-  'Biceps':            ['biceps','forearms'],
-  'Hammer Curl':       ['biceps','forearms'],
-  'Triceps':           ['triceps'],
-  'Skull Crushers':    ['triceps'],
-  'Dips':              ['triceps','chest','shoulders'],
-  'Hyperextension':    ['lower_back','glutes','hamstrings'],
-  'Crunches':          ['abs'],
-  'Plank':             ['abs','lower_back'],
+  'Тяга к лицу':         ['shoulders','upper_back','traps'],
+  'Шраги':            ['traps','upper_back'],
+  'Приседания':             ['quads','glutes','lower_back','hamstrings'],
+  'Болгарские выпады':['quads','glutes','hamstrings'],
+  'Жим ногами':         ['quads','glutes'],
+  'Разгибание ног':     ['quads'],
+  'Выпады':            ['quads','glutes','hamstrings'],
+  'Становая тяга':          ['lower_back','glutes','hamstrings','traps','lats'],
+  'Румынская тяга': ['hamstrings','glutes','lower_back'],
+  'Ягодичный мост':        ['glutes','hamstrings'],
+  'Сгибание ног':          ['hamstrings'],
+  'Тяга штанги в наклоне':       ['lats','upper_back','biceps','traps'],
+  'Тяга сидя':  ['lats','upper_back','biceps'],
+  'Тяга вниз':      ['lats','biceps','upper_back'],
+  'Тяга Т-штанги':         ['lats','upper_back','biceps'],
+  'Подтягивания':          ['lats','biceps','upper_back'],
+  'Бицепс':            ['biceps','forearms'],
+  'Молотки':       ['biceps','forearms'],
+  'Трицепс':           ['triceps'],
+  'Французский жим':    ['triceps'],
+  'Отжимания на брусьях':              ['triceps','chest','shoulders'],
+  'Гиперэкстензия':    ['lower_back','glutes','hamstrings'],
+  'Скручивания':          ['abs'],
+  'Планка':             ['abs','lower_back'],
+}
+
+
+const MONTH_MOTIVATIONS = {
+  1:  ['Первая тренировка месяца! Отличное начало', 'Старт дан! Так держать', 'Первый шаг самый важный!'],
+  2:  ['Уже вторая! Входишь в ритм', 'Два раза это уже привычка!', 'Продолжаешь значит серьёзно настроен'],
+  3:  ['Три тренировки! Ты в ударе', 'Третья пошла! Тело скажет спасибо', 'Три из трёх красавчик!'],
+  4:  ['Четыре! Неделя почти закрыта', 'Уже 4 тренировки серьёзный подход', 'Четвёртая! Мышцы растут'],
+  5:  ['Пять тренировок! Ты машина', 'Пятёрка! Это уже уровень', '5 тренировок это серьёзно'],
+  6:  ['Шесть! Уже виден прогресс', 'Шестая стабильность это сила', '6 раз тело уже меняется'],
+  7:  ['Семь! Неделя тренировок позади', 'Седьмая! Ты не сдаёшься уважаю', 'Семь тренировок ты крут!'],
+  8:  ['Восемь! Скоро будут заметны результаты', '8 тренировок монстр!', 'Восьмая! Режим соблюдается'],
+  9:  ['Девять! Почти десятка', 'Девятая характер стальной', '9 раз это очень серьёзно'],
+  10: ['10 ТРЕНИРОВОК! Легенда месяца', 'Десятка! Ты абсолютный зверь', '10 раз переходишь на другой уровень'],
+  15: ['15 ТРЕНИРОВОК! Просто монстр', 'Пятнадцать! Такой дисциплины ни у кого нет', '15 раз ты изменился навсегда'],
+  20: ['20 ТРЕНИРОВОК ЗА МЕСЯЦ! Легенда', 'Двадцать! Ты профессионал', '20 тренировок нереально круто'],
+}
+function getMotivation(count) {
+  const exact = MONTH_MOTIVATIONS[count]
+  if (exact) return exact[Math.floor(Math.random() * exact.length)]
+  if (count > 20) return count + ' тренировок за месяц — ты легенда!'
+  const msgs = [count+'-я тренировка! Продолжай в том же духе', 'Уже '+count+'! Прогресс очевиден', count+' тренировок — ты на верном пути']
+  return msgs[count % 3]
 }
 
 const EXERCISES = Object.keys(EXERCISE_IMAGES).sort((a, b) => a.localeCompare(b))
 
-const DEFAULT_FAVORITES = ['Bench Press','Squat','Deadlift']
+const DEFAULT_FAVORITES = ['Жим лёжа','Приседания','Становая тяга']
 
 function getWeightOptions(exName) {
   const t = EXERCISE_TYPE[exName] || 'light'
@@ -442,36 +465,36 @@ function MuscleMap({ muscleScores }) {
   // Front figure center ~384, Back figure center ~1130
   const zones = {
     // === FRONT ===
-    chest: "M 338,232 Q 426,214 514,232 Q 521,274 506,325 Q 426,343 346,325 Q 331,274 338,232 Z",
+    chest: "M 338,262 Q 426,244 514,262 Q 521,304 506,355 Q 426,373 346,355 Q 331,304 338,262 Z",
 
-    shoulders: "M 286,204 Q 321,186 354,204 Q 366,232 361,278 Q 331,297 291,278 Q 271,251 286,204 Z M 498,204 Q 531,186 566,204 Q 581,251 561,278 Q 521,297 491,278 Q 486,232 498,204 Z",
+    shoulders: "M 286,234 Q 321,216 354,234 Q 366,262 361,308 Q 331,327 291,308 Q 271,281 286,234 Z M 498,234 Q 531,216 566,234 Q 581,281 561,308 Q 521,327 491,308 Q 486,262 498,234 Z",
 
-    biceps: "M 251,288 Q 278,278 296,290 Q 304,325 301,371 Q 294,399 274,399 Q 248,389 238,362 Q 234,327 251,288 Z M 556,290 Q 574,278 601,288 Q 618,327 614,362 Q 604,389 578,399 Q 558,399 551,371 Q 548,325 556,290 Z",
+    biceps: "M 251,318 Q 278,308 296,320 Q 304,355 301,401 Q 294,429 274,429 Q 248,419 238,392 Q 234,357 251,318 Z M 556,320 Q 574,308 601,318 Q 618,357 614,392 Q 604,419 578,429 Q 558,429 551,401 Q 548,355 556,320 Z",
 
-    triceps: "M 294,290 Q 314,281 328,294 Q 336,327 334,374 Q 326,401 304,401 Q 290,392 288,362 Q 286,327 294,290 Z M 524,294 Q 538,281 558,290 Q 566,327 564,362 Q 562,392 548,401 Q 526,401 518,374 Q 516,327 524,294 Z",
+    triceps: "M 294,320 Q 314,311 328,324 Q 336,357 334,404 Q 326,431 304,431 Q 290,422 288,392 Q 286,357 294,320 Z M 524,324 Q 538,311 558,320 Q 566,357 564,392 Q 562,422 548,431 Q 526,431 518,404 Q 516,357 524,324 Z",
 
-    forearms: "M 231,405 Q 258,396 278,408 Q 286,438 284,475 Q 276,498 254,498 Q 228,488 218,461 Q 214,429 231,405 Z M 574,408 Q 594,396 621,405 Q 638,429 634,461 Q 624,488 598,498 Q 576,498 568,475 Q 566,438 574,408 Z",
+    forearms: "M 231,435 Q 258,426 278,438 Q 286,468 284,505 Q 276,528 254,528 Q 228,518 218,491 Q 214,459 231,435 Z M 574,438 Q 594,426 621,435 Q 638,459 634,491 Q 624,518 598,528 Q 576,528 568,505 Q 566,468 574,438 Z",
 
-    abs: "M 354,327 Q 426,340 498,327 Q 506,371 501,417 Q 496,463 486,485 Q 426,494 366,485 Q 356,463 351,417 Q 346,371 354,327 Z",
+    abs: "M 354,357 Q 426,370 498,357 Q 506,401 501,447 Q 496,493 486,515 Q 426,524 366,515 Q 356,493 351,447 Q 346,401 354,357 Z",
 
-    quads: "M 358,500 Q 388,491 411,503 Q 418,535 416,593 Q 414,648 404,679 Q 381,692 358,683 Q 338,667 334,627 Q 331,577 338,535 Z M 441,503 Q 464,491 494,500 Q 514,535 518,577 Q 521,627 514,667 Q 494,692 471,692 Q 448,679 436,648 Q 434,593 441,503 Z",
+    quads: "M 358,530 Q 388,521 411,533 Q 418,565 416,623 Q 414,678 404,709 Q 381,722 358,713 Q 338,697 334,657 Q 331,607 338,565 Z M 441,533 Q 464,521 494,530 Q 514,565 518,607 Q 521,657 514,697 Q 494,722 471,722 Q 448,709 436,678 Q 434,623 441,533 Z",
 
-    calves: "M 348,713 Q 374,704 394,713 Q 404,741 402,787 Q 398,824 378,836 Q 354,840 338,827 Q 328,799 331,762 Z M 458,713 Q 478,704 504,713 Q 521,762 514,799 Q 504,827 474,836 Q 454,836 450,799 Q 448,762 458,713 Z",
+    calves: "M 348,743 Q 374,734 394,743 Q 404,771 402,817 Q 398,854 378,866 Q 354,870 338,857 Q 328,829 331,792 Z M 458,743 Q 478,734 504,743 Q 521,792 514,829 Q 504,857 474,866 Q 454,866 450,829 Q 448,792 458,743 Z",
 
     // === BACK ===
-    traps: "M 1015,204 Q 1105,186 1195,204 Q 1203,239 1190,269 Q 1105,281 1020,269 Q 1007,239 1015,204 Z",
+    traps: "M 1015,234 Q 1105,216 1195,234 Q 1203,269 1190,299 Q 1105,311 1020,299 Q 1007,269 1015,234 Z",
 
-    upper_back: "M 1020,272 Q 1105,285 1190,272 Q 1200,313 1193,355 Q 1183,383 1105,392 Q 1027,383 1017,355 Q 1010,313 1020,272 Z",
+    upper_back: "M 1020,302 Q 1105,315 1190,302 Q 1200,343 1193,385 Q 1183,413 1105,422 Q 1027,413 1017,385 Q 1010,343 1020,302 Z",
 
-    lats: "M 973,239 Q 1000,226 1017,241 Q 1023,278 1025,334 Q 1023,380 1010,401 Q 987,408 967,389 Q 953,364 957,318 Z M 1193,241 Q 1210,226 1237,239 Q 1253,278 1253,318 Q 1257,364 1243,389 Q 1223,408 1200,401 Q 1187,380 1185,334 Q 1187,278 1193,241 Z",
+    lats: "M 973,269 Q 1000,256 1017,271 Q 1023,308 1025,364 Q 1023,410 1010,431 Q 987,438 967,419 Q 953,394 957,348 Z M 1193,271 Q 1210,256 1237,269 Q 1253,308 1253,348 Q 1257,394 1243,419 Q 1223,438 1200,431 Q 1187,410 1185,364 Q 1187,308 1193,271 Z",
 
-    lower_back: "M 1030,392 Q 1105,405 1180,392 Q 1187,424 1183,457 Q 1173,479 1105,485 Q 1037,479 1027,457 Q 1023,424 1030,392 Z",
+    lower_back: "M 1030,422 Q 1105,435 1180,422 Q 1187,454 1183,487 Q 1173,509 1105,515 Q 1037,509 1027,487 Q 1023,454 1030,422 Z",
 
-    glutes: "M 1033,485 Q 1070,475 1097,488 Q 1103,516 1100,559 Q 1093,596 1067,605 Q 1037,602 1020,584 Q 1010,556 1017,519 Z M 1113,488 Q 1140,475 1177,485 Q 1193,519 1190,556 Q 1183,584 1143,602 Q 1117,602 1110,559 Q 1107,516 1113,488 Z",
+    glutes: "M 1033,515 Q 1070,505 1097,518 Q 1103,546 1100,589 Q 1093,626 1067,635 Q 1037,632 1020,614 Q 1010,586 1017,549 Z M 1113,518 Q 1140,505 1177,515 Q 1193,549 1190,586 Q 1183,614 1143,632 Q 1117,632 1110,589 Q 1107,546 1113,518 Z",
 
-    hamstrings: "M 1025,609 Q 1053,599 1077,611 Q 1087,642 1085,695 Q 1080,734 1057,744 Q 1030,744 1013,725 Q 1000,697 1003,655 Z M 1133,611 Q 1157,599 1185,609 Q 1207,655 1197,697 Q 1183,725 1153,744 Q 1130,744 1125,695 Q 1123,642 1133,611 Z",
+    hamstrings: "M 1025,639 Q 1053,629 1077,641 Q 1087,672 1085,725 Q 1080,764 1057,774 Q 1030,774 1013,755 Q 1000,727 1003,685 Z M 1133,641 Q 1157,629 1185,639 Q 1207,685 1197,727 Q 1183,755 1153,774 Q 1130,774 1125,725 Q 1123,672 1133,641 Z",
 
-    calves_back: "M 1020,753 Q 1045,744 1067,753 Q 1077,781 1075,821 Q 1067,849 1043,855 Q 1020,852 1007,833 Q 997,803 1003,775 Z M 1143,753 Q 1165,744 1190,753 Q 1207,775 1203,803 Q 1193,833 1167,855 Q 1143,849 1135,821 Q 1133,781 1143,753 Z",
+    calves_back: "M 1020,783 Q 1045,774 1067,783 Q 1077,811 1075,851 Q 1067,879 1043,885 Q 1020,882 1007,863 Q 997,833 1003,805 Z M 1143,783 Q 1165,774 1190,783 Q 1207,805 1203,833 Q 1193,863 1167,885 Q 1143,879 1135,851 Q 1133,811 1143,783 Z",
 
   }
 
@@ -714,8 +737,6 @@ export default function App() {
 
   useEffect(() => { const s = document.createElement('style'); s.textContent = CSS; document.head.appendChild(s); return () => document.head.removeChild(s) }, [])
 
-  useEffect(() => { const img = new Image(); img.src = '/images/muscle_map.png' }, [])
-
   // Auth listener
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
@@ -754,24 +775,17 @@ export default function App() {
   }, [user])
 
   useEffect(() => {
-    const weighted = EXERCISES.find(e => !['Crunches','Plank','Push-Ups','Pull-Ups'].includes(e))
+    const weighted = EXERCISES.find(e => !['Скручивания','Планка','Отжимания','Подтягивания'].includes(e))
     if (!chartEx) setChartEx(weighted || EXERCISES[0])
   }, [])
 
   useEffect(() => {
     async function load() {
-      const { data } = await supabase.from('workouts').select('workout_date').order('workout_date', { ascending: false })
-      if (!data?.length) return
-      const dates = [...new Set(data.map(r => r.workout_date))].sort().reverse()
-      const yesterday = new Date(Date.now() - 86400000).toISOString().split('T')[0]
-      if (dates[0] < yesterday) return
-      let s = 0; let exp = new Date(dates[0])
-      for (const d of dates) { const c = new Date(d); if (c.toDateString() === exp.toDateString()) { s++; exp.setDate(exp.getDate()-1) } else break }
-      setStreak(s)
-      if ([7,30,100].includes(s)) {
-        setStreakAlert(s)
-        setTimeout(() => setStreakAlert(null), 4000)
-      }
+      const thisM = new Date().toISOString().slice(0,7)
+      const { data } = await supabase.from('workouts').select('workout_date')
+      if (!data) return
+      const monthCount = new Set(data.filter(r => r.workout_date.startsWith(thisM)).map(r => r.workout_date)).size
+      setStreak(monthCount)
     }
     load()
   }, [saved])
@@ -898,6 +912,12 @@ export default function App() {
         setTimeout(() => setPrAlert(null), 4000)
       }
     }
+    const thisM2 = new Date().toISOString().slice(0,7)
+    const { data: mData } = await supabase.from('workouts').select('workout_date')
+    const monthCount = new Set((mData||[]).filter(r => r.workout_date.startsWith(thisM2)).map(r => r.workout_date)).size
+    setStreak(monthCount)
+    setStreakAlert({ type: 'month', count: monthCount, msg: getMotivation(monthCount) })
+    setTimeout(() => setStreakAlert(null), 4500)
     setSaved(true)
     setTimeout(() => { setSaved(false); setSelectedEx(null) }, 1500)
   }
@@ -1060,7 +1080,7 @@ export default function App() {
                   <div style={{fontSize:11,opacity:0.35,marginBottom:6,fontWeight:600,textTransform:'uppercase',letterSpacing:'0.5px'}}>Изменить время</div>
                   <div style={{display:'flex',gap:6,flexWrap:'wrap'}}>
                     {[30,60,90,120,180].map(t=>(
-                      <button key={t} onClick={()=>{setTimerDuration(t);setTimerSecs(null);setTimerPaused(false)}} style={{
+                      <button key={t} onClick={()=>{setTimerDuration(t);setTimerSecs(t);setTimerPaused(false)}} style={{
                         padding:'5px 12px',borderRadius:99,fontSize:12,fontWeight:700,border:'none',cursor:'pointer',
                         background: timerDuration===t ? '#FF9F0A' : 'rgba(255,255,255,0.07)',
                         color: timerDuration===t ? '#000' : 'rgba(255,255,255,0.5)'
@@ -1298,19 +1318,29 @@ export default function App() {
             </div>
             {timerMode === 'countdown' ? (
               <div style={{padding:'0 24px'}}>
-                <div style={{marginBottom:16}}>
-                  <DropdownPicker options={Array.from({length:50},(_,i)=>(i+1)*5)} value={timerDuration} onChange={v=>{setTimerDuration(v);setTimerSecs(null)}} unit="сек" label="Длительность"/>
-                </div>
-                <div className="timer-big-num" style={{color: timerSecs!==null ? '#FF9F0A' : 'white'}}>
+                <div className="timer-big-num" style={{
+                  color: timerSecs!==null ? (timerPaused ? 'rgba(255,159,10,0.45)' : '#FF9F0A') : 'white',
+                  display:'flex',alignItems:'baseline',justifyContent:'center',gap:10
+                }}>
                   {timerSecs !== null
                     ? `${Math.floor(timerSecs/60)}:${String(timerSecs%60).padStart(2,'0')}`
                     : `${Math.floor(timerDuration/60)}:${String(timerDuration%60).padStart(2,'0')}`}
+                  {timerPaused && timerSecs !== null && <span style={{fontSize:16,opacity:0.5,fontWeight:500}}>пауза</span>}
                 </div>
-                <div className="timer-controls">
-                  {timerSecs !== null
-                    ? <button className="timer-ctrl-btn danger" onClick={()=>setTimerSecs(null)}>✕ Стоп</button>
-                    : <button className="timer-ctrl-btn primary" onClick={()=>setTimerSecs(timerDuration)}>▶ Старт</button>
-                  }
+                <div style={{marginBottom:20}}>
+                  <DropdownPicker options={Array.from({length:50},(_,i)=>(i+1)*5)} value={timerDuration} onChange={v=>{setTimerDuration(v);setTimerSecs(null);setTimerPaused(false)}} unit="сек" label="Время"/>
+                </div>
+                <div className="timer-controls" style={{gap:10}}>
+                  {timerSecs === null ? (
+                    <button className="timer-ctrl-btn primary" style={{maxWidth:'none',flex:1}} onClick={()=>{setTimerSecs(timerDuration);setTimerPaused(false)}}>▶ Старт</button>
+                  ) : (
+                    <>
+                      <button className="timer-ctrl-btn secondary" onClick={()=>{setTimerSecs(null);setTimerPaused(false)}}>✕ Стоп</button>
+                      <button className="timer-ctrl-btn primary" onClick={()=>setTimerPaused(p=>!p)}>
+                        {timerPaused ? '▶ Продолжить' : '⏸ Пауза'}
+                      </button>
+                    </>
+                  )}
                 </div>
               </div>
             ) : (
@@ -1342,13 +1372,15 @@ export default function App() {
         </div>
       )}
 
-      {/* Streak Alert Toast */}
-      {streakAlert && (
-        <div className="alert-toast" style={{borderColor:'rgba(255,100,0,0.3)'}}>
-          <div className="alert-toast-icon">{streakAlert===7?'🔥':streakAlert===30?'⚡':'👑'}</div>
+      {/* Motivational Toast */}
+      {streakAlert && streakAlert.type === 'month' && (
+        <div className="alert-toast" style={{borderColor:'rgba(48,209,88,0.3)'}}>
+          <div className="alert-toast-icon">
+            {streakAlert.count>=20?'👑':streakAlert.count>=10?'🏆':streakAlert.count>=5?'⚡':'🔥'}
+          </div>
           <div>
-            <div className="alert-toast-title">{streakAlert} дней подряд!</div>
-            <div className="alert-toast-sub">{streakAlert===7?'Неделя без пропусков — огонь!':streakAlert===30?'Месяц! Ты машина 💪':'100 дней! Легенда 🏆'}</div>
+            <div className="alert-toast-title">{streakAlert.count}-я тренировка месяца!</div>
+            <div className="alert-toast-sub">{streakAlert.msg}</div>
           </div>
         </div>
       )}
