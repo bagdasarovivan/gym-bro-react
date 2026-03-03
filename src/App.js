@@ -1412,52 +1412,24 @@ export default function App() {
               <div style={{padding:'0 24px 8px'}}>
                 <div style={{textAlign:'center',fontSize:13,fontWeight:700,color:'rgba(255,159,10,0.8)',letterSpacing:'1px',textTransform:'uppercase',marginBottom:16}}>⏱ Таймер</div>
                 <div className="timer-big-num" style={{
-                  color: timerSecs!==null ? (timerPaused ? 'rgba(255,159,10,0.5)' : '#FF9F0A') : 'rgba(255,255,255,0.85)',
-                  marginBottom: timerSecs===null ? 8 : 24
+                  color: timerPaused ? 'rgba(255,159,10,0.5)' : '#FF9F0A',
+                  marginBottom:20
                 }}>
-                  {timerSecs !== null
-                    ? `${Math.floor(timerSecs/60)}:${String(timerSecs%60).padStart(2,'0')}`
-                    : (() => { const t = timerDuration; return `${Math.floor(t/60)}:${String(t%60).padStart(2,'0')}` })()}
+                  {`${Math.floor((timerSecs!==null?timerSecs:timerDuration)/60)}:${String((timerSecs!==null?timerSecs:timerDuration)%60).padStart(2,'0')}`}
                   {timerPaused && timerSecs !== null && <span style={{fontSize:16,opacity:0.5,fontWeight:500,marginLeft:8}}>пауза</span>}
                 </div>
                 {timerSecs === null && (
-                  <div style={{marginBottom:24}}>
-                    <div style={{fontSize:11,color:'rgba(255,255,255,0.3)',textAlign:'center',marginBottom:10,fontWeight:600,textTransform:'uppercase',letterSpacing:'0.5px'}}>Прокрути для выбора времени</div>
-                    <div style={{position:'relative',height:160,overflow:'hidden',borderRadius:14,background:'rgba(255,255,255,0.04)',border:'1px solid rgba(255,255,255,0.08)'}}
-                      onWheel={e=>{
-                        e.preventDefault()
-                        const step = e.deltaY > 0 ? 5 : -5
-                        setTimerDuration(prev => Math.min(250, Math.max(5, Math.round(prev/5)*5 + step)))
-                      }}
-                      onTouchStart={e=>{ e.currentTarget._ty = e.touches[0].clientY }}
-                      onTouchMove={e=>{
-                        e.preventDefault()
-                        const dy = e.currentTarget._ty - e.touches[0].clientY
-                        if(Math.abs(dy) > 8) {
-                          const step = dy > 0 ? 5 : -5
-                          setTimerDuration(prev => Math.min(250, Math.max(5, Math.round(prev/5)*5 + step)))
-                          e.currentTarget._ty = e.touches[0].clientY
-                        }
-                      }}>
-                      <div style={{position:'absolute',top:'50%',left:0,right:0,height:48,transform:'translateY(-50%)',background:'rgba(255,159,10,0.08)',borderTop:'1px solid rgba(255,159,10,0.2)',borderBottom:'1px solid rgba(255,159,10,0.2)',pointerEvents:'none'}}/>
-                      <div style={{display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',height:'100%',gap:4}}>
-                        <div style={{fontSize:13,color:'rgba(255,255,255,0.2)',fontWeight:600}}>{timerDuration>=10 ? `${Math.floor((timerDuration-5)/60)}:${String((timerDuration-5)%60).padStart(2,'0')}` : ''}</div>
-                        <div style={{fontSize:36,fontWeight:800,color:'#FF9F0A',letterSpacing:'-1px'}}>{`${Math.floor(timerDuration/60)}:${String(timerDuration%60).padStart(2,'0')}`}</div>
-                        <div style={{fontSize:13,color:'rgba(255,255,255,0.2)',fontWeight:600}}>{timerDuration<=245 ? `${Math.floor((timerDuration+5)/60)}:${String((timerDuration+5)%60).padStart(2,'0')}` : ''}</div>
-                      </div>
-                    </div>
-                    <div style={{display:'flex',justifyContent:'center',gap:8,marginTop:10,flexWrap:'wrap'}}>
-                      {[30,60,90,120,180].map(t=>(
-                        <button key={t} onClick={()=>setTimerDuration(t)} style={{
-                          padding:'5px 12px',borderRadius:99,fontSize:12,fontWeight:700,border:'none',cursor:'pointer',
-                          background: timerDuration===t ? '#FF9F0A' : 'rgba(255,255,255,0.07)',
-                          color: timerDuration===t ? '#000' : 'rgba(255,255,255,0.45)'
-                        }}>{t}с</button>
-                      ))}
-                    </div>
+                  <div style={{marginBottom:20}}>
+                    <DropdownPicker
+                      options={Array.from({length:50},(_,i)=>(i+1)*5)}
+                      value={timerDuration}
+                      onChange={v=>{setTimerDuration(v);setTimerPaused(false)}}
+                      unit="сек"
+                      label="Время"
+                    />
                   </div>
                 )}
-                <div className="timer-controls" style={{gap:10}}>
+                <div className="timer-controls" style={{gap:10,marginTop:4}}>
                   {timerSecs === null ? (
                     <button className="timer-ctrl-btn primary" style={{maxWidth:'none',flex:1}} onClick={()=>{
                       setTimerSecs(timerDuration); setTimerPaused(true)
