@@ -1410,38 +1410,28 @@ export default function App() {
             <div className="modal-handle"/>
             {timerMode === 'countdown' ? (
               <div style={{padding:'0 24px 8px'}}>
-                <div style={{textAlign:'center',fontSize:13,fontWeight:700,color:'rgba(255,159,10,0.8)',letterSpacing:'1px',textTransform:'uppercase',marginBottom:16}}>⏱ Таймер</div>
-                <div className="timer-big-num" style={{
-                  color: timerPaused ? 'rgba(255,159,10,0.5)' : '#FF9F0A',
-                  marginBottom:20
-                }}>
-                  {`${Math.floor((timerSecs!==null?timerSecs:timerDuration)/60)}:${String((timerSecs!==null?timerSecs:timerDuration)%60).padStart(2,'0')}`}
-                  {timerPaused && timerSecs !== null && <span style={{fontSize:16,opacity:0.5,fontWeight:500,marginLeft:8}}>пауза</span>}
+                <div style={{fontSize:12,fontWeight:700,color:'rgba(255,159,10,0.7)',letterSpacing:'1px',textTransform:'uppercase',marginBottom:4}}>⏱ Таймер отдыха</div>
+                <div style={{display:'flex',alignItems:'baseline',gap:8,marginBottom:16}}>
+                  <span style={{fontSize:52,fontWeight:800,color:timerPaused?'rgba(255,159,10,0.6)':'#FF9F0A',fontVariantNumeric:'tabular-nums',letterSpacing:'-2px'}}>
+                    {`${Math.floor((timerSecs!==null?timerSecs:timerDuration)/60)}:${String((timerSecs!==null?timerSecs:timerDuration)%60).padStart(2,'0')}`}
+                  </span>
+                  {timerPaused && timerSecs !== null && <span style={{fontSize:14,color:'rgba(255,159,10,0.5)',fontWeight:600}}>пауза</span>}
                 </div>
-                {timerSecs === null && (
-                  <div style={{marginBottom:20}}>
-                    <DropdownPicker
-                      options={Array.from({length:50},(_,i)=>(i+1)*5)}
-                      value={timerDuration}
-                      onChange={v=>{setTimerDuration(v);setTimerPaused(false)}}
-                      unit="сек"
-                      label="Время"
-                    />
-                  </div>
-                )}
-                <div className="timer-controls" style={{gap:10,marginTop:4}}>
+                <div style={{display:'flex',gap:8,marginBottom:16}}>
                   {timerSecs === null ? (
-                    <button className="timer-ctrl-btn primary" style={{maxWidth:'none',flex:1}} onClick={()=>{
-                      setTimerSecs(timerDuration); setTimerPaused(true)
-                    }}>▶ Старт</button>
+                    <button className="timer-ctrl-btn primary" style={{flex:1,maxWidth:'none'}} onClick={()=>{setTimerSecs(timerDuration);setTimerPaused(true)}}>▶ Старт</button>
                   ) : (
                     <>
-                      <button className="timer-ctrl-btn secondary" onClick={()=>{setTimerSecs(null);setTimerPaused(false)}}>✕ Стоп</button>
-                      <button className="timer-ctrl-btn primary" onClick={()=>setTimerPaused(p=>!p)}>
+                      <button className="timer-ctrl-btn primary" style={{flex:1}} onClick={()=>setTimerPaused(p=>!p)}>
                         {timerPaused ? '▶ Продолжить' : '⏸ Пауза'}
                       </button>
+                      <button className="timer-ctrl-btn secondary" onClick={()=>{setTimerSecs(timerDuration);setTimerPaused(true)}}>↺ Заново</button>
                     </>
                   )}
+                </div>
+                <div>
+                  <div style={{fontSize:11,opacity:0.35,marginBottom:8,fontWeight:600,textTransform:'uppercase',letterSpacing:'0.5px'}}>Изменить время</div>
+                  <DropdownPicker options={Array.from({length:50},(_,i)=>(i+1)*5)} value={timerDuration} onChange={v=>{setTimerDuration(v);setTimerSecs(v);setTimerPaused(true)}} unit="сек" label="Время"/>
                 </div>
               </div>
             ) : (
