@@ -113,6 +113,25 @@ function getWeightOptions(exName) {
   return t === 'heavy' ? HEAVY_WEIGHTS : t === 'timed' ? TIME_OPTIONS : LIGHT_WEIGHTS
 }
 
+
+const EN_TO_RU = {
+  'Bench Press':'Жим лёжа','Squat':'Приседания','Deadlift':'Становая тяга',
+  'Romanian Deadlift':'Румынская тяга','Overhead Press':'Жим над головой',
+  'Leg Press':'Жим ногами','Barbell Row':'Тяга штанги в наклоне',
+  'Lat Pulldown':'Тяга вниз','Seated Cable Row':'Тяга сидя',
+  'Incline Dumbbell Press':'Жим гантелей наклон','Dumbbell Bench Press':'Жим гантелей лёжа',
+  'Dumbbell Flyes':'Разводка гантелей','Flat Dumbbell Flyes':'Разводка лёжа',
+  'Lunges':'Выпады','Leg Curl':'Сгибание ног','Leg Extension':'Разгибание ног',
+  'Push Ups':'Отжимания','Pull Ups':'Подтягивания','Crunches':'Скручивания',
+  'Hyperextension':'Гиперэкстензия','Biceps':'Бицепс','Triceps':'Трицепс',
+  'Plank':'Планка','Arnold Press':'Жим Арнольда','Cable Fly':'Кроссовер',
+  'Bulgarian Split Squat':'Болгарские выпады','Hammer Curl':'Молотки',
+  'Skull Crushers':'Французский жим','Face Pull':'Тяга к лицу',
+  'Hip Thrust':'Ягодичный мост','Shrugs':'Шраги','Dips':'Отжимания на брусьях',
+  'T-Bar Row':'Тяга Т-штанги','Arnold press':'Жим Арнольда',
+}
+function ruName(name) { return EN_TO_RU[name] || name }
+
 function formatMonth(m) {
   if (!m) return ''
   const [y,mo] = m.split('-')
@@ -638,7 +657,7 @@ function EditModal({ data, onClose, onSave }) {
         <div className="modal-body">
           {workouts.map((w, wi) => (
             <div key={w.id} style={{marginBottom:20}}>
-              <div style={{fontSize:14,fontWeight:700,marginBottom:10,opacity:0.7}}>{w.exercises?.name}</div>
+              <div style={{fontSize:14,fontWeight:700,marginBottom:10,opacity:0.7}}>{ruName(w.exercises?.name)}</div>
               {w.editSets.map((s,si) => (
                 <div key={si} className="edit-row">
                   <span style={{opacity:0.3,width:18,fontSize:12,textAlign:'center'}}>{si+1}</span>
@@ -1035,19 +1054,12 @@ export default function App() {
         </div>
         <div style={{display:'flex',alignItems:'center',gap:8}}>
           <button onClick={() => { setTimerSecs(timerSecs===null?timerDuration:null); setTimerPaused(true) }} style={{
-            background:(timerSecs!==null||stopwatchRunning)?'rgba(255,159,10,0.15)':'rgba(255,255,255,0.08)',
-            border:(timerSecs!==null||stopwatchRunning)?'1px solid rgba(255,159,10,0.4)':'1px solid rgba(255,255,255,0.1)',
+            background:'rgba(255,255,255,0.08)',border:'1px solid rgba(255,255,255,0.1)',
             borderRadius:99,padding:'6px 12px',cursor:'pointer',
-            color:(timerSecs!==null||stopwatchRunning)?'#FF9F0A':'rgba(255,255,255,0.8)',
-            fontSize:(timerSecs!==null||stopwatchRunning)?13:18,
-            fontWeight:700,fontVariantNumeric:'tabular-nums',border:'none',
-            display:'flex',alignItems:'center'
+            color:'rgba(255,255,255,0.8)',fontSize:18,
+            fontWeight:700,display:'flex',alignItems:'center'
           }}>
-            {(timerSecs!==null||stopwatchRunning)
-              ? (timerSecs!==null
-                  ? `⏱ ${Math.floor(timerSecs/60)}:${String(timerSecs%60).padStart(2,'0')}`
-                  : `⏲ ${Math.floor(stopwatchSecs/60)}:${String(stopwatchSecs%60).padStart(2,'0')}`)
-              : '⏱'}
+            {'⏱'}
           </button>
           {streak >= 1 && <div className="streak-badge">{streak}🔥</div>}
           <button onClick={handleSignOut} style={{
@@ -1061,24 +1073,42 @@ export default function App() {
       {tab === 'add' && (
         <div className="section">
 
-          {timerSecs !== null && (
-            <div style={{background:'linear-gradient(135deg,rgba(255,159,10,0.1),rgba(255,159,10,0.05))',border:'1px solid rgba(255,159,10,0.2)',borderRadius:20,padding:'16px 18px',marginBottom:16}}>
-              <div style={{fontSize:11,fontWeight:700,color:'rgba(255,159,10,0.7)',letterSpacing:'1px',textTransform:'uppercase',marginBottom:4}}>⏱ Таймер отдыха</div>
-              <div style={{display:'flex',alignItems:'baseline',gap:8,marginBottom:12}}>
-                <span style={{fontSize:48,fontWeight:800,color:timerPaused?'rgba(255,159,10,0.55)':'#FF9F0A',fontVariantNumeric:'tabular-nums',letterSpacing:'-2px'}}>
-                  {`${Math.floor(timerSecs/60)}:${String(timerSecs%60).padStart(2,'0')}`}
-                </span>
-                {timerPaused && <span style={{fontSize:13,color:'rgba(255,159,10,0.5)',fontWeight:600}}>пауза</span>}
-              </div>
+          {(timerSecs !== null || stopwatchRunning) && (
+            <div style={{background: timerMode==='stopwatch' ? 'linear-gradient(135deg,rgba(48,209,88,0.1),rgba(48,209,88,0.05))' : 'linear-gradient(135deg,rgba(255,159,10,0.1),rgba(255,159,10,0.05))',border: timerMode==='stopwatch' ? '1px solid rgba(48,209,88,0.2)' : '1px solid rgba(255,159,10,0.2)',borderRadius:20,padding:'16px 18px',marginBottom:16}}>
               <div style={{display:'flex',gap:8,marginBottom:12}}>
-                <button onClick={()=>setTimerPaused(p=>!p)} style={{flex:1,padding:'9px 0',borderRadius:12,border:'none',cursor:'pointer',fontWeight:700,fontSize:14,background:timerPaused?'#30D158':'rgba(255,159,10,0.15)',color:timerPaused?'#000':'#FF9F0A'}}>
-                  {timerPaused ? '▶ Продолжить' : '⏸ Пауза'}
-                </button>
-                <button onClick={()=>{setTimerSecs(timerDuration);setTimerPaused(true)}} style={{flex:1,padding:'9px 0',borderRadius:12,border:'none',cursor:'pointer',fontWeight:700,fontSize:14,background:'rgba(255,255,255,0.07)',color:'rgba(255,255,255,0.7)'}}>↺ Заново</button>
-                <button onClick={()=>{setTimerSecs(null);setTimerPaused(false)}} style={{width:36,height:36,borderRadius:10,border:'none',cursor:'pointer',background:'rgba(255,255,255,0.07)',color:'rgba(255,255,255,0.4)',fontSize:14,display:'flex',alignItems:'center',justifyContent:'center'}}>✕</button>
+                <button onClick={()=>{setTimerMode('countdown');setStopwatchRunning(false);setStopwatchSecs(0);if(timerSecs===null){setTimerSecs(timerDuration);setTimerPaused(true)}}} style={{flex:1,padding:'7px 0',borderRadius:10,border:'none',cursor:'pointer',fontSize:13,fontWeight:700,background:timerMode==='countdown'?'rgba(255,159,10,0.2)':'rgba(255,255,255,0.06)',color:timerMode==='countdown'?'#FF9F0A':'rgba(255,255,255,0.4)'}}>⏱ Таймер</button>
+                <button onClick={()=>{setTimerMode('stopwatch');setTimerSecs(null);setTimerPaused(false);setStopwatchRunning(false)}} style={{flex:1,padding:'7px 0',borderRadius:10,border:'none',cursor:'pointer',fontSize:13,fontWeight:700,background:timerMode==='stopwatch'?'rgba(48,209,88,0.2)':'rgba(255,255,255,0.06)',color:timerMode==='stopwatch'?'#30D158':'rgba(255,255,255,0.4)'}}>⏲ Секундомер</button>
               </div>
-              <div style={{fontSize:11,opacity:0.35,marginBottom:6,fontWeight:600,textTransform:'uppercase',letterSpacing:'0.5px'}}>Изменить время</div>
-              <DropdownPicker options={Array.from({length:50},(_,i)=>(i+1)*5)} value={timerDuration} onChange={v=>{setTimerDuration(v);setTimerSecs(v);setTimerPaused(true)}} unit="сек" label=""/>
+              {timerMode === 'countdown' ? (<>
+                <div style={{display:'flex',alignItems:'baseline',gap:8,marginBottom:12}}>
+                  <span style={{fontSize:48,fontWeight:800,color:timerPaused?'rgba(255,159,10,0.55)':'#FF9F0A',fontVariantNumeric:'tabular-nums',letterSpacing:'-2px'}}>
+                    {`${Math.floor((timerSecs||0)/60)}:${String((timerSecs||0)%60).padStart(2,'0')}`}
+                  </span>
+                  {timerPaused && <span style={{fontSize:13,color:'rgba(255,159,10,0.5)',fontWeight:600}}>пауза</span>}
+                </div>
+                <div style={{display:'flex',gap:8,marginBottom:12}}>
+                  <button onClick={()=>setTimerPaused(p=>!p)} style={{flex:1,padding:'9px 0',borderRadius:12,border:'none',cursor:'pointer',fontWeight:700,fontSize:14,background:timerPaused?'#30D158':'rgba(255,159,10,0.15)',color:timerPaused?'#000':'#FF9F0A'}}>
+                    {timerPaused ? '▶ Продолжить' : '⏸ Пауза'}
+                  </button>
+                  <button onClick={()=>{setTimerSecs(timerDuration);setTimerPaused(true)}} style={{flex:1,padding:'9px 0',borderRadius:12,border:'none',cursor:'pointer',fontWeight:700,fontSize:14,background:'rgba(255,255,255,0.07)',color:'rgba(255,255,255,0.7)'}}>↺ Заново</button>
+                  <button onClick={()=>{setTimerSecs(null);setTimerPaused(false)}} style={{width:36,height:36,borderRadius:10,border:'none',cursor:'pointer',background:'rgba(255,255,255,0.07)',color:'rgba(255,255,255,0.4)',fontSize:14,display:'flex',alignItems:'center',justifyContent:'center'}}>✕</button>
+                </div>
+                <div style={{fontSize:11,opacity:0.35,marginBottom:6,fontWeight:600,textTransform:'uppercase',letterSpacing:'0.5px'}}>Изменить время</div>
+                <DropdownPicker options={Array.from({length:50},(_,i)=>(i+1)*5)} value={timerDuration} onChange={v=>{setTimerDuration(v);setTimerSecs(v);setTimerPaused(true)}} unit="сек" label=""/>
+              </>) : (<>
+                <div style={{display:'flex',alignItems:'baseline',gap:8,marginBottom:12}}>
+                  <span style={{fontSize:48,fontWeight:800,color:stopwatchRunning?'#30D158':'rgba(255,255,255,0.85)',fontVariantNumeric:'tabular-nums',letterSpacing:'-2px'}}>
+                    {`${Math.floor(stopwatchSecs/60)}:${String(stopwatchSecs%60).padStart(2,'0')}`}
+                  </span>
+                </div>
+                <div style={{display:'flex',gap:8,marginBottom:4}}>
+                  <button onClick={()=>setStopwatchRunning(r=>!r)} style={{flex:1,padding:'9px 0',borderRadius:12,border:'none',cursor:'pointer',fontWeight:700,fontSize:14,background:stopwatchRunning?'rgba(255,59,48,0.15)':'#30D158',color:stopwatchRunning?'#FF453A':'#000'}}>
+                    {stopwatchRunning ? '⏸ Пауза' : '▶ Старт'}
+                  </button>
+                  <button onClick={()=>{setStopwatchSecs(0);setStopwatchRunning(false)}} style={{flex:1,padding:'9px 0',borderRadius:12,border:'none',cursor:'pointer',fontWeight:700,fontSize:14,background:'rgba(255,255,255,0.07)',color:'rgba(255,255,255,0.7)'}}>↺ Сброс</button>
+                  <button onClick={()=>{setStopwatchRunning(false);setStopwatchSecs(0);setTimerMode('countdown')}} style={{width:36,height:36,borderRadius:10,border:'none',cursor:'pointer',background:'rgba(255,255,255,0.07)',color:'rgba(255,255,255,0.4)',fontSize:14,display:'flex',alignItems:'center',justifyContent:'center'}}>✕</button>
+                </div>
+              </>)}
             </div>
           )}
 
@@ -1242,7 +1272,7 @@ export default function App() {
                       </div>
                       {ws.map(w => (
                         <div key={w.id} className="hist-card">
-                          <div className="hist-ex">{w.exercises?.name}</div>
+                          <div className="hist-ex">{ruName(w.exercises?.name)}</div>
                           <div className="chips">{w.sets?.sort((a,b)=>a.set_no-b.set_no).map((s,i) => <span key={i} className="chip">{s.time_sec>0?`${s.time_sec}s`:`${s.weight}×${s.reps}`}</span>)}</div>
                         </div>
                       ))}
@@ -1321,7 +1351,7 @@ export default function App() {
               <div key={name} style={{borderBottom: prIdx<prs.length-1 ? '1px solid rgba(255,255,255,0.06)' : 'none'}}>
                 <button style={{width:'100%',background:'none',border:'none',cursor:'pointer',padding:'11px 16px',display:'flex',alignItems:'center',gap:10,textAlign:'left'}} onClick={()=>setOpenPrs(p=>({...p,[name]:!p[name]}))}>
                   {img ? <img src={img} alt={name} style={{width:32,height:32,borderRadius:7,objectFit:'cover',flexShrink:0}} onError={e=>e.target.style.display='none'}/> : <div style={{width:32,height:32,borderRadius:7,background:'rgba(255,255,255,0.07)',display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0,fontSize:16}}>🏋️</div>}
-                  <span style={{flex:1,color:'rgba(255,255,255,0.85)',fontSize:14,fontWeight:600}}>{name}</span>
+                  <span style={{flex:1,color:'rgba(255,255,255,0.85)',fontSize:14,fontWeight:600}}>{ruName(name)}</span>
                   <span style={{color:'#30D158',fontSize:14,fontWeight:700,marginRight:8}}>{pr.weight} кг</span>
                   <span style={{color:'rgba(255,255,255,0.25)',fontSize:11,display:'inline-block',transition:'transform 0.2s',transform:isOpen?'rotate(180deg)':'none'}}>▼</span>
                 </button>
@@ -1336,7 +1366,7 @@ export default function App() {
           </div>}
           <div className="prog-title">📊 График роста</div>
           <div className="chart-wrap">
-            <select className="chart-ex-select" value={chartEx} onChange={e=>setChartEx(e.target.value)}>{exercises.map(e=><option key={e.id} value={e.name}>{e.name}</option>)}</select>
+            <select className="chart-ex-select" value={chartEx} onChange={e=>setChartEx(e.target.value)}>{exercises.map(e=><option key={e.id} value={e.name}>{ruName(e.name)}</option>)}</select>
             <LineChart data={chartData} period={chartPeriod} setPeriod={setChartPeriod}/>
           </div>
         </div>
@@ -1367,7 +1397,7 @@ export default function App() {
             <div className="modal-list">
               {calDayModal.workouts.map(w=>(
                 <div key={w.id} style={{padding:'12px 10px',borderRadius:12,marginBottom:6,background:'rgba(255,255,255,0.04)',border:'1px solid rgba(255,255,255,0.07)'}}>
-                  <div style={{fontSize:14,fontWeight:700,marginBottom:7}}>{w.exercises?.name}</div>
+                  <div style={{fontSize:14,fontWeight:700,marginBottom:7}}>{ruName(w.exercises?.name)}</div>
                   <div className="chips">{w.sets?.sort((a,b)=>a.set_no-b.set_no).map((s,i)=><span key={i} className="chip">{s.time_sec>0?`${s.time_sec}s`:`${s.weight}×${s.reps}`}</span>)}</div>
                 </div>
               ))}
