@@ -815,13 +815,17 @@ export default function App() {
   useEffect(() => {
     if (tab !== 'progress') return
     async function load() {
-      const { data: wData } = await supabase.from('workouts').select('workout_date')
-      const { data: sData } = await supabase.from('sets').select('weight,reps').gt('weight',0).gt('reps',0)
+      const { data: wData } = await supabase.from('workouts').select('id,workout_date')
       const totalW = new Set(wData?.map(w => w.workout_date)).size
       const thisM = new Date().toISOString().slice(0,7)
       const monthW = new Set(wData?.filter(w => w.workout_date.startsWith(thisM)).map(w => w.workout_date)).size
-      const totalKg = sData?.reduce((s,r) => s+r.weight*r.reps, 0) || 0
-      setStats({ totalW, monthW, totalKg })
+      const monthIds = (wData||[]).filter(w=>w.workout_date.startsWith(thisM)).map(w=>w.id).filter(Boolean)
+      let monthKg = 0
+      if (monthIds.length > 0) {
+        const { data: sData } = await supabase.from('sets').select('weight,reps,workout_id').gt('weight',0).gt('reps',0).in('workout_id', monthIds)
+        monthKg = (sData||[]).reduce((s,r)=>s+r.weight*r.reps, 0)
+      }
+      setStats({ totalW, monthW, monthKg })
       const { data: pData } = await supabase.from('workouts').select('workout_date,exercises(name),sets(weight,reps)')
       const ENG_TO_RUS = {'Жим лёжа':'Жим лёжа','Приседания':'Приседания','Становая тяга':'Становая тяга','Румынская тяга':'Румынская тяга','Жим над головой':'Жим над головой','Жим ногами':'Жим ногами','Тяга штанги в наклоне':'Тяга штанги в наклоне','Тяга вниз':'Тяга вниз','Тяга сидя':'Тяга сидя','Жим гантелей наклон':'Жим гантелей наклон','Жим гантелей лёжа':'Жим гантелей лёжа','Разводка гантелей':'Разводка гантелей','Разводка лёжа':'Разводка лёжа','Выпады':'Выпады','Сгибание ног':'Сгибание ног','Разгибание ног':'Разгибание ног','Отжимания':'Отжимания','Подтягивания':'Подтягивания','Скручивания':'Скручивания','Гиперэкстензия':'Гиперэкстензия','Бицепс':'Бицепс','Трицепс':'Трицепс','Планка':'Планка','Жим Арнольда':'Жим Арнольда','Кроссовер':'Кроссовер','Болгарские выпады':'Болгарские выпады','Молотки':'Молотки','Французский жим':'Французский жим','Тяга к лицу':'Тяга к лицу','Ягодичный мост':'Ягодичный мост','Шраги':'Шраги','Отжимания на брусьях':'Отжимания на брусьях','Тяга Т-штанги':'Тяга Т-штанги'}
       const map = {}
@@ -1292,7 +1296,7 @@ export default function App() {
         const recentHistory = history.filter(w => w.workout_date >= thirtyDaysAgo)
         const muscleCounts = {}
         recentHistory.forEach(w => {
-          const muscles = EXERCISE_MUSCLES[w.exercises?.name] || []
+          const muscles = EXERCISE_MUSCLES[ruName(w.exercises?.name)] || []
           muscles.forEach(m => { muscleCounts[m] = (muscleCounts[m] || 0) + 1 })
         })
         const maxCount = Math.max(1, ...Object.values(muscleCounts))
@@ -1303,7 +1307,7 @@ export default function App() {
             <div className="stats-row">
               <div className="stat-card"><div className="stat-val">{stats.monthW}</div><div className="stat-lbl">{new Date().toLocaleDateString('ru',{month:'long'})}</div></div>
               <div className="stat-card"><div className="stat-val">{stats.totalW}</div><div className="stat-lbl">всего</div></div>
-              <div className="stat-card"><div className="stat-val" style={{color:'#69F0AE',fontSize:18}}>{stats.totalKg>=1000?`${(stats.totalKg/1000).toFixed(1)}K`:Math.round(stats.totalKg)} kg</div><div className="stat-lbl">поднято</div></div>
+              <div className="stat-card"><div className="stat-val" style={{color:'#69F0AE',fontSize:18}}>{stats.monthKg>=1000?`${(stats.monthKg/1000).toFixed(1)}K`:Math.round(stats.monthKg)} kg</div><div className="stat-lbl">поднято за месяц</div></div>
             </div>
           )}
           <div className="prog-title">💪 Нагрузка по мышцам</div>
@@ -1415,16 +1419,16 @@ export default function App() {
           onClick={e=>{if(e.target===e.currentTarget)setShowDateModal(false)}}>
           <div style={{background:'#1c1c1e',borderRadius:20,padding:'28px 24px',width:'calc(100% - 48px)',maxWidth:320,border:'1px solid rgba(255,255,255,0.1)'}}>
             <div style={{fontSize:17,fontWeight:700,color:'#fff',marginBottom:20,textAlign:'center'}}>📅 Выбери дату тренировки</div>
-            <div style={{position:'relative',marginBottom:16}}>
+            <label style={{display:'block',marginBottom:16,cursor:'pointer'}}>
               <div style={{width:'100%',background:'rgba(255,255,255,0.08)',border:'1px solid rgba(255,255,255,0.15)',
                 borderRadius:12,padding:'14px 16px',color:'#fff',fontSize:16,fontWeight:600,
-                boxSizing:'border-box',display:'flex',alignItems:'center',justifyContent:'space-between',pointerEvents:'none'}}>
+                boxSizing:'border-box',display:'flex',alignItems:'center',justifyContent:'space-between'}}>
                 <span>{new Date(workoutDate+'T12:00:00').toLocaleDateString('ru',{day:'numeric',month:'long',year:'numeric'})}</span>
                 <span style={{fontSize:18}}>📅</span>
               </div>
               <input type="date" value={workoutDate} onChange={e=>setWorkoutDate(e.target.value)}
-                style={{position:'absolute',inset:0,opacity:0,width:'100%',height:'100%',cursor:'pointer',zIndex:1}}/>
-            </div>
+                style={{display:'block',width:'100%',height:0,opacity:0,overflow:'hidden'}}/>
+            </label>
             <button onClick={()=>{setShowDateModal(false);setWorkoutStarted(true)}}
               style={{width:'100%',padding:'15px',borderRadius:14,border:'none',cursor:'pointer',
               background:'rgba(255,255,255,0.12)',color:'rgba(255,255,255,0.9)',fontSize:15,fontWeight:700,
