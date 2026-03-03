@@ -600,7 +600,7 @@ function DropdownPicker({ options, value, onChange, unit = '', label = '', label
             <div key={opt} data-val={opt}
               className={`dpicker-opt${opt === value ? ' active' : ''}`}
               onClick={() => { onChange(opt); setOpen(false) }}>
-              {opt} {unit && <span className="dpicker-opt-unit">{unit}</span>}
+              {labelFn ? labelFn(opt) : opt} {!labelFn && unit && <span className="dpicker-opt-unit">{unit}</span>}
             </div>
           ))}
         </div>
@@ -1034,7 +1034,7 @@ export default function App() {
           <h1>Gym BRO</h1>
         </div>
         <div style={{display:'flex',alignItems:'center',gap:8}}>
-          <button onClick={() => setShowTimerChoice(true)} style={{
+          <button onClick={() => { setTimerSecs(timerSecs===null?timerDuration:null); setTimerPaused(true) }} style={{
             background:(timerSecs!==null||stopwatchRunning)?'rgba(255,159,10,0.15)':'rgba(255,255,255,0.08)',
             border:(timerSecs!==null||stopwatchRunning)?'1px solid rgba(255,159,10,0.4)':'1px solid rgba(255,255,255,0.1)',
             borderRadius:99,padding:'6px 12px',cursor:'pointer',
@@ -1060,6 +1060,27 @@ export default function App() {
 
       {tab === 'add' && (
         <div className="section">
+
+          {timerSecs !== null && (
+            <div style={{background:'linear-gradient(135deg,rgba(255,159,10,0.1),rgba(255,159,10,0.05))',border:'1px solid rgba(255,159,10,0.2)',borderRadius:20,padding:'16px 18px',marginBottom:16}}>
+              <div style={{fontSize:11,fontWeight:700,color:'rgba(255,159,10,0.7)',letterSpacing:'1px',textTransform:'uppercase',marginBottom:4}}>⏱ Таймер отдыха</div>
+              <div style={{display:'flex',alignItems:'baseline',gap:8,marginBottom:12}}>
+                <span style={{fontSize:48,fontWeight:800,color:timerPaused?'rgba(255,159,10,0.55)':'#FF9F0A',fontVariantNumeric:'tabular-nums',letterSpacing:'-2px'}}>
+                  {`${Math.floor(timerSecs/60)}:${String(timerSecs%60).padStart(2,'0')}`}
+                </span>
+                {timerPaused && <span style={{fontSize:13,color:'rgba(255,159,10,0.5)',fontWeight:600}}>пауза</span>}
+              </div>
+              <div style={{display:'flex',gap:8,marginBottom:12}}>
+                <button onClick={()=>setTimerPaused(p=>!p)} style={{flex:1,padding:'9px 0',borderRadius:12,border:'none',cursor:'pointer',fontWeight:700,fontSize:14,background:timerPaused?'#30D158':'rgba(255,159,10,0.15)',color:timerPaused?'#000':'#FF9F0A'}}>
+                  {timerPaused ? '▶ Продолжить' : '⏸ Пауза'}
+                </button>
+                <button onClick={()=>{setTimerSecs(timerDuration);setTimerPaused(true)}} style={{flex:1,padding:'9px 0',borderRadius:12,border:'none',cursor:'pointer',fontWeight:700,fontSize:14,background:'rgba(255,255,255,0.07)',color:'rgba(255,255,255,0.7)'}}>↺ Заново</button>
+                <button onClick={()=>{setTimerSecs(null);setTimerPaused(false)}} style={{width:36,height:36,borderRadius:10,border:'none',cursor:'pointer',background:'rgba(255,255,255,0.07)',color:'rgba(255,255,255,0.4)',fontSize:14,display:'flex',alignItems:'center',justifyContent:'center'}}>✕</button>
+              </div>
+              <div style={{fontSize:11,opacity:0.35,marginBottom:6,fontWeight:600,textTransform:'uppercase',letterSpacing:'0.5px'}}>Изменить время</div>
+              <DropdownPicker options={Array.from({length:50},(_,i)=>(i+1)*5)} value={timerDuration} onChange={v=>{setTimerDuration(v);setTimerSecs(v);setTimerPaused(true)}} unit="сек" label=""/>
+            </div>
+          )}
 
           {!workoutStarted ? (
             <div style={{display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',flex:1,paddingTop:40,paddingBottom:40,gap:44}}>
@@ -1363,16 +1384,16 @@ export default function App() {
           onClick={e=>{if(e.target===e.currentTarget)setShowDateModal(false)}}>
           <div style={{background:'#1c1c1e',borderRadius:20,padding:'28px 24px',width:'calc(100% - 48px)',maxWidth:320,border:'1px solid rgba(255,255,255,0.1)'}}>
             <div style={{fontSize:17,fontWeight:700,color:'#fff',marginBottom:20,textAlign:'center'}}>📅 Выбери дату тренировки</div>
-            <label style={{display:'block',position:'relative',marginBottom:16,cursor:'pointer'}}>
+            <div style={{position:'relative',marginBottom:16}}>
               <div style={{width:'100%',background:'rgba(255,255,255,0.08)',border:'1px solid rgba(255,255,255,0.15)',
                 borderRadius:12,padding:'14px 16px',color:'#fff',fontSize:16,fontWeight:600,
-                boxSizing:'border-box',display:'flex',alignItems:'center',justifyContent:'space-between'}}>
+                boxSizing:'border-box',display:'flex',alignItems:'center',justifyContent:'space-between',pointerEvents:'none'}}>
                 <span>{new Date(workoutDate+'T12:00:00').toLocaleDateString('ru',{day:'numeric',month:'long',year:'numeric'})}</span>
                 <span style={{fontSize:18}}>📅</span>
               </div>
               <input type="date" value={workoutDate} onChange={e=>setWorkoutDate(e.target.value)}
-                style={{position:'absolute',inset:0,opacity:0,width:'100%',height:'100%',cursor:'pointer'}}/>
-            </label>
+                style={{position:'absolute',inset:0,opacity:0,width:'100%',height:'100%',cursor:'pointer',zIndex:1}}/>
+            </div>
             <button onClick={()=>{setShowDateModal(false);setWorkoutStarted(true)}}
               style={{width:'100%',padding:'15px',borderRadius:14,border:'none',cursor:'pointer',
               background:'rgba(255,255,255,0.12)',color:'rgba(255,255,255,0.9)',fontSize:15,fontWeight:700,
@@ -1383,74 +1404,6 @@ export default function App() {
         </div>
       )}
 
-      {showTimerChoice && (
-        <div style={{position:'fixed',inset:0,background:'rgba(0,0,0,0.7)',zIndex:200,display:'flex',alignItems:'center',justifyContent:'center',backdropFilter:'blur(8px)'}}
-          onClick={e=>{if(e.target===e.currentTarget)setShowTimerChoice(false)}}>
-          <div style={{background:'#1c1c1e',borderRadius:20,padding:'28px 24px',width:'calc(100% - 48px)',maxWidth:300,border:'1px solid rgba(255,255,255,0.1)'}}>
-            <div style={{fontSize:17,fontWeight:700,color:'#fff',marginBottom:24,textAlign:'center'}}>Выбери режим</div>
-            <div style={{display:'flex',flexDirection:'column',gap:12}}>
-              <button onClick={()=>{setTimerMode('countdown');setShowTimerChoice(false);setShowTimerModal(true)}}
-                style={{padding:'18px',borderRadius:14,border:'1px solid rgba(255,159,10,0.25)',background:'rgba(255,159,10,0.08)',
-                color:'#FF9F0A',fontSize:16,fontWeight:700,cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',gap:10}}>
-                <span style={{fontSize:22}}>⏱</span> Таймер
-              </button>
-              <button onClick={()=>{setTimerMode('stopwatch');setShowTimerChoice(false);setShowTimerModal(true)}}
-                style={{padding:'18px',borderRadius:14,border:'1px solid rgba(48,209,88,0.25)',background:'rgba(48,209,88,0.08)',
-                color:'#30D158',fontSize:16,fontWeight:700,cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',gap:10}}>
-                <span style={{fontSize:22}}>⏲</span> Секундомер
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {showTimerModal && (
-        <div className="timer-modal-overlay" onClick={e=>{if(e.target.classList.contains('timer-modal-overlay')){setShowTimerModal(false)}}}>
-          <div className="timer-modal">
-            <div className="modal-handle"/>
-            {timerMode === 'countdown' ? (
-              <div style={{padding:'0 24px 8px'}}>
-                <div style={{fontSize:12,fontWeight:700,color:'rgba(255,159,10,0.7)',letterSpacing:'1px',textTransform:'uppercase',marginBottom:4}}>⏱ Таймер отдыха</div>
-                <div style={{display:'flex',alignItems:'baseline',gap:8,marginBottom:16}}>
-                  <span style={{fontSize:52,fontWeight:800,color:timerPaused?'rgba(255,159,10,0.6)':'#FF9F0A',fontVariantNumeric:'tabular-nums',letterSpacing:'-2px'}}>
-                    {`${Math.floor((timerSecs!==null?timerSecs:timerDuration)/60)}:${String((timerSecs!==null?timerSecs:timerDuration)%60).padStart(2,'0')}`}
-                  </span>
-                  {timerPaused && timerSecs !== null && <span style={{fontSize:14,color:'rgba(255,159,10,0.5)',fontWeight:600}}>пауза</span>}
-                </div>
-                <div style={{display:'flex',gap:8,marginBottom:16}}>
-                  {timerSecs === null ? (
-                    <button className="timer-ctrl-btn primary" style={{flex:1,maxWidth:'none'}} onClick={()=>{setTimerSecs(timerDuration);setTimerPaused(true)}}>▶ Старт</button>
-                  ) : (
-                    <>
-                      <button className="timer-ctrl-btn primary" style={{flex:1}} onClick={()=>setTimerPaused(p=>!p)}>
-                        {timerPaused ? '▶ Продолжить' : '⏸ Пауза'}
-                      </button>
-                      <button className="timer-ctrl-btn secondary" onClick={()=>{setTimerSecs(timerDuration);setTimerPaused(true)}}>↺ Заново</button>
-                    </>
-                  )}
-                </div>
-                <div>
-                  <div style={{fontSize:11,opacity:0.35,marginBottom:8,fontWeight:600,textTransform:'uppercase',letterSpacing:'0.5px'}}>Изменить время</div>
-                  <DropdownPicker options={Array.from({length:50},(_,i)=>(i+1)*5)} value={timerDuration} onChange={v=>{setTimerDuration(v);setTimerSecs(v);setTimerPaused(true)}} unit="сек" label="Время"/>
-                </div>
-              </div>
-            ) : (
-              <div style={{padding:'0 24px 8px'}}>
-                <div style={{textAlign:'center',fontSize:13,fontWeight:700,color:'rgba(48,209,88,0.8)',letterSpacing:'1px',textTransform:'uppercase',marginBottom:16}}>⏲ Секундомер</div>
-                <div className="timer-big-num" style={{color: stopwatchRunning ? '#30D158' : 'white', marginBottom:32}}>
-                  {`${Math.floor(stopwatchSecs/60)}:${String(stopwatchSecs%60).padStart(2,'0')}`}
-                </div>
-                <div className="timer-controls" style={{gap:10}}>
-                  <button className="timer-ctrl-btn secondary" onClick={()=>{setStopwatchSecs(0);setStopwatchRunning(false)}}>↺ Сброс</button>
-                  <button className={`timer-ctrl-btn${stopwatchRunning?' danger':' primary'}`} onClick={()=>setStopwatchRunning(r=>!r)}>
-                    {stopwatchRunning ? '⏸ Пауза' : '▶ Старт'}
-                  </button>
-                </div>
-              </div>
-            )}
-          </div>
-        </div>
-      )}
 
       {/* PR Alert Toast */}
       {prAlert && (
