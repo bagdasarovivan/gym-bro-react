@@ -719,6 +719,8 @@ export default function App() {
   const [streakAlert, setStreakAlert] = useState(null)
   const [workoutStarted, setWorkoutStarted] = useState(false)
   const [workoutDate, setWorkoutDate] = useState(new Date().toISOString().split('T')[0])
+  const [showDateModal, setShowDateModal] = useState(false)
+  const [workoutExercises, setWorkoutExercises] = useState([])
   const historyLoaded = useRef(false)
 
   const handleAuth = async () => {
@@ -894,28 +896,44 @@ export default function App() {
       }
     }
   }
-  const saveWorkout = async () => {
-    const filled = sets.filter(s => s.weight > 0 && s.reps > 0)
-    if (!filled.length) return
-    // Upsert exercise to ensure it exists in DB
-    let { data: ex } = await supabase.from('exercises').select('id').eq('name',selectedEx).single()
-    if (!ex) {
-      const { data: inserted } = await supabase.from('exercises').insert({ name: selectedEx }).select().single()
-      ex = inserted
+  const addExToWorkout = async (name) => {
+    setShowExModal(false)
+    setModalSearch('')
+    // fetch last session for this exercise
+    let lastSess = null
+    const { data: exDb } = await supabase.from('exercises').select('id').eq('name', name).single()
+    if (exDb) {
+      const { data: lastW } = await supabase.from('workouts').select('workout_date,sets(set_no,weight,reps,time_sec)').eq('exercise_id', exDb.id).order('workout_date',{ascending:false}).limit(1).single()
+      lastSess = lastW || null
     }
-    if (!ex) return
-    const { data: w } = await supabase.from('workouts').insert({ workout_date: workoutDate, exercise_id: ex.id }).select().single()
-    await supabase.from('sets').insert(filled.map((s,i) => ({ workout_id:w.id, set_no:i+1, weight:s.weight, reps:s.reps, time_sec:null })))
-    // Check for new PR
-    const maxSaved = Math.max(...filled.map(s => s.weight))
-    const repsSaved = filled.find(s => s.weight === maxSaved)?.reps || 0
-    const existingPr = prs.find(([name]) => name === selectedEx)
-    if (existingPr) {
-      const [,pr] = existingPr
-      if (maxSaved > pr.weight) {
-        setPrAlert({ name: selectedEx, weight: maxSaved, reps: repsSaved, prev: pr.weight })
-        if (navigator.vibrate) navigator.vibrate([100,50,100,50,300])
-        setTimeout(() => setPrAlert(null), 4000)
+    const defaultWeight = lastSess?.sets?.length ? Math.max(...lastSess.sets.map(s=>s.weight||0)) : 0
+    const defaultReps = lastSess?.sets?.length ? (lastSess.sets.sort((a,b)=>b.weight-a.weight)[0]?.reps || 0) : 0
+    setWorkoutExercises(prev => [...prev, { name, open: true, lastSession: lastSess, sets: [{ weight: defaultWeight, reps: defaultReps }] }])
+  }
+
+  const saveWorkout = async () => {
+    if (!workoutExercises.length) return
+    for (const exItem of workoutExercises) {
+      const filled = exItem.sets.filter(s => s.weight > 0 && s.reps > 0)
+      if (!filled.length) continue
+      let { data: ex } = await supabase.from('exercises').select('id').eq('name', exItem.name).single()
+      if (!ex) {
+        const { data: inserted } = await supabase.from('exercises').insert({ name: exItem.name }).select().single()
+        ex = inserted
+      }
+      if (!ex) continue
+      const { data: w } = await supabase.from('workouts').insert({ workout_date: workoutDate, exercise_id: ex.id }).select().single()
+      await supabase.from('sets').insert(filled.map((s,i) => ({ workout_id: w.id, set_no: i+1, weight: s.weight, reps: s.reps, time_sec: null })))
+      const maxSaved = Math.max(...filled.map(s => s.weight))
+      const repsSaved = filled.find(s => s.weight === maxSaved)?.reps || 0
+      const existingPr = prs.find(([name]) => name === exItem.name)
+      if (existingPr) {
+        const [,pr] = existingPr
+        if (maxSaved > pr.weight) {
+          setPrAlert({ name: exItem.name, weight: maxSaved, reps: repsSaved, prev: pr.weight })
+          if (navigator.vibrate) navigator.vibrate([100,50,100,50,300])
+          setTimeout(() => setPrAlert(null), 4000)
+        }
       }
     }
     const thisM2 = new Date().toISOString().slice(0,7)
@@ -925,7 +943,7 @@ export default function App() {
     setStreakAlert({ type: 'month', count: monthCount, msg: getMotivation(monthCount) })
     setTimeout(() => setStreakAlert(null), 4500)
     setSaved(true)
-    setTimeout(() => { setSaved(false); setSelectedEx(null) }, 1500)
+    setTimeout(() => { setSaved(false); setWorkoutStarted(false); setWorkoutExercises([]) }, 2000)
   }
 
   const deleteDay = async (date, workouts) => {
@@ -1052,7 +1070,6 @@ export default function App() {
 
       {tab === 'add' && (
         <div className="section">
-          <div className="date-label">{todayLabel()}</div>
           {(timerSecs !== null || stopwatchRunning) && (
             <div className="timer-card" style={{flexDirection:'column',gap:10,alignItems:'stretch'}}>
               <div style={{display:'flex',alignItems:'center',justifyContent:'space-between'}}>
@@ -1114,7 +1131,7 @@ export default function App() {
                 `}</style>
                 <div className="pr1"/>
                 <div className="pr1 pr2"/>
-                <button className="start-btn" onClick={()=>setWorkoutStarted(true)} style={{
+                <button className="start-btn" onClick={()=>setShowDateModal(true)} style={{
                   width:150,height:150,borderRadius:'50%',cursor:'pointer',zIndex:1,
                   background:'rgba(255,255,255,0.05)',border:'1px solid rgba(255,255,255,0.15)',
                   display:'flex',alignItems:'center',justifyContent:'center',
@@ -1131,61 +1148,71 @@ export default function App() {
                 </button>
               </div>
             </div>
-          ) : !selectedEx ? (
-            <>
-              <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:8}}>
-                <button onClick={()=>setWorkoutStarted(false)} style={{background:'none',border:'none',color:'rgba(255,255,255,0.45)',fontSize:14,cursor:'pointer',padding:'4px 0',fontWeight:600}}>← Назад</button>
-                <input type="date" value={workoutDate} onChange={e=>setWorkoutDate(e.target.value)} style={{
-                  background:'rgba(255,255,255,0.04)',border:'1px solid rgba(255,255,255,0.08)',
-                  borderRadius:8,padding:'5px 10px',color:'rgba(255,255,255,0.45)',fontSize:12,
-                  fontWeight:500,cursor:'pointer',outline:'none'
-                }}/>
-              </div>
-              <button className="ex-selector-btn" onClick={() => setShowExModal(true)}>
-                <span style={{opacity:0.45}}>Выбери упражнение...</span>
-                <span style={{opacity:0.4,fontSize:20}}>⌄</span>
-              </button>
-            </>
           ) : (
             <>
-              <button className="back-btn" onClick={() => setSelectedEx(null)}>‹ Упражнения</button>
-              <div className="ex-header">
-                {EXERCISE_IMAGES[selectedEx]
-                  ? <img src={EXERCISE_IMAGES[selectedEx]} alt={selectedEx} className="ex-image" onError={e=>e.target.style.display='none'}/>
-                  : <div style={{width:90,height:90,borderRadius:14,background:'rgba(255,255,255,0.07)',display:'flex',alignItems:'center',justifyContent:'center',fontSize:36,flexShrink:0}}>🏋️</div>
-                }
-                <div className="ex-title">{selectedEx}</div>
-              </div>
-              <div className="fav-section">
-                <div><div className="fav-section-label">Избранное</div><div className="fav-section-name">{isFav?'⭐ В избранном':'☆ Не в избранном'}</div></div>
-                <button className={`fav-big-btn${isFav?' active':''}`} onClick={() => toggleFav(selectedEx)}>{isFav?'⭐':'☆'}</button>
-              </div>
-              {lastSession && (
-                <div className="last-hint">
-                  💡 <b>В прошлый раз</b> ({daysAgo(lastSession.workout_date)}, {formatDateShort(lastSession.workout_date)}):&nbsp;
-                  {lastSession.sets?.sort((a,b)=>a.set_no-b.set_no).map(s=>s.time_sec>0?`${s.time_sec}s`:`${s.weight}×${s.reps}`).join(' · ')}
+              <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:16}}>
+                <button onClick={()=>{setWorkoutStarted(false);setWorkoutExercises([]);setSaved(false)}} style={{background:'none',border:'none',color:'rgba(255,255,255,0.45)',fontSize:14,cursor:'pointer',padding:'4px 0',fontWeight:600}}>← Назад</button>
+                <div style={{fontSize:13,color:'rgba(255,255,255,0.5)',fontWeight:600}}>
+                  📅 {new Date(workoutDate+'T12:00:00').toLocaleDateString('ru',{day:'numeric',month:'long'})}
                 </div>
+              </div>
+              {workoutExercises.map((ex, exIdx) => {
+                const isOpen = ex.open
+                const exType2 = EXERCISE_TYPE[ex.name] || 'light'
+                const wOpts = getWeightOptions(ex.name)
+                return (
+                  <div key={exIdx} style={{background:'rgba(255,255,255,0.04)',borderRadius:16,border:'1px solid rgba(255,255,255,0.07)',marginBottom:10,overflow:'hidden'}}>
+                    <button onClick={()=>setWorkoutExercises(prev=>prev.map((e,i)=>i===exIdx?{...e,open:!e.open}:e))}
+                      style={{width:'100%',background:'none',border:'none',padding:'12px 14px',display:'flex',alignItems:'center',gap:10,cursor:'pointer',textAlign:'left'}}>
+                      {EXERCISE_IMAGES[ex.name]
+                        ? <img src={EXERCISE_IMAGES[ex.name]} alt={ex.name} style={{width:36,height:36,borderRadius:8,objectFit:'cover',flexShrink:0}} onError={e=>e.target.style.display='none'}/>
+                        : <div style={{width:36,height:36,borderRadius:8,background:'rgba(255,255,255,0.07)',display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0,fontSize:18}}>🏋️</div>
+                      }
+                      <span style={{flex:1,fontSize:15,fontWeight:700,color:'rgba(255,255,255,0.9)'}}>{ex.name}</span>
+                      <span style={{fontSize:12,color:'rgba(255,255,255,0.3)',marginRight:4}}>{ex.sets.filter(s=>s.weight>0&&s.reps>0).length} подх.</span>
+                      <button onClick={e=>{e.stopPropagation();setWorkoutExercises(prev=>prev.filter((_,i)=>i!==exIdx))}}
+                        style={{background:'rgba(255,59,48,0.1)',border:'none',borderRadius:8,padding:'4px 8px',color:'#FF453A',cursor:'pointer',fontSize:12,fontWeight:700,marginRight:4}}>✕</button>
+                      <span style={{color:'rgba(255,255,255,0.25)',fontSize:11,display:'inline-block',transform:isOpen?'rotate(180deg)':'none',transition:'transform 0.2s'}}>▼</span>
+                    </button>
+                    {isOpen && (
+                      <div style={{padding:'0 14px 14px'}}>
+                        {ex.lastSession && (
+                          <div style={{fontSize:12,color:'rgba(255,255,255,0.35)',marginBottom:10,padding:'7px 10px',background:'rgba(255,255,255,0.03)',borderRadius:8}}>
+                            💡 Прошлый раз: {ex.lastSession.sets?.sort((a,b)=>a.set_no-b.set_no).map(s=>s.time_sec>0?`${s.time_sec}s`:`${s.weight}×${s.reps}`).join(' · ')}
+                          </div>
+                        )}
+                        {ex.sets.map((s,si) => (
+                          <div key={si} className="set-row">
+                            <span className="set-num">{si+1}</span>
+                            {exType2 === 'timed' ? (
+                              <DropdownPicker options={TIME_OPTIONS} value={s.weight} onChange={v=>setWorkoutExercises(prev=>prev.map((e,i)=>i!==exIdx?e:{...e,sets:e.sets.map((ss,j)=>j!==si?ss:{...ss,weight:v})}))} unit="s" label={`Подход ${si+1}`}/>
+                            ) : (
+                              <>
+                                <DropdownPicker options={wOpts} value={s.weight} onChange={v=>setWorkoutExercises(prev=>prev.map((e,i)=>i!==exIdx?e:{...e,sets:e.sets.map((ss,j)=>j!==si?ss:{...ss,weight:v})}))} unit="кг" label={`Подход ${si+1} — Вес`}/>
+                                <span className="set-sep">×</span>
+                                <DropdownPicker options={REPS_OPTIONS} value={s.reps} onChange={v=>setWorkoutExercises(prev=>prev.map((e,i)=>i!==exIdx?e:{...e,sets:e.sets.map((ss,j)=>j!==si?ss:{...ss,reps:v})}))} unit="повт" label={`Подход ${si+1} — Повт`}/>
+                              </>
+                            )}
+                          </div>
+                        ))}
+                        <div className="set-btns" style={{marginTop:4}}>
+                          <button className="set-btn" onClick={()=>setWorkoutExercises(prev=>prev.map((e,i)=>i!==exIdx?e:{...e,sets:[...e.sets,{weight:e.sets[e.sets.length-1]?.weight||0,reps:e.sets[e.sets.length-1]?.reps||0}]}))}>➕ Подход</button>
+                          <button className="set-btn" onClick={()=>setWorkoutExercises(prev=>prev.map((e,i)=>i!==exIdx?e:{...e,sets:e.sets.length>1?e.sets.slice(0,-1):e.sets}))} style={{opacity:ex.sets.length<=1?0.35:1}}>➖ Убрать</button>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )
+              })}
+              <button className="ex-selector-btn" onClick={()=>setShowExModal(true)} style={{marginBottom:16}}>
+                <span style={{opacity:0.55}}>➕ Добавить упражнение...</span>
+                <span style={{opacity:0.4,fontSize:20}}>⏄</span>
+              </button>
+              {workoutExercises.length > 0 && (
+                <button className={`save-btn${saved?' done':''}`} onClick={saveWorkout}>
+                  {saved ? '✅ Тренировка сохранена!' : `💾 Сохранить тренировку (${workoutExercises.length} упр.)`}
+                </button>
               )}
-              <div className="sets-lbl">Подходы</div>
-              {sets.map((s,i) => (
-                <div key={i} className="set-row">
-                  <span className="set-num">{i+1}</span>
-                  {exType === 'timed' ? (
-                    <DropdownPicker options={TIME_OPTIONS} value={s.weight} onChange={v=>updateSet(i,'weight',v)} unit="s" label={`Подход ${i+1} — Время`}/>
-                  ) : (
-                    <>
-                      <DropdownPicker options={weightOpts} value={s.weight} onChange={v=>updateSet(i,'weight',v)} unit="кг" label={`Подход ${i+1} — Вес`}/>
-                      <span className="set-sep">×</span>
-                      <DropdownPicker options={REPS_OPTIONS} value={s.reps} onChange={v=>updateSet(i,'reps',v)} unit="повт" label={`Подход ${i+1} — Повторения`}/>
-                    </>
-                  )}
-                </div>
-              ))}
-              <div className="set-btns">
-                <button className="set-btn" onClick={addSet}>➕ Добавить</button>
-                <button className="set-btn" onClick={removeSet} style={{opacity:sets.length<=1?0.35:1}}>➖ Убрать</button>
-              </div>
-              <button className={`save-btn${saved?' done':''}`} onClick={saveWorkout}>{saved?'✅ Сохранено!':'💾 Сохранить тренировку'}</button>
             </>
           )}
         </div>
@@ -1349,8 +1376,8 @@ export default function App() {
               <div className="modal-srch-wrap"><span className="modal-srch-icon">🔍</span><input className="modal-srch" placeholder="Поиск..." value={modalSearch} onChange={e=>setModalSearch(e.target.value)} autoFocus/></div>
             </div>
             <div className="modal-list">
-              {!modalSearch&&favFiltered.length>0&&<><div className="modal-sect-lbl">⭐ Избранные</div>{favFiltered.map(ex=><ModalItem key={ex.id} ex={ex} onSelect={()=>{setSelectedEx(ex.name);setShowExModal(false);setModalSearch('')}}/>)}<div className="modal-sect-lbl">Все упражнения</div></>}
-              {(modalSearch?filtered:restFiltered).map(ex=><ModalItem key={ex.id} ex={ex} onSelect={()=>{setSelectedEx(ex.name);setShowExModal(false);setModalSearch('')}}/>)}
+              {!modalSearch&&favFiltered.length>0&&<><div className="modal-sect-lbl">⭐ Избранные</div>{favFiltered.map(ex=><ModalItem key={ex.id} ex={ex} onSelect={()=>addExToWorkout(ex.name)}/>)}<div className="modal-sect-lbl">Все упражнения</div></>}
+              {(modalSearch?filtered:restFiltered).map(ex=><ModalItem key={ex.id} ex={ex} onSelect={()=>addExToWorkout(ex.name)}/>)}
             </div>
           </div>
         </div>
@@ -1376,6 +1403,22 @@ export default function App() {
       {editModal && <EditModal data={editModal} onClose={()=>setEditModal(null)} onSave={saveEdit}/>}
 
       {/* Timer Modal */}
+      {showDateModal && (
+        <div className="modal-overlay" onClick={e=>{if(e.target.classList.contains('modal-overlay'))setShowDateModal(false)}}>
+          <div className="modal-box" style={{maxWidth:320}}>
+            <div className="modal-title" style={{marginBottom:20}}>📅 Выбери дату тренировки</div>
+            <input type="date" value={workoutDate} onChange={e=>setWorkoutDate(e.target.value)}
+              style={{width:'100%',background:'rgba(255,255,255,0.06)',border:'1px solid rgba(255,255,255,0.12)',
+              borderRadius:12,padding:'12px 16px',color:'#fff',fontSize:16,fontWeight:600,outline:'none',boxSizing:'border-box',marginBottom:16}}/>
+            <button onClick={()=>{setShowDateModal(false);setWorkoutStarted(true)}}
+              style={{width:'100%',padding:'14px',borderRadius:14,border:'none',cursor:'pointer',
+              background:'rgba(255,255,255,0.1)',color:'rgba(255,255,255,0.9)',fontSize:15,fontWeight:700}}>
+              ✅ Начать тренировку
+            </button>
+          </div>
+        </div>
+      )}
+
       {showTimerModal && (
         <div className="timer-modal-overlay" onClick={e=>{if(e.target.classList.contains('timer-modal-overlay'))setShowTimerModal(false)}}>
           <div className="timer-modal">
