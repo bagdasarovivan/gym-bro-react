@@ -802,7 +802,6 @@ export default function App() {
   useEffect(() => {
     if (tab !== 'history') return
     supabase.from('workouts').select('id,workout_date,exercises(name),sets(set_no,weight,reps,time_sec)')
-      .eq('user_id', user.id)
       .eq('user_id', user.id).order('workout_date', { ascending: false }).order('id', { ascending: false }).limit(200)
       .then(({ data }) => setHistory(data || []))
   }, [tab, saved])
