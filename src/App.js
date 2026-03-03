@@ -769,7 +769,7 @@ export default function App() {
   if (user === null) return (
     <div className="auth-screen">
       <div className="auth-card">
-        <img src="/images/gymbro_logo.png" alt="logo" className="auth-logo" onError={e=>{e.target.style.display='none'}}/>
+        <img src="/images/gymbro_icon.png" alt="logo" className="auth-logo" onError={e=>{e.target.style.display='none'}}/>
         <div className="auth-title">Gym BRO</div>
         <div className="auth-sub">{authMode==='login' ? 'Войди в свой аккаунт' : 'Создай новый аккаунт'}</div>
         {authError && <div className="auth-err">{authError}</div>}
@@ -812,7 +812,7 @@ export default function App() {
 
       <div className="header">
         <div className="header-left">
-          <img src="/images/gymbro_logo.png" alt="logo" className="header-logo" onError={e=>e.target.style.display='none'}/>
+          <img src="/images/gymbro_icon.png" alt="logo" className="header-logo" onError={e=>e.target.style.display='none'}/>
           <h1>Gym BRO</h1>
         </div>
         <div style={{display:'flex',alignItems:'center',gap:8}}>
