@@ -1096,39 +1096,45 @@ export default function App() {
             </div>
           )}
           {!workoutStarted ? (
-            <div style={{display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',flex:1,paddingTop:60,paddingBottom:40,gap:32}}>
+            <div style={{display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',flex:1,paddingTop:40,paddingBottom:40,gap:44}}>
               <div style={{textAlign:'center'}}>
-                <div style={{fontSize:48,marginBottom:8}}>💪</div>
-                <div style={{fontSize:22,fontWeight:800,color:'white',marginBottom:6}}>Готов к тренировке?</div>
-                <div style={{fontSize:14,color:'rgba(255,255,255,0.4)',fontWeight:500}}>
+                <div style={{fontSize:12,color:'rgba(255,255,255,0.28)',fontWeight:600,textTransform:'uppercase',letterSpacing:'1.5px',marginBottom:14}}>
                   {new Date().toLocaleDateString('ru',{weekday:'long',day:'numeric',month:'long'})}
                 </div>
+                <div style={{fontSize:26,fontWeight:700,color:'rgba(255,255,255,0.8)',letterSpacing:'-0.3px'}}>Тренировка</div>
               </div>
-              <div style={{display:'flex',flexDirection:'column',alignItems:'center',gap:20}}>
-                <button onClick={()=>{setWorkoutStarted(true);setWorkoutDate(workoutDate)}} style={{
-                  width:180,height:180,borderRadius:'50%',border:'none',cursor:'pointer',
-                  background:'linear-gradient(135deg,#30D158,#25a847)',
-                  boxShadow:'0 0 60px rgba(48,209,88,0.35), 0 8px 32px rgba(48,209,88,0.2)',
-                  display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',
-                  gap:6,fontSize:16,fontWeight:800,color:'#000',letterSpacing:0.3,
-                  transition:'transform 0.15s'
+              <div style={{position:'relative',display:'flex',alignItems:'center',justifyContent:'center'}}>
+                <style>{`
+                  @keyframes pulse-ring{0%{transform:scale(1);opacity:0.15}70%{transform:scale(1.4);opacity:0}100%{transform:scale(1.4);opacity:0}}
+                  .pr1{position:absolute;width:150px;height:150px;border-radius:50%;border:1px solid rgba(255,255,255,0.4);animation:pulse-ring 2.4s ease-out infinite}
+                  .pr2{animation-delay:1.2s!important}
+                  .start-btn:active{transform:scale(0.95)!important}
+                `}</style>
+                <div className="pr1"/>
+                <div className="pr1 pr2"/>
+                <button className="start-btn" onClick={()=>setWorkoutStarted(true)} style={{
+                  width:150,height:150,borderRadius:'50%',cursor:'pointer',
+                  background:'rgba(255,255,255,0.05)',border:'1px solid rgba(255,255,255,0.15)',
+                  display:'flex',alignItems:'center',justifyContent:'center',
+                  transition:'transform 0.15s,background 0.2s,border-color 0.2s',
                 }}
-                  onMouseDown={e=>e.currentTarget.style.transform='scale(0.94)'}
+                  onMouseEnter={e=>{e.currentTarget.style.background='rgba(255,255,255,0.09)';e.currentTarget.style.borderColor='rgba(255,255,255,0.28)'}}
+                  onMouseLeave={e=>{e.currentTarget.style.background='rgba(255,255,255,0.05)';e.currentTarget.style.borderColor='rgba(255,255,255,0.15)'}}
+                  onMouseDown={e=>e.currentTarget.style.transform='scale(0.95)'}
                   onMouseUp={e=>e.currentTarget.style.transform='scale(1)'}
-                  onTouchStart={e=>e.currentTarget.style.transform='scale(0.94)'}
+                  onTouchStart={e=>e.currentTarget.style.transform='scale(0.95)'}
                   onTouchEnd={e=>e.currentTarget.style.transform='scale(1)'}
                 >
-                  <span style={{fontSize:34}}>▶</span>
-                  <span>Начать</span>
+                  <span style={{fontSize:13,fontWeight:700,color:'rgba(255,255,255,0.75)',letterSpacing:'3px',textTransform:'uppercase'}}>НАЧАТЬ</span>
                 </button>
-                <div style={{display:'flex',flexDirection:'column',alignItems:'center',gap:8}}>
-                  <div style={{fontSize:11,color:'rgba(255,255,255,0.3)',fontWeight:600,textTransform:'uppercase',letterSpacing:'0.5px'}}>Дата тренировки</div>
-                  <input type="date" value={workoutDate} onChange={e=>setWorkoutDate(e.target.value)} style={{
-                    background:'rgba(255,255,255,0.07)',border:'1px solid rgba(255,255,255,0.12)',
-                    borderRadius:12,padding:'9px 18px',color:'rgba(255,255,255,0.75)',fontSize:14,
-                    fontWeight:600,cursor:'pointer',outline:'none',textAlign:'center'
-                  }}/>
-                </div>
+              </div>
+              <div style={{display:'flex',flexDirection:'column',alignItems:'center',gap:7}}>
+                <div style={{fontSize:11,color:'rgba(255,255,255,0.2)',fontWeight:600,textTransform:'uppercase',letterSpacing:'0.5px'}}>Другая дата</div>
+                <input type="date" value={workoutDate} onChange={e=>setWorkoutDate(e.target.value)} style={{
+                  background:'rgba(255,255,255,0.04)',border:'1px solid rgba(255,255,255,0.08)',
+                  borderRadius:10,padding:'7px 14px',color:'rgba(255,255,255,0.45)',fontSize:13,
+                  fontWeight:500,cursor:'pointer',outline:'none',textAlign:'center'
+                }}/>
               </div>
             </div>
           ) : !selectedEx ? (
@@ -1273,7 +1279,7 @@ export default function App() {
         <div className="section">
           {stats && (
             <div className="stats-row">
-              <div className="stat-card"><div className="stat-val">{stats.monthW}</div><div className="stat-lbl">этот месяц</div></div>
+              <div className="stat-card"><div className="stat-val">{stats.monthW}</div><div className="stat-lbl">{new Date().toLocaleDateString('ru',{month:'long'})}</div></div>
               <div className="stat-card"><div className="stat-val">{stats.totalW}</div><div className="stat-lbl">всего</div></div>
               <div className="stat-card"><div className="stat-val" style={{color:'#69F0AE',fontSize:18}}>{stats.totalKg>=1000?`${(stats.totalKg/1000).toFixed(1)}K`:Math.round(stats.totalKg)} kg</div><div className="stat-lbl">поднято</div></div>
             </div>
