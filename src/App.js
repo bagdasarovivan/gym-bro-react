@@ -40,6 +40,9 @@ const EXERCISE_IMAGES = {
   'Dips':'/images/dips.png','T-Bar Row':'/images/t_bar_row.png',
 }
 
+
+const EXERCISES = Object.keys(EXERCISE_IMAGES).sort((a, b) => a.localeCompare(b))
+
 const DEFAULT_FAVORITES = ['Bench Press','Squat','Deadlift']
 
 function getWeightOptions(exName) {
@@ -427,7 +430,7 @@ function EditModal({ data, onClose, onSave }) {
 
 export default function App() {
   const [tab, setTab] = useState('add')
-  const [exercises, setExercises] = useState([])
+  const exercises = EXERCISES.map((name, i) => ({ id: i, name }))
   const [favorites, setFavorites] = useState(() => { try { return JSON.parse(localStorage.getItem('gbFavs')) || DEFAULT_FAVORITES } catch { return DEFAULT_FAVORITES } })
   const [showOnboard, setShowOnboard] = useState(() => !localStorage.getItem('gbOnboarded'))
   const [selectedEx, setSelectedEx] = useState(null)
@@ -461,10 +464,8 @@ export default function App() {
   useEffect(() => { const s = document.createElement('style'); s.textContent = CSS; document.head.appendChild(s); return () => document.head.removeChild(s) }, [])
 
   useEffect(() => {
-    supabase.from('exercises').select('*').order('name').then(({ data }) => {
-      setExercises(data || [])
-      if (!chartEx && data?.length) { const weighted = data.find(e => !['Crunches','Plank','Push-Ups','Pull-Ups'].includes(e.name)); setChartEx(weighted ? weighted.name : data[0].name) }
-    })
+    const weighted = EXERCISES.find(e => !['Crunches','Plank','Push-Ups','Pull-Ups'].includes(e))
+    if (!chartEx) setChartEx(weighted || EXERCISES[0])
   }, [])
 
   useEffect(() => {
@@ -537,8 +538,8 @@ export default function App() {
   useEffect(() => {
     if (!selectedEx) return
     async function load() {
-      const { data: ex } = await supabase.from('exercises').select('id').eq('name',selectedEx).single()
-      if (!ex) return
+      let { data: ex } = await supabase.from('exercises').select('id').eq('name',selectedEx).single()
+      if (!ex) { setLastSession(null); return }
       const { data } = await supabase.from('workouts').select('workout_date,sets(set_no,weight,reps,time_sec)').eq('exercise_id',ex.id).order('workout_date',{ascending:false}).limit(1).single()
       setLastSession(data || null)
     }
@@ -566,7 +567,13 @@ export default function App() {
   const saveWorkout = async () => {
     const filled = sets.filter(s => s.weight > 0 && s.reps > 0)
     if (!filled.length) return
-    const { data: ex } = await supabase.from('exercises').select('id').eq('name',selectedEx).single()
+    // Upsert exercise to ensure it exists in DB
+    let { data: ex } = await supabase.from('exercises').select('id').eq('name',selectedEx).single()
+    if (!ex) {
+      const { data: inserted } = await supabase.from('exercises').insert({ name: selectedEx }).select().single()
+      ex = inserted
+    }
+    if (!ex) return
     const { data: w } = await supabase.from('workouts').insert({ workout_date: new Date().toISOString().split('T')[0], exercise_id: ex.id }).select().single()
     await supabase.from('sets').insert(filled.map((s,i) => ({ workout_id:w.id, set_no:i+1, weight:s.weight, reps:s.reps, time_sec:null })))
     setSaved(true)
