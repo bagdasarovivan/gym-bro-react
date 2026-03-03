@@ -924,12 +924,6 @@ export default function App() {
     setStreak(monthCount)
     setStreakAlert({ type: 'month', count: monthCount, msg: getMotivation(monthCount) })
     setTimeout(() => setStreakAlert(null), 4500)
-    const thisM2 = new Date().toISOString().slice(0,7)
-    const { data: mData } = await supabase.from('workouts').select('workout_date')
-    const monthCount = new Set((mData||[]).filter(r => r.workout_date.startsWith(thisM2)).map(r => r.workout_date)).size
-    setStreak(monthCount)
-    setStreakAlert({ type: 'month', count: monthCount, msg: getMotivation(monthCount) })
-    setTimeout(() => setStreakAlert(null), 4500)
     setSaved(true)
     setTimeout(() => { setSaved(false); setSelectedEx(null) }, 1500)
   }
