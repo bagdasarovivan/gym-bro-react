@@ -209,7 +209,6 @@ export default function App() {
 
       if (!data || !data.length) return
       const dates = [...new Set(data.map(r => r.workout_date))].sort().reverse()
-      const today = new Date().toISOString().split('T')[0]
       const yesterday = new Date(Date.now() - 86400000).toISOString().split('T')[0]
       if (dates[0] < yesterday) return
 
