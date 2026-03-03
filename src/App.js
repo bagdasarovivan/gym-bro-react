@@ -445,15 +445,15 @@ function MuscleMap({ muscleScores }) {
   const getColor = (muscle) => {
     const score = muscleScores[muscle] || 0
     if (score === 0) return 'rgba(255,255,255,0)'
-    if (score < 0.33) return 'rgba(255,214,0,0.35)'
-    if (score < 0.66) return 'rgba(255,140,0,0.45)'
-    return 'rgba(255,59,48,0.55)'
+    if (score < 0.33) return 'rgba(48,209,88,0.4)'
+    if (score < 0.66) return 'rgba(255,214,0,0.45)'
+    return 'rgba(255,59,48,0.6)'
   }
   const getStroke = (muscle) => {
     const score = muscleScores[muscle] || 0
     if (score === 0) return hovered === muscle ? 'rgba(255,255,255,0.4)' : 'rgba(255,255,255,0)'
-    if (score < 0.33) return 'rgba(255,214,0,0.8)'
-    if (score < 0.66) return 'rgba(255,140,0,0.9)'
+    if (score < 0.33) return 'rgba(48,209,88,0.9)'
+    if (score < 0.66) return 'rgba(255,214,0,0.9)'
     return 'rgba(255,59,48,1)'
   }
   const muscleNames = {
@@ -1311,6 +1311,14 @@ export default function App() {
           <div className="chart-wrap" style={{padding:'16px 8px'}}>
             <div style={{fontSize:11,opacity:0.35,textAlign:'center',marginBottom:12,textTransform:'uppercase',letterSpacing:'0.5px'}}>За последние 30 дней</div>
             <MuscleMap muscleScores={muscleScores}/>
+            <div style={{display:'flex',justifyContent:'center',gap:14,marginTop:12}}>
+              {[['#30D158','Мало'],['#FFD60A','Средне'],['#FF3B30','Много'],['rgba(255,255,255,0.2)','Нет']].map(([color,label])=>(
+                <div key={label} style={{display:'flex',alignItems:'center',gap:5}}>
+                  <div style={{width:10,height:10,borderRadius:3,background:color,flexShrink:0}}/>
+                  <span style={{fontSize:11,color:'rgba(255,255,255,0.4)',fontWeight:500}}>{label}</span>
+                </div>
+              ))}
+            </div>
           </div>
           <div className="prog-title">📅 Календарь</div>
           <div className="cal-nav">
@@ -1404,15 +1412,18 @@ export default function App() {
 
       {/* Timer Modal */}
       {showDateModal && (
-        <div className="modal-overlay" onClick={e=>{if(e.target.classList.contains('modal-overlay'))setShowDateModal(false)}}>
-          <div className="modal-box" style={{maxWidth:320}}>
-            <div className="modal-title" style={{marginBottom:20}}>📅 Выбери дату тренировки</div>
+        <div style={{position:'fixed',inset:0,background:'rgba(0,0,0,0.7)',zIndex:200,display:'flex',alignItems:'center',justifyContent:'center',backdropFilter:'blur(8px)'}}
+          onClick={e=>{if(e.target===e.currentTarget)setShowDateModal(false)}}>
+          <div style={{background:'#1c1c1e',borderRadius:20,padding:'28px 24px',width:'calc(100% - 48px)',maxWidth:320,border:'1px solid rgba(255,255,255,0.1)'}}>
+            <div style={{fontSize:17,fontWeight:700,color:'#fff',marginBottom:20,textAlign:'center'}}>📅 Выбери дату тренировки</div>
             <input type="date" value={workoutDate} onChange={e=>setWorkoutDate(e.target.value)}
-              style={{width:'100%',background:'rgba(255,255,255,0.06)',border:'1px solid rgba(255,255,255,0.12)',
-              borderRadius:12,padding:'12px 16px',color:'#fff',fontSize:16,fontWeight:600,outline:'none',boxSizing:'border-box',marginBottom:16}}/>
+              style={{width:'100%',background:'rgba(255,255,255,0.08)',border:'1px solid rgba(255,255,255,0.15)',
+              borderRadius:12,padding:'13px 16px',color:'#fff',fontSize:16,fontWeight:600,outline:'none',
+              boxSizing:'border-box',marginBottom:20,colorScheme:'dark'}}/>
             <button onClick={()=>{setShowDateModal(false);setWorkoutStarted(true)}}
-              style={{width:'100%',padding:'14px',borderRadius:14,border:'none',cursor:'pointer',
-              background:'rgba(255,255,255,0.1)',color:'rgba(255,255,255,0.9)',fontSize:15,fontWeight:700}}>
+              style={{width:'100%',padding:'15px',borderRadius:14,border:'none',cursor:'pointer',
+              background:'rgba(255,255,255,0.12)',color:'rgba(255,255,255,0.9)',fontSize:15,fontWeight:700,
+              letterSpacing:'0.3px'}}>
               ✅ Начать тренировку
             </button>
           </div>
