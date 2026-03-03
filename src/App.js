@@ -445,16 +445,16 @@ function MuscleMap({ muscleScores }) {
   const getColor = (muscle) => {
     const score = muscleScores[muscle] || 0
     if (score === 0) return 'rgba(255,255,255,0)'
-    if (score < 0.33) return 'rgba(48,209,88,0.4)'
-    if (score < 0.66) return 'rgba(255,214,0,0.45)'
-    return 'rgba(255,59,48,0.6)'
+    if (score < 0.33) return 'rgba(255,214,0,0.45)'
+    if (score < 0.66) return 'rgba(100,210,100,0.5)'
+    return 'rgba(0,160,60,0.65)'
   }
   const getStroke = (muscle) => {
     const score = muscleScores[muscle] || 0
     if (score === 0) return hovered === muscle ? 'rgba(255,255,255,0.4)' : 'rgba(255,255,255,0)'
-    if (score < 0.33) return 'rgba(48,209,88,0.9)'
-    if (score < 0.66) return 'rgba(255,214,0,0.9)'
-    return 'rgba(255,59,48,1)'
+    if (score < 0.33) return 'rgba(255,214,0,0.9)'
+    if (score < 0.66) return 'rgba(100,210,100,1)'
+    return 'rgba(0,200,70,1)'
   }
   const muscleNames = {
     chest:'Грудь', shoulders:'Плечи', biceps:'Бицепс', triceps:'Трицепс',
@@ -699,6 +699,9 @@ export default function App() {
   const [showTimerModal, setShowTimerModal] = useState(false)
   const [timerPaused, setTimerPaused] = useState(false)
   const [timerMode, setTimerMode] = useState('countdown')
+  const [showTimerChoice, setShowTimerChoice] = useState(false)
+  const [timerPickerMins, setTimerPickerMins] = useState(1)
+  const [timerPickerSecs, setTimerPickerSecs] = useState(30)
   const [stopwatchSecs, setStopwatchSecs] = useState(0)
   const [stopwatchRunning, setStopwatchRunning] = useState(false)
   const stopwatchRef = useRef(null)
@@ -1031,7 +1034,7 @@ export default function App() {
           <h1>Gym BRO</h1>
         </div>
         <div style={{display:'flex',alignItems:'center',gap:8}}>
-          <button onClick={() => setShowTimerModal(true)} style={{
+          <button onClick={() => setShowTimerChoice(true)} style={{
             background:(timerSecs!==null||stopwatchRunning)?'rgba(255,159,10,0.15)':'rgba(255,255,255,0.08)',
             border:(timerSecs!==null||stopwatchRunning)?'1px solid rgba(255,159,10,0.4)':'1px solid rgba(255,255,255,0.1)',
             borderRadius:99,padding:'6px 12px',cursor:'pointer',
@@ -1299,7 +1302,7 @@ export default function App() {
             <div style={{fontSize:11,opacity:0.35,textAlign:'center',marginBottom:12,textTransform:'uppercase',letterSpacing:'0.5px'}}>За последние 30 дней</div>
             <MuscleMap muscleScores={muscleScores}/>
             <div style={{display:'flex',justifyContent:'center',gap:14,marginTop:12}}>
-              {[['#30D158','Мало'],['#FFD60A','Средне'],['#FF3B30','Много'],['rgba(255,255,255,0.2)','Нет']].map(([color,label])=>(
+              {[['#FFD60A','Мало'],['#64D264','Средне'],['#00A03C','Много'],['rgba(255,255,255,0.2)','Нет']].map(([color,label])=>(
                 <div key={label} style={{display:'flex',alignItems:'center',gap:5}}>
                   <div style={{width:10,height:10,borderRadius:3,background:color,flexShrink:0}}/>
                   <span style={{fontSize:11,color:'rgba(255,255,255,0.4)',fontWeight:500}}>{label}</span>
@@ -1423,31 +1426,70 @@ export default function App() {
         </div>
       )}
 
+      {showTimerChoice && (
+        <div style={{position:'fixed',inset:0,background:'rgba(0,0,0,0.7)',zIndex:200,display:'flex',alignItems:'center',justifyContent:'center',backdropFilter:'blur(8px)'}}
+          onClick={e=>{if(e.target===e.currentTarget)setShowTimerChoice(false)}}>
+          <div style={{background:'#1c1c1e',borderRadius:20,padding:'28px 24px',width:'calc(100% - 48px)',maxWidth:300,border:'1px solid rgba(255,255,255,0.1)'}}>
+            <div style={{fontSize:17,fontWeight:700,color:'#fff',marginBottom:24,textAlign:'center'}}>Выбери режим</div>
+            <div style={{display:'flex',flexDirection:'column',gap:12}}>
+              <button onClick={()=>{setTimerMode('countdown');setShowTimerChoice(false);setShowTimerModal(true)}}
+                style={{padding:'18px',borderRadius:14,border:'1px solid rgba(255,159,10,0.25)',background:'rgba(255,159,10,0.08)',
+                color:'#FF9F0A',fontSize:16,fontWeight:700,cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',gap:10}}>
+                <span style={{fontSize:22}}>⏱</span> Таймер отдыха
+              </button>
+              <button onClick={()=>{setTimerMode('stopwatch');setShowTimerChoice(false);setShowTimerModal(true)}}
+                style={{padding:'18px',borderRadius:14,border:'1px solid rgba(48,209,88,0.25)',background:'rgba(48,209,88,0.08)',
+                color:'#30D158',fontSize:16,fontWeight:700,cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',gap:10}}>
+                <span style={{fontSize:22}}>⏲</span> Секундомер
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {showTimerModal && (
-        <div className="timer-modal-overlay" onClick={e=>{if(e.target.classList.contains('timer-modal-overlay'))setShowTimerModal(false)}}>
+        <div className="timer-modal-overlay" onClick={e=>{if(e.target.classList.contains('timer-modal-overlay')){setShowTimerModal(false)}}}>
           <div className="timer-modal">
             <div className="modal-handle"/>
-            <div className="timer-tabs">
-              <button className={`timer-tab${timerMode==='countdown'?' active':''}`} onClick={()=>setTimerMode('countdown')}>⏱ Таймер</button>
-              <button className={`timer-tab${timerMode==='stopwatch'?' active':''}`} onClick={()=>setTimerMode('stopwatch')}>⏲ Секундомер</button>
-            </div>
             {timerMode === 'countdown' ? (
-              <div style={{padding:'0 24px'}}>
+              <div style={{padding:'0 24px 8px'}}>
+                <div style={{textAlign:'center',fontSize:13,fontWeight:700,color:'rgba(255,159,10,0.8)',letterSpacing:'1px',textTransform:'uppercase',marginBottom:16}}>⏱ Таймер отдыха</div>
                 <div className="timer-big-num" style={{
                   color: timerSecs!==null ? (timerPaused ? 'rgba(255,159,10,0.45)' : '#FF9F0A') : 'white',
-                  display:'flex',alignItems:'baseline',justifyContent:'center',gap:10
+                  marginBottom:24
                 }}>
                   {timerSecs !== null
                     ? `${Math.floor(timerSecs/60)}:${String(timerSecs%60).padStart(2,'0')}`
-                    : `${Math.floor(timerDuration/60)}:${String(timerDuration%60).padStart(2,'0')}`}
-                  {timerPaused && timerSecs !== null && <span style={{fontSize:16,opacity:0.5,fontWeight:500}}>пауза</span>}
+                    : `${String(timerPickerMins).padStart(2,'0')}:${String(timerPickerSecs).padStart(2,'0')}`}
+                  {timerPaused && timerSecs !== null && <span style={{fontSize:16,opacity:0.5,fontWeight:500,marginLeft:8}}>пауза</span>}
                 </div>
-                <div style={{marginBottom:20}}>
-                  <DropdownPicker options={Array.from({length:50},(_,i)=>(i+1)*5)} value={timerDuration} onChange={v=>{setTimerDuration(v);setTimerSecs(null);setTimerPaused(false)}} unit="сек" label="Время"/>
-                </div>
+                {timerSecs === null && (
+                  <div style={{display:'flex',gap:16,justifyContent:'center',alignItems:'center',marginBottom:24}}>
+                    <div style={{textAlign:'center'}}>
+                      <div style={{fontSize:11,color:'rgba(255,255,255,0.35)',marginBottom:8,fontWeight:600,textTransform:'uppercase',letterSpacing:'0.5px'}}>МИН</div>
+                      <div style={{display:'flex',flexDirection:'column',gap:0,background:'rgba(255,255,255,0.05)',borderRadius:14,overflow:'hidden',border:'1px solid rgba(255,255,255,0.08)'}}>
+                        <button onClick={()=>setTimerPickerMins(m=>Math.min(59,m+1))} style={{padding:'10px 20px',background:'none',border:'none',color:'rgba(255,255,255,0.5)',fontSize:18,cursor:'pointer'}}>▲</button>
+                        <div style={{padding:'8px 20px',fontSize:28,fontWeight:700,color:'#fff',textAlign:'center',minWidth:60}}>{String(timerPickerMins).padStart(2,'0')}</div>
+                        <button onClick={()=>setTimerPickerMins(m=>Math.max(0,m-1))} style={{padding:'10px 20px',background:'none',border:'none',color:'rgba(255,255,255,0.5)',fontSize:18,cursor:'pointer'}}>▼</button>
+                      </div>
+                    </div>
+                    <div style={{fontSize:28,fontWeight:700,color:'rgba(255,255,255,0.3)',marginTop:16}}>:</div>
+                    <div style={{textAlign:'center'}}>
+                      <div style={{fontSize:11,color:'rgba(255,255,255,0.35)',marginBottom:8,fontWeight:600,textTransform:'uppercase',letterSpacing:'0.5px'}}>СЕК</div>
+                      <div style={{display:'flex',flexDirection:'column',gap:0,background:'rgba(255,255,255,0.05)',borderRadius:14,overflow:'hidden',border:'1px solid rgba(255,255,255,0.08)'}}>
+                        <button onClick={()=>setTimerPickerSecs(s=>s>=55?0:s+5)} style={{padding:'10px 20px',background:'none',border:'none',color:'rgba(255,255,255,0.5)',fontSize:18,cursor:'pointer'}}>▲</button>
+                        <div style={{padding:'8px 20px',fontSize:28,fontWeight:700,color:'#fff',textAlign:'center',minWidth:60}}>{String(timerPickerSecs).padStart(2,'0')}</div>
+                        <button onClick={()=>setTimerPickerSecs(s=>s<=0?55:s-5)} style={{padding:'10px 20px',background:'none',border:'none',color:'rgba(255,255,255,0.5)',fontSize:18,cursor:'pointer'}}>▼</button>
+                      </div>
+                    </div>
+                  </div>
+                )}
                 <div className="timer-controls" style={{gap:10}}>
                   {timerSecs === null ? (
-                    <button className="timer-ctrl-btn primary" style={{maxWidth:'none',flex:1}} onClick={()=>{setTimerSecs(timerDuration);setTimerPaused(false)}}>▶ Старт</button>
+                    <button className="timer-ctrl-btn primary" style={{maxWidth:'none',flex:1}} onClick={()=>{
+                      const total = timerPickerMins*60 + timerPickerSecs
+                      if(total>0){setTimerDuration(total);setTimerSecs(total);setTimerPaused(false)}
+                    }}>▶ Старт</button>
                   ) : (
                     <>
                       <button className="timer-ctrl-btn secondary" onClick={()=>{setTimerSecs(null);setTimerPaused(false)}}>✕ Стоп</button>
@@ -1459,8 +1501,9 @@ export default function App() {
                 </div>
               </div>
             ) : (
-              <div style={{padding:'0 24px'}}>
-                <div className="timer-big-num" style={{color: stopwatchRunning ? '#30D158' : 'white'}}>
+              <div style={{padding:'0 24px 8px'}}>
+                <div style={{textAlign:'center',fontSize:13,fontWeight:700,color:'rgba(48,209,88,0.8)',letterSpacing:'1px',textTransform:'uppercase',marginBottom:16}}>⏲ Секундомер</div>
+                <div className="timer-big-num" style={{color: stopwatchRunning ? '#30D158' : 'white', marginBottom:32}}>
                   {`${Math.floor(stopwatchSecs/60)}:${String(stopwatchSecs%60).padStart(2,'0')}`}
                 </div>
                 <div className="timer-controls" style={{gap:10}}>
