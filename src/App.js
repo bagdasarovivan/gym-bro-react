@@ -715,6 +715,8 @@ export default function App() {
   const stopwatchRef = useRef(null)
   const [prAlert, setPrAlert] = useState(null)
   const [streakAlert, setStreakAlert] = useState(null)
+  const [workoutStarted, setWorkoutStarted] = useState(false)
+  const [workoutDate, setWorkoutDate] = useState(new Date().toISOString().split('T')[0])
   const historyLoaded = useRef(false)
 
   const handleAuth = async () => {
@@ -898,7 +900,7 @@ export default function App() {
       ex = inserted
     }
     if (!ex) return
-    const { data: w } = await supabase.from('workouts').insert({ workout_date: new Date().toISOString().split('T')[0], exercise_id: ex.id }).select().single()
+    const { data: w } = await supabase.from('workouts').insert({ workout_date: workoutDate, exercise_id: ex.id }).select().single()
     await supabase.from('sets').insert(filled.map((s,i) => ({ workout_id:w.id, set_no:i+1, weight:s.weight, reps:s.reps, time_sec:null })))
     // Check for new PR
     const maxSaved = Math.max(...filled.map(s => s.weight))
@@ -1091,11 +1093,55 @@ export default function App() {
               )}
             </div>
           )}
-          {!selectedEx ? (
-            <button className="ex-selector-btn" onClick={() => setShowExModal(true)}>
-              <span style={{opacity:0.45}}>Выбери упражнение...</span>
-              <span style={{opacity:0.4,fontSize:20}}>⌄</span>
-            </button>
+          {!workoutStarted ? (
+            <div style={{display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',flex:1,paddingTop:60,paddingBottom:40,gap:32}}>
+              <div style={{textAlign:'center'}}>
+                <div style={{fontSize:48,marginBottom:8}}>💪</div>
+                <div style={{fontSize:22,fontWeight:800,color:'white',marginBottom:6}}>Готов к тренировке?</div>
+                <div style={{fontSize:14,color:'rgba(255,255,255,0.4)',fontWeight:500}}>
+                  {new Date().toLocaleDateString('ru',{weekday:'long',day:'numeric',month:'long'})}
+                </div>
+              </div>
+              <div style={{display:'flex',flexDirection:'column',alignItems:'center',gap:20}}>
+                <button onClick={()=>{setWorkoutStarted(true);setWorkoutDate(workoutDate)}} style={{
+                  width:180,height:180,borderRadius:'50%',border:'none',cursor:'pointer',
+                  background:'linear-gradient(135deg,#30D158,#25a847)',
+                  boxShadow:'0 0 60px rgba(48,209,88,0.35), 0 8px 32px rgba(48,209,88,0.2)',
+                  display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',
+                  gap:6,fontSize:16,fontWeight:800,color:'#000',letterSpacing:0.3,
+                  transition:'transform 0.15s'
+                }}
+                  onMouseDown={e=>e.currentTarget.style.transform='scale(0.94)'}
+                  onMouseUp={e=>e.currentTarget.style.transform='scale(1)'}
+                  onTouchStart={e=>e.currentTarget.style.transform='scale(0.94)'}
+                  onTouchEnd={e=>e.currentTarget.style.transform='scale(1)'}
+                >
+                  <span style={{fontSize:34}}>▶</span>
+                  <span>Начать</span>
+                </button>
+                <div style={{display:'flex',flexDirection:'column',alignItems:'center',gap:8}}>
+                  <div style={{fontSize:11,color:'rgba(255,255,255,0.3)',fontWeight:600,textTransform:'uppercase',letterSpacing:'0.5px'}}>Дата тренировки</div>
+                  <input type="date" value={workoutDate} onChange={e=>setWorkoutDate(e.target.value)} style={{
+                    background:'rgba(255,255,255,0.07)',border:'1px solid rgba(255,255,255,0.12)',
+                    borderRadius:12,padding:'9px 18px',color:'rgba(255,255,255,0.75)',fontSize:14,
+                    fontWeight:600,cursor:'pointer',outline:'none',textAlign:'center'
+                  }}/>
+                </div>
+              </div>
+            </div>
+          ) : !selectedEx ? (
+            <>
+              <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:8}}>
+                <button onClick={()=>setWorkoutStarted(false)} style={{background:'none',border:'none',color:'rgba(255,255,255,0.45)',fontSize:14,cursor:'pointer',padding:'4px 0',fontWeight:600}}>← Назад</button>
+                <div style={{fontSize:12,color:'rgba(255,255,255,0.35)',fontWeight:600}}>
+                  {new Date(workoutDate+'T12:00:00').toLocaleDateString('ru',{day:'numeric',month:'long'})}
+                </div>
+              </div>
+              <button className="ex-selector-btn" onClick={() => setShowExModal(true)}>
+                <span style={{opacity:0.45}}>Выбери упражнение...</span>
+                <span style={{opacity:0.4,fontSize:20}}>⌄</span>
+              </button>
+            </>
           ) : (
             <>
               <button className="back-btn" onClick={() => setSelectedEx(null)}>‹ Упражнения</button>
@@ -1387,7 +1433,7 @@ export default function App() {
 
       <div className="nav-bar">
         {[{id:'add',icon:'➕',label:'Тренировка'},{id:'history',icon:'📜',label:'История'},{id:'progress',icon:'📈',label:'Прогресс'}].map(t=>(
-          <div key={t.id} className="nav-item" style={{opacity:tab===t.id?1:0.38}} onClick={()=>setTab(t.id)}>
+          <div key={t.id} className="nav-item" style={{opacity:tab===t.id?1:0.38}} onClick={()=>{setTab(t.id);if(t.id!=='add'){setWorkoutStarted(false);setSelectedEx(null)}}}>
             <span className="nav-icon">{t.icon}</span>
             <span className="nav-lbl" style={{color:tab===t.id?'#00C853':'white'}}>{t.label}</span>
           </div>
