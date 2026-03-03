@@ -3,12 +3,12 @@
   "name": "Gym BRO — Дневник тренировок",
   "icons": [
     {
-      "src": "gymbro_icon.png",
+      "src": "images/gymbro_icon.png",
       "sizes": "192x192",
       "type": "image/png"
     },
     {
-      "src": "gymbro_icon.png",
+      "src": "images/gymbro_icon.png",
       "sizes": "512x512",
       "type": "image/png"
     }
