@@ -729,8 +729,6 @@ export default function App() {
   const [workoutStarted, setWorkoutStarted] = useState(false)
   const [workoutDate, setWorkoutDate] = useState(new Date().toISOString().split('T')[0])
   const [showDateModal, setShowDateModal] = useState(false)
-  const [pickerMonth, setPickerMonth] = useState(new Date().getMonth())
-  const [pickerYear, setPickerYear] = useState(new Date().getFullYear())
   const [workoutExercises, setWorkoutExercises] = useState([])
   const historyLoaded = useRef(false)
 
@@ -899,12 +897,6 @@ export default function App() {
     setSets([{ weight: opts[0], reps: REPS_OPTIONS[0] }])
   }, [selectedEx])
 
-  const openDateModal = () => {
-    const d = new Date(workoutDate + 'T12:00:00')
-    setPickerMonth(d.getMonth())
-    setPickerYear(d.getFullYear())
-    setShowDateModal(true)
-  }
   const addSet = () => { setSets(prev => { const last = prev[prev.length-1]; return [...prev, { weight: last.weight, reps: last.reps }] }) }
   const removeSet = () => sets.length > 1 && setSets(sets.slice(0,-1))
   const updateSet = (i, f, v) => { const n=[...sets]; n[i][f]=v; setSets(n) }
@@ -1145,7 +1137,7 @@ export default function App() {
                 `}</style>
                 <div className="pr1"/>
                 <div className="pr1 pr2"/>
-                <button className="start-btn" onClick={()=>openDateModal()} style={{
+                <button className="start-btn" onClick={()=>setShowDateModal(true)} style={{
                   width:150,height:150,borderRadius:'50%',cursor:'pointer',zIndex:1,
                   background:'rgba(255,255,255,0.05)',border:'1px solid rgba(255,255,255,0.15)',
                   display:'flex',alignItems:'center',justifyContent:'center',
@@ -1425,59 +1417,31 @@ export default function App() {
       {editModal && <EditModal data={editModal} onClose={()=>setEditModal(null)} onSave={saveEdit}/>}
 
       {/* Timer Modal */}
-      {showDateModal && (() => {
-        const selDate = new Date(workoutDate + 'T12:00:00')
-        const selYear = selDate.getFullYear()
-        const selMonth = selDate.getMonth()
-        const selDay = selDate.getDate()
-        const today2 = new Date()
-        const todayY = today2.getFullYear(), todayM = today2.getMonth(), todayD = today2.getDate()
-        const firstDow2 = new Date(pickerYear, pickerMonth, 1).getDay()
-        const offset2 = firstDow2 === 0 ? 6 : firstDow2 - 1
-        const daysInPicker = new Date(pickerYear, pickerMonth + 1, 0).getDate()
-        const pickerMonthName = new Date(pickerYear, pickerMonth).toLocaleDateString("ru", {month:"long", year:"numeric"})
-        return (
-          <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.7)",zIndex:200,display:"flex",alignItems:"center",justifyContent:"center",backdropFilter:"blur(8px)"}}
-            onClick={e=>{if(e.target===e.currentTarget)setShowDateModal(false)}}>
-            <div style={{background:"#1c1c1e",borderRadius:20,padding:"24px 20px",width:"calc(100% - 40px)",maxWidth:340,border:"1px solid rgba(255,255,255,0.1)"}}>
-              <div style={{fontSize:17,fontWeight:700,color:"#fff",marginBottom:18,textAlign:"center"}}>📅 Выбери дату тренировки</div>
-              <div style={{background:"rgba(255,255,255,0.06)",borderRadius:12,padding:"12px 16px",color:"#fff",fontSize:15,fontWeight:600,textAlign:"center",marginBottom:14,border:"1px solid rgba(255,255,255,0.1)"}}>
-                {new Date(workoutDate+"T12:00:00").toLocaleDateString("ru",{day:"numeric",month:"long",year:"numeric"})}
+      {/* Date Modal */}
+      {showDateModal && (
+        <div style={{position:'fixed',inset:0,background:'rgba(0,0,0,0.7)',zIndex:200,display:'flex',alignItems:'center',justifyContent:'center',backdropFilter:'blur(8px)'}}
+          onClick={e=>{if(e.target===e.currentTarget)setShowDateModal(false)}}>
+          <div style={{background:'#1c1c1e',borderRadius:20,padding:'28px 24px',width:'calc(100% - 48px)',maxWidth:320,border:'1px solid rgba(255,255,255,0.1)'}}>
+            <div style={{fontSize:17,fontWeight:700,color:'#fff',marginBottom:20,textAlign:'center'}}>📅 Выбери дату тренировки</div>
+            <div style={{position:'relative',marginBottom:16,cursor:'pointer'}} onClick={()=>{const i=document.getElementById('wdate');i&&(i.showPicker?i.showPicker():i.click())}}>
+              <div style={{background:'rgba(255,255,255,0.08)',border:'1px solid rgba(255,255,255,0.15)',
+                borderRadius:12,padding:'14px 16px',color:'#fff',fontSize:16,fontWeight:600,
+                display:'flex',alignItems:'center',justifyContent:'space-between'}}>
+                <span>{new Date(workoutDate+'T12:00:00').toLocaleDateString('ru',{day:'numeric',month:'long',year:'numeric'})}</span>
+                <span style={{fontSize:18}}>📅</span>
               </div>
-              <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:10}}>
-                <button onClick={()=>{if(pickerMonth===0){setPickerMonth(11);setPickerYear(y=>y-1)}else setPickerMonth(m=>m-1)}}
-                  style={{background:"rgba(255,255,255,0.08)",border:"none",borderRadius:8,width:32,height:32,color:"rgba(255,255,255,0.7)",cursor:"pointer",fontSize:18,display:"flex",alignItems:"center",justifyContent:"center"}}>&#8249;</button>
-                <span style={{fontSize:14,fontWeight:700,color:"rgba(255,255,255,0.85)",textTransform:"capitalize"}}>{pickerMonthName}</span>
-                <button onClick={()=>{if(pickerMonth===11){setPickerMonth(0);setPickerYear(y=>y+1)}else setPickerMonth(m=>m+1)}}
-                  style={{background:"rgba(255,255,255,0.08)",border:"none",borderRadius:8,width:32,height:32,color:"rgba(255,255,255,0.7)",cursor:"pointer",fontSize:18,display:"flex",alignItems:"center",justifyContent:"center"}}>&#8250;</button>
-              </div>
-              <div style={{display:"grid",gridTemplateColumns:"repeat(7,1fr)",gap:3,marginBottom:14}}>
-                {["Пн","Вт","Ср","Чт","Пт","Сб","Вс"].map(d=><div key={d} style={{textAlign:"center",fontSize:10,color:"rgba(255,255,255,0.3)",fontWeight:600,paddingBottom:4}}>{d}</div>)}
-                {Array(offset2).fill(null).map((_,i)=><div key={"e"+i}/>)}
-                {Array(daysInPicker).fill(null).map((_,i)=>{
-                  const d=i+1
-                  const isToday=d===todayD&&pickerMonth===todayM&&pickerYear===todayY
-                  const isSelected=d===selDay&&pickerMonth===selMonth&&pickerYear===selYear
-                  return <div key={d} onClick={()=>setWorkoutDate(pickerYear+"-"+String(pickerMonth+1).padStart(2,"0")+"-"+String(d).padStart(2,"0"))}
-                    style={{aspectRatio:"1",borderRadius:8,display:"flex",alignItems:"center",justifyContent:"center",fontSize:13,fontWeight:isSelected?700:500,cursor:"pointer",
-                      background:isSelected?"#30D158":isToday?"rgba(255,255,255,0.12)":"rgba(255,255,255,0.04)",
-                      color:isSelected?"#000":"rgba(255,255,255,0.8)",
-                      boxShadow:isToday&&!isSelected?"0 0 0 1px rgba(255,255,255,0.3)":"none"}}>{d}</div>
-                })}
-              </div>
-              <div style={{display:"flex",justifyContent:"center",marginBottom:14}}>
-                <button onClick={()=>{const t=new Date();setWorkoutDate(t.toISOString().split("T")[0]);setPickerMonth(t.getMonth());setPickerYear(t.getFullYear())}}
-                  style={{padding:"8px 28px",borderRadius:10,border:"none",cursor:"pointer",background:"rgba(255,255,255,0.08)",color:"rgba(255,255,255,0.7)",fontSize:14,fontWeight:600}}>Сегодня</button>
-              </div>
-              <button onClick={()=>{setShowDateModal(false);setWorkoutStarted(true)}}
-                style={{width:"100%",padding:"15px",borderRadius:14,border:"none",cursor:"pointer",
-                background:"#30D158",color:"#000",fontSize:15,fontWeight:700}}>
-                ✅ Начать тренировку
-              </button>
+              <input id="wdate" type="date" value={workoutDate} onChange={e=>setWorkoutDate(e.target.value)}
+                style={{position:'absolute',top:0,left:0,width:'100%',height:'100%',opacity:0,cursor:'pointer',zIndex:2,colorScheme:'dark'}}/>
             </div>
+            <button onClick={()=>{setShowDateModal(false);setWorkoutStarted(true)}}
+              style={{width:'100%',padding:'15px',borderRadius:14,border:'none',cursor:'pointer',
+              background:'#30D158',color:'#000',fontSize:15,fontWeight:700,
+              letterSpacing:'0.3px'}}>
+              ✅ Начать тренировку
+            </button>
           </div>
-        )
-      })()}
+        </div>
+      )}
 
 
       {/* PR Alert Toast */}
