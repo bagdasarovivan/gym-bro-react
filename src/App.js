@@ -503,6 +503,7 @@ export default function App() {
   const [timerDuration, setTimerDuration] = useState(90)
   const timerRef = useRef(null)
   const [showTimerModal, setShowTimerModal] = useState(false)
+  const [timerPaused, setTimerPaused] = useState(false)
   const [timerMode, setTimerMode] = useState('countdown')
   const [stopwatchSecs, setStopwatchSecs] = useState(0)
   const [stopwatchRunning, setStopwatchRunning] = useState(false)
@@ -656,11 +657,11 @@ export default function App() {
   }, [selectedEx])
 
   useEffect(() => {
-    if (timerSecs === null) { clearInterval(timerRef.current); return }
-    if (timerSecs <= 0) { setTimerSecs(null); if (navigator.vibrate) navigator.vibrate([200,100,200,100,400]); return }
+    if (timerSecs === null || timerPaused) { clearInterval(timerRef.current); return }
+    if (timerSecs <= 0) { setTimerSecs(null); setTimerPaused(false); if (navigator.vibrate) navigator.vibrate([200,100,200,100,400]); return }
     timerRef.current = setInterval(() => setTimerSecs(s => s<=1?null:s-1), 1000)
     return () => clearInterval(timerRef.current)
-  }, [timerSecs])
+  }, [timerSecs, timerPaused])
 
   useEffect(() => {
     if (!stopwatchRunning) { clearInterval(stopwatchRef.current); return }
@@ -843,16 +844,47 @@ export default function App() {
         <div className="section">
           <div className="date-label">{todayLabel()}</div>
           {(timerSecs !== null || stopwatchRunning) && (
-            <div className={`timer-card${timerSecs===null?' idle':''}`} onClick={() => setShowTimerModal(true)} style={{cursor:'pointer'}}>
-              <div style={{flex:1}}>
-                <div className="timer-lbl">{timerSecs!==null ? '⏱ Отдых' : '⏱ Секундомер'}</div>
-                <div className="timer-num">
-                  {timerSecs!==null
-                    ? `${Math.floor(timerSecs/60)}:${String(timerSecs%60).padStart(2,'0')}`
-                    : `${Math.floor(stopwatchSecs/60)}:${String(stopwatchSecs%60).padStart(2,'0')}`}
+            <div className="timer-card" style={{flexDirection:'column',gap:10,alignItems:'stretch'}}>
+              <div style={{display:'flex',alignItems:'center',justifyContent:'space-between'}}>
+                <div>
+                  <div className="timer-lbl">{timerSecs!==null ? '⏱ Таймер отдыха' : '⏲ Секундомер'}</div>
+                  <div className="timer-num" style={{marginTop:2}}>
+                    {timerSecs!==null
+                      ? `${Math.floor(timerSecs/60)}:${String(timerSecs%60).padStart(2,'0')}`
+                      : `${Math.floor(stopwatchSecs/60)}:${String(stopwatchSecs%60).padStart(2,'0')}`}
+                    {timerPaused && <span style={{fontSize:14,opacity:0.5,marginLeft:8,fontWeight:600}}>пауза</span>}
+                  </div>
                 </div>
+                <button onClick={()=>{setTimerSecs(null);setTimerPaused(false);setStopwatchRunning(false);setStopwatchSecs(0)}}
+                  style={{background:'rgba(255,255,255,0.08)',border:'none',borderRadius:10,width:32,height:32,cursor:'pointer',color:'rgba(255,255,255,0.5)',fontSize:14,display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0}}>✕</button>
               </div>
-              <button className="timer-skip" onClick={e=>{e.stopPropagation();timerSecs!==null?setTimerSecs(null):(setStopwatchRunning(false),setStopwatchSecs(0))}}>✕</button>
+              {timerSecs !== null && (
+                <div style={{display:'flex',gap:8}}>
+                  <button onClick={()=>setTimerPaused(p=>!p)} style={{
+                    flex:1,padding:'9px 0',borderRadius:12,border:'none',cursor:'pointer',fontWeight:700,fontSize:14,
+                    background: timerPaused ? '#30D158' : 'rgba(255,159,10,0.15)',
+                    color: timerPaused ? '#000' : '#FF9F0A'
+                  }}>{timerPaused ? '▶ Продолжить' : '⏸ Пауза'}</button>
+                  <button onClick={()=>{setTimerSecs(timerDuration);setTimerPaused(false)}} style={{
+                    flex:1,padding:'9px 0',borderRadius:12,border:'none',cursor:'pointer',fontWeight:700,fontSize:14,
+                    background:'rgba(255,255,255,0.07)',color:'rgba(255,255,255,0.7)'
+                  }}>↺ Заново</button>
+                </div>
+              )}
+              {timerSecs !== null && (
+                <div>
+                  <div style={{fontSize:11,opacity:0.35,marginBottom:6,fontWeight:600,textTransform:'uppercase',letterSpacing:'0.5px'}}>Изменить время</div>
+                  <div style={{display:'flex',gap:6,flexWrap:'wrap'}}>
+                    {[30,60,90,120,180].map(t=>(
+                      <button key={t} onClick={()=>{setTimerDuration(t);setTimerSecs(t);setTimerPaused(false)}} style={{
+                        padding:'5px 12px',borderRadius:99,fontSize:12,fontWeight:700,border:'none',cursor:'pointer',
+                        background: timerDuration===t ? '#FF9F0A' : 'rgba(255,255,255,0.07)',
+                        color: timerDuration===t ? '#000' : 'rgba(255,255,255,0.5)'
+                      }}>{t}с</button>
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
           )}
           {!selectedEx ? (
