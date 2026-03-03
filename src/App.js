@@ -545,16 +545,22 @@ export default function App() {
   // Load favorites from supabase when user logs in
   useEffect(() => {
     if (!user) return
+    const initKey = 'gbFavsInit_' + user.id
     supabase.from('user_favorites').select('exercise_name').eq('user_id', user.id)
       .then(async ({ data }) => {
+        const initialized = localStorage.getItem(initKey)
         if (data && data.length > 0) {
-          // Has saved favorites — load them
           setFavorites(data.map(r => r.exercise_name))
-        } else if (data && data.length === 0) {
-          // First time user — insert defaults to DB and set them
+          localStorage.setItem(initKey, '1')
+        } else if (!initialized) {
+          // Truly first time — insert defaults
           const inserts = DEFAULT_FAVORITES.map(name => ({ user_id: user.id, exercise_name: name }))
           await supabase.from('user_favorites').insert(inserts)
           setFavorites(DEFAULT_FAVORITES)
+          localStorage.setItem(initKey, '1')
+        } else {
+          // User cleared all favorites intentionally
+          setFavorites([])
         }
       })
     // Show onboard only once per user
