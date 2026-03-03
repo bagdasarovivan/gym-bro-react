@@ -990,7 +990,7 @@ export default function App() {
   const firstDow = new Date(calYear,calMonth,1).getDay()
   const offset = firstDow === 0 ? 6 : firstDow - 1
   const daysInMonth = new Date(calYear,calMonth+1,0).getDate()
-  const todayStr = new Date().toISOString().split('T')[0]
+  const todayStr = new Date().toISOString().split('T')[0] // eslint-disable-line
   const weightOpts = selectedEx ? getWeightOptions(selectedEx) : LIGHT_WEIGHTS
   const exType = EXERCISE_TYPE[selectedEx] || 'light'
   const isFav = favorites.includes(selectedEx)
