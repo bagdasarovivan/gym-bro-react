@@ -223,6 +223,25 @@ input[type=number]::-webkit-inner-spin-button{-webkit-appearance:none}
 .nav-icon{font-size:22px}
 .nav-lbl{font-size:10px;font-weight:600;letter-spacing:0.2px}
 @media(max-width:480px){.nav-bar{width:100%}}
+.timer-modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:150;display:flex;align-items:flex-end;justify-content:center;backdrop-filter:blur(8px);animation:fov 0.2s ease}
+.timer-modal{background:#1c1c1e;border-radius:24px 24px 0 0;width:100%;max-width:480px;padding:0 0 40px;animation:sup 0.3s cubic-bezier(0.34,1.1,0.64,1)}
+.timer-tabs{display:flex;border-bottom:1px solid rgba(255,255,255,0.06);margin-bottom:24px}
+.timer-tab{flex:1;padding:14px;background:none;border:none;color:rgba(255,255,255,0.4);font-size:14px;font-weight:600;cursor:pointer;transition:all 0.15s;position:relative}
+.timer-tab.active{color:white}
+.timer-tab.active::after{content:"";position:absolute;bottom:0;left:20%;right:20%;height:2px;background:#30D158;border-radius:99px}
+.timer-icon-btn{background:none;border:none;cursor:pointer;font-size:20px;padding:4px 6px;opacity:0.7;transition:opacity 0.15s}
+.timer-icon-btn:hover{opacity:1}
+.timer-big-num{font-size:72px;font-weight:800;font-variant-numeric:tabular-nums;letter-spacing:-3px;text-align:center;margin:16px 0}
+.timer-controls{display:flex;gap:12px;padding:0 24px;justify-content:center}
+.timer-ctrl-btn{flex:1;padding:14px;border:none;border-radius:16px;font-size:16px;font-weight:700;cursor:pointer;max-width:160px}
+.timer-ctrl-btn.primary{background:#30D158;color:#000}
+.timer-ctrl-btn.secondary{background:#2c2c2e;color:white}
+.timer-ctrl-btn.danger{background:rgba(255,59,48,0.15);color:#FF453A}
+.alert-toast{position:fixed;top:80px;left:50%;transform:translateX(-50%);z-index:300;background:#1c1c1e;border-radius:20px;padding:16px 20px;display:flex;align-items:center;gap:12px;box-shadow:0 8px 32px rgba(0,0,0,0.5);border:1px solid rgba(255,255,255,0.08);animation:toastIn 0.4s cubic-bezier(0.34,1.2,0.64,1);min-width:280px;max-width:360px}
+@keyframes toastIn{from{opacity:0;transform:translateX(-50%) translateY(-20px)}to{opacity:1;transform:translateX(-50%) translateY(0)}}
+.alert-toast-icon{font-size:32px;flex-shrink:0}
+.alert-toast-title{font-size:15px;font-weight:800;margin-bottom:2px}
+.alert-toast-sub{font-size:13px;opacity:0.5}
 .auth-screen{min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:24px;background:#000}
 .auth-card{width:100%;max-width:380px;background:#1c1c1e;border-radius:24px;padding:32px 24px}
 .auth-logo{width:64px;height:64px;border-radius:16px;object-fit:cover;margin:0 auto 20px;display:block}
@@ -483,6 +502,13 @@ export default function App() {
   const [timerSecs, setTimerSecs] = useState(null)
   const [timerDuration, setTimerDuration] = useState(90)
   const timerRef = useRef(null)
+  const [showTimerModal, setShowTimerModal] = useState(false)
+  const [timerMode, setTimerMode] = useState('countdown')
+  const [stopwatchSecs, setStopwatchSecs] = useState(0)
+  const [stopwatchRunning, setStopwatchRunning] = useState(false)
+  const stopwatchRef = useRef(null)
+  const [prAlert, setPrAlert] = useState(null)
+  const [streakAlert, setStreakAlert] = useState(null)
   const historyLoaded = useRef(false)
 
   const handleAuth = async () => {
@@ -544,6 +570,10 @@ export default function App() {
       let s = 0; let exp = new Date(dates[0])
       for (const d of dates) { const c = new Date(d); if (c.toDateString() === exp.toDateString()) { s++; exp.setDate(exp.getDate()-1) } else break }
       setStreak(s)
+      if ([7,30,100].includes(s)) {
+        setStreakAlert(s)
+        setTimeout(() => setStreakAlert(null), 4000)
+      }
     }
     load()
   }, [saved])
@@ -620,6 +650,12 @@ export default function App() {
   }, [timerSecs])
 
   useEffect(() => {
+    if (!stopwatchRunning) { clearInterval(stopwatchRef.current); return }
+    stopwatchRef.current = setInterval(() => setStopwatchSecs(s => s+1), 1000)
+    return () => clearInterval(stopwatchRef.current)
+  }, [stopwatchRunning])
+
+  useEffect(() => {
     if (!selectedEx) return
     const opts = getWeightOptions(selectedEx)
     setSets([{ weight: opts[0], reps: REPS_OPTIONS[0] }])
@@ -652,6 +688,18 @@ export default function App() {
     if (!ex) return
     const { data: w } = await supabase.from('workouts').insert({ workout_date: new Date().toISOString().split('T')[0], exercise_id: ex.id }).select().single()
     await supabase.from('sets').insert(filled.map((s,i) => ({ workout_id:w.id, set_no:i+1, weight:s.weight, reps:s.reps, time_sec:null })))
+    // Check for new PR
+    const maxSaved = Math.max(...filled.map(s => s.weight))
+    const repsSaved = filled.find(s => s.weight === maxSaved)?.reps || 0
+    const existingPr = prs.find(([name]) => name === selectedEx)
+    if (existingPr) {
+      const [,pr] = existingPr
+      if (maxSaved > pr.weight) {
+        setPrAlert({ name: selectedEx, weight: maxSaved, reps: repsSaved, prev: pr.weight })
+        if (navigator.vibrate) navigator.vibrate([100,50,100,50,300])
+        setTimeout(() => setPrAlert(null), 4000)
+      }
+    }
     setSaved(true)
     setTimeout(() => { setSaved(false); setSelectedEx(null) }, 1500)
   }
@@ -762,30 +810,19 @@ export default function App() {
       {tab === 'add' && (
         <div className="section">
           <div className="date-label">{todayLabel()}</div>
-          <div className={`timer-card${timerSecs===null?' idle':''}`}>
-            {timerSecs !== null ? (
-              <>
-                <div style={{flex:1}}>
-                  <div className="timer-lbl">Отдых</div>
-                  <div className="timer-num">{Math.floor(timerSecs/60)}:{String(timerSecs%60).padStart(2,'0')}</div>
+          {(timerSecs !== null || stopwatchRunning) && (
+            <div className={`timer-card${timerSecs===null?' idle':''}`} onClick={() => setShowTimerModal(true)} style={{cursor:'pointer'}}>
+              <div style={{flex:1}}>
+                <div className="timer-lbl">{timerSecs!==null ? '⏱ Отдых' : '⏱ Секундомер'}</div>
+                <div className="timer-num">
+                  {timerSecs!==null
+                    ? `${Math.floor(timerSecs/60)}:${String(timerSecs%60).padStart(2,'0')}`
+                    : `${Math.floor(stopwatchSecs/60)}:${String(stopwatchSecs%60).padStart(2,'0')}`}
                 </div>
-                <button className="timer-skip" onClick={() => setTimerSecs(null)}>✕ Стоп</button>
-              </>
-            ) : (
-              <>
-                <div style={{flex:1}}>
-                  <div className="timer-lbl">Таймер отдыха</div>
-                  <DropdownPicker
-                    options={Array.from({length:50},(_,i)=>(i+1)*5)}
-                    value={timerDuration}
-                    onChange={v=>setTimerDuration(v)}
-                    unit="сек"
-                  />
-                </div>
-                <button className="timer-start" onClick={() => setTimerSecs(timerDuration)}>▶ Старт</button>
-              </>
-            )}
-          </div>
+              </div>
+              <button className="timer-skip" onClick={e=>{e.stopPropagation();timerSecs!==null?setTimerSecs(null):(setStopwatchRunning(false),setStopwatchSecs(0))}}>✕</button>
+            </div>
+          )}
           {!selectedEx ? (
             <button className="ex-selector-btn" onClick={() => setShowExModal(true)}>
               <span style={{opacity:0.45}}>Выбери упражнение...</span>
@@ -914,11 +951,6 @@ export default function App() {
               <div className="stat-card"><div className="stat-val" style={{color:'#69F0AE',fontSize:18}}>{stats.totalKg>=1000?`${(stats.totalKg/1000).toFixed(1)}K`:Math.round(stats.totalKg)} kg</div><div className="stat-lbl">поднято</div></div>
             </div>
           )}
-          <div className="prog-title">📊 График роста</div>
-          <div className="chart-wrap">
-            <select className="chart-ex-select" value={chartEx} onChange={e=>setChartEx(e.target.value)}>{exercises.map(e=><option key={e.id} value={e.name}>{e.name}</option>)}</select>
-            <LineChart data={chartData} period={chartPeriod} setPeriod={setChartPeriod}/>
-          </div>
           <div className="prog-title">📅 Календарь</div>
           <div className="cal-nav">
             <button className="cal-btn" onClick={()=>{if(calMonth===0){setCalMonth(11);setCalYear(y=>y-1)}else setCalMonth(m=>m-1)}}>◀</button>
@@ -947,6 +979,11 @@ export default function App() {
               </div>
             )
           })}
+          <div className="prog-title">📊 График роста</div>
+          <div className="chart-wrap">
+            <select className="chart-ex-select" value={chartEx} onChange={e=>setChartEx(e.target.value)}>{exercises.map(e=><option key={e.id} value={e.name}>{e.name}</option>)}</select>
+            <LineChart data={chartData} period={chartPeriod} setPeriod={setChartPeriod}/>
+          </div>
         </div>
       )}
 
@@ -984,6 +1021,72 @@ export default function App() {
       )}
 
       {editModal && <EditModal data={editModal} onClose={()=>setEditModal(null)} onSave={saveEdit}/>}
+
+      {/* Timer Modal */}
+      {showTimerModal && (
+        <div className="timer-modal-overlay" onClick={e=>{if(e.target.classList.contains('timer-modal-overlay'))setShowTimerModal(false)}}>
+          <div className="timer-modal">
+            <div className="modal-handle"/>
+            <div className="timer-tabs">
+              <button className={`timer-tab${timerMode==='countdown'?' active':''}`} onClick={()=>setTimerMode('countdown')}>⏱ Таймер</button>
+              <button className={`timer-tab${timerMode==='stopwatch'?' active':''}`} onClick={()=>setTimerMode('stopwatch')}>⏲ Секундомер</button>
+            </div>
+            {timerMode === 'countdown' ? (
+              <div style={{padding:'0 24px'}}>
+                <div style={{marginBottom:16}}>
+                  <DropdownPicker options={Array.from({length:50},(_,i)=>(i+1)*5)} value={timerDuration} onChange={v=>{setTimerDuration(v);setTimerSecs(null)}} unit="сек" label="Длительность"/>
+                </div>
+                <div className="timer-big-num" style={{color: timerSecs!==null ? '#FF9F0A' : 'white'}}>
+                  {timerSecs !== null
+                    ? `${Math.floor(timerSecs/60)}:${String(timerSecs%60).padStart(2,'0')}`
+                    : `${Math.floor(timerDuration/60)}:${String(timerDuration%60).padStart(2,'0')}`}
+                </div>
+                <div className="timer-controls">
+                  {timerSecs !== null
+                    ? <button className="timer-ctrl-btn danger" onClick={()=>setTimerSecs(null)}>✕ Стоп</button>
+                    : <button className="timer-ctrl-btn primary" onClick={()=>setTimerSecs(timerDuration)}>▶ Старт</button>
+                  }
+                </div>
+              </div>
+            ) : (
+              <div style={{padding:'0 24px'}}>
+                <div className="timer-big-num" style={{color: stopwatchRunning ? '#30D158' : 'white'}}>
+                  {`${Math.floor(stopwatchSecs/60)}:${String(stopwatchSecs%60).padStart(2,'0')}`}
+                </div>
+                <div className="timer-controls" style={{gap:10}}>
+                  <button className="timer-ctrl-btn secondary" onClick={()=>{setStopwatchSecs(0);setStopwatchRunning(false)}}>↺ Сброс</button>
+                  <button className={`timer-ctrl-btn${stopwatchRunning?' danger':' primary'}`} onClick={()=>setStopwatchRunning(r=>!r)}>
+                    {stopwatchRunning ? '⏸ Пауза' : '▶ Старт'}
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* PR Alert Toast */}
+      {prAlert && (
+        <div className="alert-toast" style={{borderColor:'rgba(255,200,0,0.3)'}}>
+          <div className="alert-toast-icon">🥇</div>
+          <div>
+            <div className="alert-toast-title">Новый рекорд!</div>
+            <div className="alert-toast-sub">{prAlert.name}: {prAlert.weight} кг × {prAlert.reps} повт</div>
+            <div style={{fontSize:11,color:'#FF9F0A',marginTop:2}}>Было: {prAlert.prev} кг</div>
+          </div>
+        </div>
+      )}
+
+      {/* Streak Alert Toast */}
+      {streakAlert && (
+        <div className="alert-toast" style={{borderColor:'rgba(255,100,0,0.3)'}}>
+          <div className="alert-toast-icon">{streakAlert===7?'🔥':streakAlert===30?'⚡':'👑'}</div>
+          <div>
+            <div className="alert-toast-title">{streakAlert} дней подряд!</div>
+            <div className="alert-toast-sub">{streakAlert===7?'Неделя без пропусков — огонь!':streakAlert===30?'Месяц! Ты машина 💪':'100 дней! Легенда 🏆'}</div>
+          </div>
+        </div>
+      )}
 
       <div className="nav-bar">
         {[{id:'add',icon:'➕',label:'Тренировка'},{id:'history',icon:'📜',label:'История'},{id:'progress',icon:'📈',label:'Прогресс'}].map(t=>(
