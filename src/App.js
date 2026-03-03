@@ -520,7 +520,7 @@ function MuscleMap({ muscleScores }) {
   }
 
   const score = muscleScores[hovered] || 0
-  const scoreColor = score > 0.66 ? '#FF453A' : score > 0.33 ? '#FF9F0A' : score > 0 ? '#FFD60A' : 'rgba(255,255,255,0.3)'
+  const scoreColor = score > 0.66 ? '#00C853' : score > 0.33 ? '#64D264' : score > 0 ? '#FFD60A' : 'rgba(255,255,255,0.3)'
 
   const handleZone = (muscle) => ({
     fill: hovered === muscle ? (score > 0 ? getColor(muscle) : 'rgba(255,255,255,0.12)') : getColor(muscle),
@@ -855,7 +855,8 @@ export default function App() {
   useEffect(() => {
     if (!chartEx || tab !== 'progress') return
     async function load() {
-      const { data: ex } = await supabase.from('exercises').select('id').eq('name',chartEx).single()
+      const enName = Object.entries(EN_TO_RU).find(([,v])=>v===chartEx)?.[0] || chartEx
+      const { data: ex } = await supabase.from('exercises').select('id').eq('name', chartEx).maybeSingle().then(r => r.data ? r : supabase.from('exercises').select('id').eq('name', enName).maybeSingle())
       if (!ex) return
       const { data } = await supabase.from('workouts').select('workout_date,sets(weight,reps)').eq('exercise_id',ex.id).order('workout_date',{ascending:true}).limit(30)
       const pts = (data||[]).map(w => ({ val: Math.max(...(w.sets?.filter(s=>s.weight>0).map(s=>s.weight)||[0])), label: new Date(w.workout_date).toLocaleDateString('ru',{day:'numeric',month:'short'}) })).filter(p=>p.val>0)
@@ -1118,7 +1119,7 @@ export default function App() {
           )}
 
           {!workoutStarted ? (
-            <div style={{display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',flex:1,paddingTop:40,paddingBottom:40,gap:44}}>
+            <div style={{display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',flex:1,paddingTop:'20vh',paddingBottom:40,gap:44}}>
               <div style={{textAlign:'center'}}>
                 <div style={{fontSize:12,color:'rgba(255,255,255,0.28)',fontWeight:600,textTransform:'uppercase',letterSpacing:'1.5px',marginBottom:14}}>
                   {new Date().toLocaleDateString('ru',{weekday:'long',day:'numeric',month:'long'})}
@@ -1419,16 +1420,16 @@ export default function App() {
           onClick={e=>{if(e.target===e.currentTarget)setShowDateModal(false)}}>
           <div style={{background:'#1c1c1e',borderRadius:20,padding:'28px 24px',width:'calc(100% - 48px)',maxWidth:320,border:'1px solid rgba(255,255,255,0.1)'}}>
             <div style={{fontSize:17,fontWeight:700,color:'#fff',marginBottom:20,textAlign:'center'}}>📅 Выбери дату тренировки</div>
-            <label style={{display:'block',marginBottom:16,cursor:'pointer'}}>
-              <div style={{width:'100%',background:'rgba(255,255,255,0.08)',border:'1px solid rgba(255,255,255,0.15)',
+            <div style={{position:'relative',marginBottom:16,cursor:'pointer'}} onClick={()=>{const i=document.getElementById('wdate');i&&(i.showPicker?i.showPicker():i.click())}}>
+              <div style={{background:'rgba(255,255,255,0.08)',border:'1px solid rgba(255,255,255,0.15)',
                 borderRadius:12,padding:'14px 16px',color:'#fff',fontSize:16,fontWeight:600,
-                boxSizing:'border-box',display:'flex',alignItems:'center',justifyContent:'space-between'}}>
+                display:'flex',alignItems:'center',justifyContent:'space-between'}}>
                 <span>{new Date(workoutDate+'T12:00:00').toLocaleDateString('ru',{day:'numeric',month:'long',year:'numeric'})}</span>
                 <span style={{fontSize:18}}>📅</span>
               </div>
-              <input type="date" value={workoutDate} onChange={e=>setWorkoutDate(e.target.value)}
-                style={{display:'block',width:'100%',height:0,opacity:0,overflow:'hidden'}}/>
-            </label>
+              <input id="wdate" type="date" value={workoutDate} onChange={e=>setWorkoutDate(e.target.value)}
+                style={{position:'absolute',top:0,left:0,width:'100%',height:'100%',opacity:0,cursor:'pointer',zIndex:2,colorScheme:'dark'}}/>
+            </div>
             <button onClick={()=>{setShowDateModal(false);setWorkoutStarted(true)}}
               style={{width:'100%',padding:'15px',borderRadius:14,border:'none',cursor:'pointer',
               background:'rgba(255,255,255,0.12)',color:'rgba(255,255,255,0.9)',fontSize:15,fontWeight:700,
