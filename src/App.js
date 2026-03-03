@@ -564,20 +564,7 @@ function MuscleMap({ muscleScores }) {
         </svg>
       </div>
 
-      {/* Legend */}
-      <div style={{display:'flex',gap:16,justifyContent:'center',marginTop:14,flexWrap:'wrap'}}>
-        {[
-          ['rgba(255,59,48,0.6)','rgba(255,59,48,1)','Много'],
-          ['rgba(255,140,0,0.5)','rgba(255,140,0,0.9)','Средне'],
-          ['rgba(255,214,0,0.4)','rgba(255,214,0,0.8)','Мало'],
-          ['rgba(255,255,255,0.08)','rgba(255,255,255,0.3)','Не тренируется'],
-        ].map(([fill,stroke,label])=>(
-          <div key={label} style={{display:'flex',alignItems:'center',gap:5}}>
-            <div style={{width:12,height:12,borderRadius:3,background:fill,border:`1px solid ${stroke}`}}/>
-            <span style={{fontSize:11,opacity:0.45}}>{label}</span>
-          </div>
-        ))}
-      </div>
+
     </div>
   )
 }
@@ -1416,10 +1403,16 @@ export default function App() {
           onClick={e=>{if(e.target===e.currentTarget)setShowDateModal(false)}}>
           <div style={{background:'#1c1c1e',borderRadius:20,padding:'28px 24px',width:'calc(100% - 48px)',maxWidth:320,border:'1px solid rgba(255,255,255,0.1)'}}>
             <div style={{fontSize:17,fontWeight:700,color:'#fff',marginBottom:20,textAlign:'center'}}>📅 Выбери дату тренировки</div>
-            <input type="date" value={workoutDate} onChange={e=>setWorkoutDate(e.target.value)}
-              style={{width:'100%',background:'rgba(255,255,255,0.08)',border:'1px solid rgba(255,255,255,0.15)',
-              borderRadius:12,padding:'13px 16px',color:'#fff',fontSize:16,fontWeight:600,outline:'none',
-              boxSizing:'border-box',marginBottom:20,colorScheme:'dark'}}/>
+            <label style={{display:'block',position:'relative',marginBottom:16,cursor:'pointer'}}>
+              <div style={{width:'100%',background:'rgba(255,255,255,0.08)',border:'1px solid rgba(255,255,255,0.15)',
+                borderRadius:12,padding:'14px 16px',color:'#fff',fontSize:16,fontWeight:600,
+                boxSizing:'border-box',display:'flex',alignItems:'center',justifyContent:'space-between'}}>
+                <span>{new Date(workoutDate+'T12:00:00').toLocaleDateString('ru',{day:'numeric',month:'long',year:'numeric'})}</span>
+                <span style={{fontSize:18}}>📅</span>
+              </div>
+              <input type="date" value={workoutDate} onChange={e=>setWorkoutDate(e.target.value)}
+                style={{position:'absolute',inset:0,opacity:0,width:'100%',height:'100%',cursor:'pointer'}}/>
+            </label>
             <button onClick={()=>{setShowDateModal(false);setWorkoutStarted(true)}}
               style={{width:'100%',padding:'15px',borderRadius:14,border:'none',cursor:'pointer',
               background:'rgba(255,255,255,0.12)',color:'rgba(255,255,255,0.9)',fontSize:15,fontWeight:700,
