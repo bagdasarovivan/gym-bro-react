@@ -419,177 +419,145 @@ function MuscleMap({ muscleScores }) {
 
   const getColor = (muscle) => {
     const score = muscleScores[muscle] || 0
-    if (score === 0) return 'rgba(255,255,255,0.06)'
-    if (score < 0.33) return 'rgba(255,200,0,0.35)'
-    if (score < 0.66) return 'rgba(255,120,0,0.5)'
-    return 'rgba(255,59,48,0.7)'
+    if (score === 0) return 'rgba(255,255,255,0)'
+    if (score < 0.33) return 'rgba(255,214,0,0.35)'
+    if (score < 0.66) return 'rgba(255,140,0,0.45)'
+    return 'rgba(255,59,48,0.55)'
   }
-
   const getStroke = (muscle) => {
     const score = muscleScores[muscle] || 0
-    if (score === 0) return 'rgba(255,255,255,0.15)'
-    if (score < 0.33) return 'rgba(255,200,0,0.6)'
-    if (score < 0.66) return 'rgba(255,120,0,0.8)'
+    if (score === 0) return hovered === muscle ? 'rgba(255,255,255,0.4)' : 'rgba(255,255,255,0)'
+    if (score < 0.33) return 'rgba(255,214,0,0.8)'
+    if (score < 0.66) return 'rgba(255,140,0,0.9)'
     return 'rgba(255,59,48,1)'
   }
-
   const muscleNames = {
-    chest: 'Грудь', shoulders: 'Плечи', biceps: 'Бицепс', triceps: 'Трицепс',
-    abs: 'Пресс', quads: 'Квадрицепс', calves: 'Икры', forearms: 'Предплечья',
-    upper_back: 'Верхняя спина', lats: 'Широчайшие', lower_back: 'Поясница',
-    glutes: 'Ягодицы', hamstrings: 'Бицепс бедра', traps: 'Трапеции'
+    chest:'Грудь', shoulders:'Плечи', biceps:'Бицепс', triceps:'Трицепс',
+    abs:'Пресс', quads:'Квадрицепс', calves:'Икры', forearms:'Предплечья',
+    upper_back:'Верхняя спина', lats:'Широчайшие', lower_back:'Поясница',
+    glutes:'Ягодицы', hamstrings:'Бицепс бедра', traps:'Трапеции'
   }
 
-  const M = (muscle) => ({
-    fill: hovered === muscle ? 'rgba(48,209,88,0.5)' : getColor(muscle),
-    stroke: hovered === muscle ? '#30D158' : getStroke(muscle),
-    strokeWidth: hovered === muscle ? 1.5 : 1,
-    style: { cursor: 'pointer', transition: 'all 0.2s' },
+  // SVG viewBox matches image 1536x1024
+  // Front figure center ~384, Back figure center ~1130
+  const zones = {
+    // === FRONT ===
+    // chest
+    chest: "M 295,295 Q 340,275 385,280 Q 430,275 470,295 Q 480,330 470,365 Q 430,385 385,382 Q 340,385 295,365 Q 280,330 295,295 Z",
+    // shoulders front
+    shoulders: "M 230,270 Q 255,245 290,255 Q 305,275 300,310 Q 275,330 250,320 Q 225,305 230,270 Z M 470,255 Q 505,245 530,270 Q 535,305 510,320 Q 485,330 460,310 Q 455,275 470,255 Z",
+    // biceps
+    biceps: "M 205,330 Q 225,320 245,330 Q 255,360 252,395 Q 240,415 220,412 Q 200,405 195,375 Q 190,350 205,330 Z M 515,330 Q 535,320 555,330 Q 568,350 563,375 Q 558,405 538,412 Q 518,415 506,395 Q 503,360 515,330 Z",
+    // triceps front
+    triceps: "M 245,332 Q 265,322 278,335 Q 285,360 280,395 Q 268,415 252,412 Q 240,400 240,375 Q 238,355 245,332 Z M 482,332 Q 495,322 515,332 Q 520,355 518,375 Q 518,400 506,412 Q 490,415 478,395 Q 473,360 482,332 Z",
+    // forearms
+    forearms: "M 193,418 Q 215,410 235,420 Q 245,448 248,478 Q 240,495 222,493 Q 200,488 190,460 Q 185,440 193,418 Z M 525,418 Q 545,410 567,418 Q 575,440 570,460 Q 560,488 538,493 Q 520,495 512,478 Q 515,448 525,418 Z",
+    // abs
+    abs: "M 320,378 Q 355,368 385,372 Q 415,368 450,378 Q 460,410 458,450 Q 456,490 450,520 Q 415,530 385,528 Q 355,530 320,520 Q 314,490 312,450 Q 310,410 320,378 Z",
+    // quads
+    quads: "M 318,570 Q 345,558 372,565 Q 388,595 390,640 Q 390,690 380,730 Q 360,748 340,742 Q 315,732 308,700 Q 300,660 303,620 Q 305,590 318,570 Z M 398,565 Q 425,558 452,570 Q 465,590 467,620 Q 470,660 462,700 Q 455,732 430,742 Q 410,748 390,730 Q 380,690 380,640 Q 382,595 398,565 Z",
+    // calves
+    calves: "M 318,800 Q 340,792 358,800 Q 368,825 366,862 Q 362,895 345,905 Q 328,908 318,893 Q 308,870 308,843 Q 308,818 318,800 Z M 400,800 Q 418,792 440,800 Q 450,818 450,843 Q 450,870 440,893 Q 430,908 413,905 Q 396,895 392,862 Q 390,825 400,800 Z",
+
+    // === BACK ===
+    // traps
+    traps: "M 978,268 Q 1020,248 1065,255 Q 1110,248 1152,268 Q 1158,295 1148,318 Q 1108,330 1065,326 Q 1022,330 982,318 Q 972,295 978,268 Z",
+    // upper_back
+    upper_back: "M 990,325 Q 1025,315 1065,320 Q 1105,315 1140,325 Q 1155,355 1150,390 Q 1140,420 1105,432 Q 1065,438 1025,432 Q 990,420 980,390 Q 975,355 990,325 Z",
+    // lats
+    lats: "M 958,330 Q 982,318 998,332 Q 1005,365 1000,405 Q 992,435 972,445 Q 952,442 942,420 Q 935,395 940,365 Q 944,342 958,330 Z M 1132,330 Q 1148,318 1172,330 Q 1176,342 1180,365 Q 1185,395 1178,420 Q 1168,442 1148,445 Q 1128,435 1120,405 Q 1115,365 1122,332 Z",
+    // lower_back
+    lower_back: "M 1005,438 Q 1035,428 1065,432 Q 1095,428 1125,438 Q 1132,462 1128,490 Q 1118,515 1065,520 Q 1012,515 1002,490 Q 998,462 1005,438 Z",
+    // glutes
+    glutes: "M 998,528 Q 1028,518 1058,524 Q 1068,548 1065,580 Q 1060,610 1040,622 Q 1018,626 1002,610 Q 988,590 990,562 Q 992,542 998,528 Z M 1072,524 Q 1102,518 1132,528 Q 1138,542 1140,562 Q 1142,590 1128,610 Q 1112,626 1090,622 Q 1070,610 1065,580 Q 1062,548 1072,524 Z",
+    // hamstrings
+    hamstrings: "M 992,635 Q 1018,625 1042,635 Q 1055,660 1055,700 Q 1053,742 1040,765 Q 1022,778 1002,772 Q 982,762 975,738 Q 968,705 972,668 Q 976,645 992,635 Z M 1088,635 Q 1112,625 1138,635 Q 1154,645 1158,668 Q 1162,705 1155,738 Q 1148,762 1128,772 Q 1108,778 1090,765 Q 1077,742 1075,700 Q 1075,660 1088,635 Z",
+    // calves back
+    calves_back: "M 988,782 Q 1010,774 1030,782 Q 1042,805 1042,835 Q 1040,868 1025,882 Q 1008,888 995,875 Q 980,858 978,828 Q 976,805 988,782 Z M 1100,782 Q 1120,774 1142,782 Q 1154,805 1152,828 Q 1150,858 1135,875 Q 1122,888 1105,882 Q 1090,868 1088,835 Q 1088,805 1100,782 Z",
+  }
+
+  const score = muscleScores[hovered] || 0
+  const scoreColor = score > 0.66 ? '#FF453A' : score > 0.33 ? '#FF9F0A' : score > 0 ? '#FFD60A' : 'rgba(255,255,255,0.3)'
+
+  const handleZone = (muscle) => ({
+    fill: hovered === muscle ? (score > 0 ? getColor(muscle) : 'rgba(255,255,255,0.12)') : getColor(muscle),
+    stroke: hovered === muscle ? (score > 0 ? getStroke(muscle) : 'rgba(255,255,255,0.5)') : getStroke(muscle),
+    strokeWidth: hovered === muscle ? 1.5 : 0.8,
+    style: { cursor: 'pointer', transition: 'all 0.15s' },
     onMouseEnter: () => setHovered(muscle),
     onMouseLeave: () => setHovered(null),
   })
 
   return (
-    <div>
-      {hovered && (
-        <div style={{textAlign:'center',marginBottom:10,fontSize:13,fontWeight:700,
-          color: muscleScores[hovered] > 0.66 ? '#FF453A' : muscleScores[hovered] > 0.33 ? '#FF9F0A' : muscleScores[hovered] > 0 ? '#FFD60A' : 'rgba(255,255,255,0.4)'}}>
-          {muscleNames[hovered]} — {muscleScores[hovered] ? Math.round(muscleScores[hovered]*100)+'%' : 'не тренируется'}
-        </div>
-      )}
-      {!hovered && (
-        <div style={{textAlign:'center',marginBottom:10,fontSize:12,opacity:0.3}}>Наведи на мышцу</div>
-      )}
+    <div style={{userSelect:'none'}}>
+      {/* Info bar */}
+      <div style={{height:32,display:'flex',alignItems:'center',justifyContent:'center',marginBottom:8}}>
+        {hovered ? (
+          <div style={{display:'flex',alignItems:'center',gap:8}}>
+            <div style={{width:10,height:10,borderRadius:'50%',background:scoreColor,flexShrink:0}}/>
+            <span style={{fontSize:14,fontWeight:700,color:scoreColor}}>
+              {muscleNames[hovered] || muscleNames[hovered.replace('_back','')]}
+            </span>
+            <span style={{fontSize:12,opacity:0.5}}>
+              {score > 0 ? Math.round(score*100)+'% нагрузки' : 'не тренируется'}
+            </span>
+          </div>
+        ) : (
+          <div style={{fontSize:11,opacity:0.2,letterSpacing:'1px',textTransform:'uppercase'}}>наведи на мышцу</div>
+        )}
+      </div>
 
-      <div style={{display:'flex',gap:16,justifyContent:'center'}}>
-        {/* FRONT */}
-        <svg viewBox="0 0 160 320" width="140" height="280">
-          {/* Head */}
-          <ellipse cx="80" cy="22" rx="18" ry="20" fill="rgba(255,255,255,0.04)" stroke="rgba(255,255,255,0.15)" strokeWidth="1"/>
-          {/* Neck */}
-          <rect x="73" y="40" width="14" height="12" rx="4" fill="rgba(255,255,255,0.04)" stroke="rgba(255,255,255,0.1)" strokeWidth="1"/>
+      {/* SVG overlay on image */}
+      <div style={{position:'relative',width:'100%',maxWidth:560,margin:'0 auto'}}>
+        <img
+          src="/images/muscle_map.png"
+          alt="muscle map"
+          style={{width:'100%',display:'block',borderRadius:12,filter:'brightness(0.92) invert(1)',opacity:0.85}}
+        />
+        <svg
+          viewBox="0 0 1536 1024"
+          style={{position:'absolute',inset:0,width:'100%',height:'100%'}}
+          preserveAspectRatio="xMidYMid meet"
+        >
+          {/* FRONT zones */}
+          <path d={zones.chest} {...handleZone('chest')}/>
+          <path d={zones.shoulders} {...handleZone('shoulders')}/>
+          <path d={zones.biceps} {...handleZone('biceps')}/>
+          <path d={zones.triceps} {...handleZone('triceps')}/>
+          <path d={zones.forearms} {...handleZone('forearms')}/>
+          <path d={zones.abs} {...handleZone('abs')}/>
+          <path d={zones.quads} {...handleZone('quads')}/>
+          <path d={zones.calves} {...handleZone('calves')}/>
 
-          {/* Chest */}
-          <path d="M55,52 Q80,48 105,52 L108,80 Q80,88 52,80 Z" {...M('chest')}/>
-
-          {/* Shoulders L */}
-          <ellipse cx="46" cy="60" rx="14" ry="12" {...M('shoulders')}/>
-          {/* Shoulders R */}
-          <ellipse cx="114" cy="60" rx="14" ry="12" {...M('shoulders')}/>
-
-          {/* Biceps L */}
-          <path d="M35,72 Q28,72 26,90 Q24,108 32,112 Q38,108 40,90 Z" {...M('biceps')}/>
-          {/* Biceps R */}
-          <path d="M125,72 Q132,72 134,90 Q136,108 128,112 Q122,108 120,90 Z" {...M('biceps')}/>
-
-          {/* Triceps L (side) */}
-          <path d="M40,74 Q44,74 46,90 Q47,108 42,112 Q38,108 38,90 Z" {...M('triceps')}/>
-          {/* Triceps R */}
-          <path d="M120,74 Q116,74 114,90 Q113,108 118,112 Q122,108 122,90 Z" {...M('triceps')}/>
-
-          {/* Forearms L */}
-          <path d="M29,114 Q24,130 22,148 Q28,150 34,148 Q36,130 35,114 Z" {...M('forearms')}/>
-          {/* Forearms R */}
-          <path d="M131,114 Q136,130 138,148 Q132,150 126,148 Q124,130 125,114 Z" {...M('forearms')}/>
-
-          {/* Abs */}
-          <path d="M60,82 Q80,86 100,82 L102,130 Q80,136 58,130 Z" {...M('abs')}/>
-
-          {/* Hip area */}
-          <path d="M58,130 Q80,136 102,130 L104,148 Q80,152 56,148 Z" fill="rgba(255,255,255,0.04)" stroke="rgba(255,255,255,0.1)" strokeWidth="1"/>
-
-          {/* Quads L */}
-          <path d="M58,150 Q70,148 76,152 L74,220 Q66,224 56,218 Z" {...M('quads')}/>
-          {/* Quads R */}
-          <path d="M102,150 Q90,148 84,152 L86,220 Q94,224 104,218 Z" {...M('quads')}/>
-
-          {/* Knee L */}
-          <ellipse cx="65" cy="224" rx="10" ry="8" fill="rgba(255,255,255,0.04)" stroke="rgba(255,255,255,0.12)" strokeWidth="1"/>
-          {/* Knee R */}
-          <ellipse cx="95" cy="224" rx="10" ry="8" fill="rgba(255,255,255,0.04)" stroke="rgba(255,255,255,0.12)" strokeWidth="1"/>
-
-          {/* Calves L */}
-          <path d="M57,232 Q66,230 72,234 L70,284 Q63,288 56,284 Z" {...M('calves')}/>
-          {/* Calves R */}
-          <path d="M103,232 Q94,230 88,234 L90,284 Q97,288 104,284 Z" {...M('calves')}/>
-
-          {/* Feet */}
-          <ellipse cx="64" cy="292" rx="12" ry="6" fill="rgba(255,255,255,0.04)" stroke="rgba(255,255,255,0.1)" strokeWidth="1"/>
-          <ellipse cx="96" cy="292" rx="12" ry="6" fill="rgba(255,255,255,0.04)" stroke="rgba(255,255,255,0.1)" strokeWidth="1"/>
-        </svg>
-
-        {/* BACK */}
-        <svg viewBox="0 0 160 320" width="140" height="280">
-          {/* Head */}
-          <ellipse cx="80" cy="22" rx="18" ry="20" fill="rgba(255,255,255,0.04)" stroke="rgba(255,255,255,0.15)" strokeWidth="1"/>
-          {/* Neck */}
-          <rect x="73" y="40" width="14" height="12" rx="4" fill="rgba(255,255,255,0.04)" stroke="rgba(255,255,255,0.1)" strokeWidth="1"/>
-
-          {/* Traps */}
-          <path d="M60,52 Q80,44 100,52 L96,68 Q80,72 64,68 Z" {...M('traps')}/>
-
-          {/* Shoulders L back */}
-          <ellipse cx="46" cy="62" rx="14" ry="12" {...M('shoulders')}/>
-          {/* Shoulders R back */}
-          <ellipse cx="114" cy="62" rx="14" ry="12" {...M('shoulders')}/>
-
-          {/* Triceps L back */}
-          <path d="M35,74 Q28,74 26,92 Q24,110 32,114 Q38,110 40,92 Z" {...M('triceps')}/>
-          {/* Triceps R back */}
-          <path d="M125,74 Q132,74 134,92 Q136,110 128,114 Q122,110 120,92 Z" {...M('triceps')}/>
-
-          {/* Forearms L back */}
-          <path d="M29,116 Q24,132 22,150 Q28,152 34,150 Q36,132 35,116 Z" {...M('forearms')}/>
-          {/* Forearms R back */}
-          <path d="M131,116 Q136,132 138,150 Q132,152 126,150 Q124,132 125,116 Z" {...M('forearms')}/>
-
-          {/* Upper back / Lats */}
-          <path d="M52,68 Q64,70 76,74 L74,110 Q60,116 48,106 Q44,90 46,74 Z" {...M('lats')}/>
-          <path d="M108,68 Q96,70 84,74 L86,110 Q100,116 112,106 Q116,90 114,74 Z" {...M('lats')}/>
-
-          {/* Upper back center */}
-          <path d="M64,68 Q80,72 96,68 L94,110 Q80,116 66,110 Z" {...M('upper_back')}/>
-
-          {/* Lower back */}
-          <path d="M62,112 Q80,118 98,112 L100,138 Q80,144 60,138 Z" {...M('lower_back')}/>
-
-          {/* Glutes */}
-          <path d="M56,140 Q68,136 78,140 L80,178 Q68,184 54,176 Z" {...M('glutes')}/>
-          <path d="M104,140 Q92,136 82,140 L80,178 Q92,184 106,176 Z" {...M('glutes')}/>
-
-          {/* Hamstrings L */}
-          <path d="M56,178 Q68,176 74,180 L72,222 Q64,228 54,222 Z" {...M('hamstrings')}/>
-          {/* Hamstrings R */}
-          <path d="M104,178 Q92,176 86,180 L88,222 Q96,228 106,222 Z" {...M('hamstrings')}/>
-
-          {/* Knee L back */}
-          <ellipse cx="64" cy="226" rx="10" ry="7" fill="rgba(255,255,255,0.04)" stroke="rgba(255,255,255,0.12)" strokeWidth="1"/>
-          {/* Knee R back */}
-          <ellipse cx="96" cy="226" rx="10" ry="7" fill="rgba(255,255,255,0.04)" stroke="rgba(255,255,255,0.12)" strokeWidth="1"/>
-
-          {/* Calves L back */}
-          <path d="M56,234 Q65,232 72,236 L70,284 Q63,288 55,284 Z" {...M('calves')}/>
-          {/* Calves R back */}
-          <path d="M104,234 Q95,232 88,236 L90,284 Q97,288 105,284 Z" {...M('calves')}/>
-
-          {/* Feet */}
-          <ellipse cx="64" cy="292" rx="12" ry="6" fill="rgba(255,255,255,0.04)" stroke="rgba(255,255,255,0.1)" strokeWidth="1"/>
-          <ellipse cx="96" cy="292" rx="12" ry="6" fill="rgba(255,255,255,0.04)" stroke="rgba(255,255,255,0.1)" strokeWidth="1"/>
+          {/* BACK zones */}
+          <path d={zones.traps} {...handleZone('traps')}/>
+          <path d={zones.upper_back} {...handleZone('upper_back')}/>
+          <path d={zones.lats} {...handleZone('lats')}/>
+          <path d={zones.lower_back} {...handleZone('lower_back')}/>
+          <path d={zones.glutes} {...handleZone('glutes')}/>
+          <path d={zones.hamstrings} {...handleZone('hamstrings')}/>
+          <path d={zones.calves_back} {...handleZone('calves_back')}/>
         </svg>
       </div>
 
       {/* Legend */}
-      <div style={{display:'flex',gap:12,justifyContent:'center',marginTop:14,flexWrap:'wrap'}}>
-        {[['rgba(255,59,48,0.7)','rgba(255,59,48,1)','Много'],['rgba(255,120,0,0.5)','rgba(255,120,0,0.8)','Средне'],['rgba(255,200,0,0.35)','rgba(255,200,0,0.6)','Мало'],['rgba(255,255,255,0.06)','rgba(255,255,255,0.15)','Не тренируется']].map(([fill,stroke,label])=>(
+      <div style={{display:'flex',gap:16,justifyContent:'center',marginTop:14,flexWrap:'wrap'}}>
+        {[
+          ['rgba(255,59,48,0.6)','rgba(255,59,48,1)','Много'],
+          ['rgba(255,140,0,0.5)','rgba(255,140,0,0.9)','Средне'],
+          ['rgba(255,214,0,0.4)','rgba(255,214,0,0.8)','Мало'],
+          ['rgba(255,255,255,0.08)','rgba(255,255,255,0.3)','Не тренируется'],
+        ].map(([fill,stroke,label])=>(
           <div key={label} style={{display:'flex',alignItems:'center',gap:5}}>
-            <div style={{width:14,height:14,borderRadius:4,background:fill,border:`1px solid ${stroke}`}}/>
-            <span style={{fontSize:11,opacity:0.5}}>{label}</span>
+            <div style={{width:12,height:12,borderRadius:3,background:fill,border:`1px solid ${stroke}`}}/>
+            <span style={{fontSize:11,opacity:0.45}}>{label}</span>
           </div>
         ))}
       </div>
     </div>
   )
 }
+
 
 function DropdownPicker({ options, value, onChange, unit = '', label = '', labelFn = null }) {
   const [open, setOpen] = useState(false)
