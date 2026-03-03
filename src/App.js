@@ -17,6 +17,9 @@ const EXERCISE_TYPE = {
   'Dumbbell Flyes':'light','Flat Dumbbell Flyes':'light','Lunges':'light','Leg Curl':'light',
   'Leg Extension':'light','Push-Ups':'light','Pull-Ups':'light','Crunches':'light',
   'Hyperextension':'light','Biceps':'light','Triceps':'light','Plank':'timed',
+  'Arnold Press':'light','Cable Fly':'light','Bulgarian Split Squat':'light',
+  'Hammer Curl':'light','Skull Crushers':'light','Face Pull':'light',
+  'Hip Thrust':'heavy','Shrugs':'heavy','Dips':'light','T-Bar Row':'heavy',
 }
 
 const EXERCISE_IMAGES = {
@@ -30,6 +33,11 @@ const EXERCISE_IMAGES = {
   'Barbell Row':'/images/barbell_row.png','Pull-Ups':'/images/pull_ups.png','Plank':'/images/plank.png',
   'Crunches':'/images/crunches.png','Flat Dumbbell Flyes':'/images/flat_dumbbell_flyes.png',
   'Hyperextension':'/images/hyperextension.png',
+  'Arnold Press':'/images/arnold_press.png','Cable Fly':'/images/cable_fly.png',
+  'Bulgarian Split Squat':'/images/bulgarian_split_squat.png','Hammer Curl':'/images/hammer_curl.png',
+  'Skull Crushers':'/images/skull_crushers.png','Face Pull':'/images/face_pull.png',
+  'Hip Thrust':'/images/hip_thrust.png','Shrugs':'/images/shrugs.png',
+  'Dips':'/images/dips.png','T-Bar Row':'/images/t_bar_row.png',
 }
 
 const DEFAULT_FAVORITES = ['Bench Press','Squat','Deadlift']
@@ -97,16 +105,22 @@ input[type=number]::-webkit-inner-spin-button{-webkit-appearance:none}
 .fav-big-btn.active{background:rgba(255,200,0,0.15)}
 .last-hint{background:#1c1c1e;border:none;border-radius:14px;padding:12px 16px;margin:0 0 20px;font-size:13px;color:rgba(255,255,255,0.6);line-height:1.6}
 .sets-lbl{font-size:13px;font-weight:600;opacity:0.35;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:12px}
-.set-row{display:flex;gap:10px;margin-bottom:10px;align-items:center}
-.set-num{opacity:0.25;width:18px;font-size:13px;font-weight:500;flex-shrink:0;text-align:center}
-.set-sep{opacity:0.2;flex-shrink:0;font-size:16px}
-.picker-wrap{flex:1;position:relative;height:56px;overflow:hidden;border-radius:12px;background:#1c1c1e;border:none;cursor:ns-resize;user-select:none;touch-action:none}
-.picker-display{height:100%;display:flex;align-items:center;justify-content:center;gap:5px}
-.picker-val{font-size:20px;font-weight:600;letter-spacing:-0.3px}
-.picker-unit{font-size:12px;opacity:0.4;font-weight:500}
-.picker-arrows{display:flex;flex-direction:column}
-.picker-arrow{background:none;border:none;color:rgba(255,255,255,0.25);font-size:9px;cursor:pointer;padding:2px 4px;line-height:1}
-.picker-arrow:hover{color:rgba(255,255,255,0.6)}
+.set-row{display:flex;gap:10px;margin-bottom:16px;align-items:flex-end}
+.set-num{opacity:0.25;width:18px;font-size:13px;font-weight:500;flex-shrink:0;text-align:center;padding-bottom:14px}
+.set-sep{opacity:0.2;flex-shrink:0;font-size:16px;padding-bottom:14px}
+.dpicker-wrap{flex:1;position:relative;z-index:10}
+.dpicker-label{font-size:11px;font-weight:600;opacity:0.35;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px}
+.dpicker-btn{width:100%;background:#1c1c1e;border:1.5px solid rgba(255,255,255,0.08);border-radius:12px;padding:14px 14px;color:white;font-size:17px;font-weight:600;cursor:pointer;display:flex;align-items:center;justify-content:space-between;transition:all 0.15s;text-align:left}
+.dpicker-btn.open{border-color:rgba(48,209,88,0.5);background:#1c1c1e}
+.dpicker-btn:active{background:#2c2c2e}
+.dpicker-unit{font-size:13px;opacity:0.45;font-weight:500}
+.dpicker-chevron{opacity:0.4;font-size:18px;transition:transform 0.2s}
+.dpicker-btn.open .dpicker-chevron{transform:rotate(180deg);opacity:0.7}
+.dpicker-dropdown{position:absolute;top:calc(100% + 4px);left:0;right:0;background:#2c2c2e;border-radius:14px;max-height:220px;overflow-y:auto;z-index:200;box-shadow:0 8px 32px rgba(0,0,0,0.5);border:1px solid rgba(255,255,255,0.08)}
+.dpicker-opt{padding:13px 16px;font-size:17px;font-weight:500;cursor:pointer;transition:background 0.1s;color:rgba(255,255,255,0.75)}
+.dpicker-opt:hover{background:rgba(255,255,255,0.06)}
+.dpicker-opt.active{color:#30D158;font-weight:700;background:rgba(48,209,88,0.08)}
+.dpicker-opt-unit{font-size:13px;opacity:0.45}
 .set-btns{display:flex;gap:10px;margin:10px 0 24px}
 .set-btn{flex:1;padding:12px;background:#1c1c1e;border:none;border-radius:12px;color:rgba(255,255,255,0.7);font-size:14px;font-weight:500;cursor:pointer;transition:all 0.15s}
 .set-btn:active{background:#2c2c2e}
@@ -114,6 +128,7 @@ input[type=number]::-webkit-inner-spin-button{-webkit-appearance:none}
 .timer-lbl{font-size:12px;opacity:0.4;margin-bottom:2px;font-weight:500}
 .timer-num{font-size:36px;font-weight:700;color:#FF9F0A;font-variant-numeric:tabular-nums;letter-spacing:-1px}
 .timer-skip{background:#2c2c2e;border:none;border-radius:12px;padding:10px 18px;color:#FF9F0A;font-size:14px;font-weight:600;cursor:pointer}
+.timer-start{background:rgba(48,209,88,0.15);border:none;border-radius:12px;padding:10px 18px;color:#30D158;font-size:14px;font-weight:600;cursor:pointer}
 .save-btn{width:100%;padding:16px;background:#30D158;border:none;border-radius:16px;font-size:17px;font-weight:700;color:#000;cursor:pointer;transition:all 0.2s;letter-spacing:-0.2px}
 .save-btn:active{background:#28B84A}
 .save-btn.done{background:#30D158}
@@ -129,6 +144,8 @@ input[type=number]::-webkit-inner-spin-button{-webkit-appearance:none}
 .day-action-btn:hover{color:rgba(255,255,255,0.8)}
 .day-action-btn.ok{color:#30D158}
 .day-action-btn+.day-action-btn{border-left:1px solid rgba(255,255,255,0.05)}
+.day-action-btn.del{color:rgba(255,59,48,0.7)}
+.day-action-btn.del:hover{color:#FF453A}
 .hist-card{padding:12px 16px;border-bottom:1px solid rgba(255,255,255,0.04)}
 .hist-card:last-child{border-bottom:none}
 .hist-ex{font-size:14px;font-weight:600;margin-bottom:7px}
@@ -196,173 +213,44 @@ input[type=number]::-webkit-inner-spin-button{-webkit-appearance:none}
 .nav-lbl{font-size:10px;font-weight:600;letter-spacing:0.2px}
 @media(max-width:480px){.nav-bar{width:100%}}`
 
-function ScrollPicker({ options, value, onChange, unit = '' }) {
-  const startY = useRef(null)
-  const startIdx = useRef(0)
+function DropdownPicker({ options, value, onChange, unit = '', label = '' }) {
+  const [open, setOpen] = useState(false)
+  const ref = useRef(null)
 
-  const getIdx = useCallback(() => {
-    const i = options.indexOf(value)
-    return i === -1 ? 0 : i
-  }, [value, options])
+  useEffect(() => {
+    if (!open) return
+    const el = ref.current?.querySelector(`[data-val="${value}"]`)
+    if (el) el.scrollIntoView({ block: 'center' })
+  }, [open, value])
 
-  const go = useCallback((delta) => {
-    const newIdx = Math.max(0, Math.min(options.length - 1, getIdx() + delta))
-    onChange(options[newIdx])
-  }, [getIdx, options, onChange])
-
-  const onWheel = (e) => { e.preventDefault(); go(e.deltaY > 0 ? 1 : -1) }
-  const onTouchStart = (e) => { startY.current = e.touches[0].clientY; startIdx.current = getIdx() }
-  const onTouchMove = (e) => {
-    e.preventDefault()
-    const steps = Math.round((startY.current - e.touches[0].clientY) / 18)
-    const newIdx = Math.max(0, Math.min(options.length - 1, startIdx.current + steps))
-    onChange(options[newIdx])
-  }
+  useEffect(() => {
+    const close = (e) => { if (ref.current && !ref.current.contains(e.target)) setOpen(false) }
+    document.addEventListener('mousedown', close)
+    document.addEventListener('touchstart', close)
+    return () => { document.removeEventListener('mousedown', close); document.removeEventListener('touchstart', close) }
+  }, [])
 
   return (
-    <div className="picker-wrap" onWheel={onWheel} onTouchStart={onTouchStart} onTouchMove={onTouchMove}>
-      <div className="picker-display">
-        <div className="picker-arrows">
-          <button className="picker-arrow" onClick={() => go(-1)}>▲</button>
-          <button className="picker-arrow" onClick={() => go(1)}>▼</button>
+    <div className="dpicker-wrap" ref={ref}>
+      {label && <div className="dpicker-label">{label}</div>}
+      <button className={`dpicker-btn${open?' open':''}`} onClick={() => setOpen(o => !o)}>
+        <span className="dpicker-val">{value} <span className="dpicker-unit">{unit}</span></span>
+        <span className="dpicker-chevron">⌄</span>
+      </button>
+      {open && (
+        <div className="dpicker-dropdown">
+          {options.map(opt => (
+            <div key={opt} data-val={opt}
+              className={`dpicker-opt${opt === value ? ' active' : ''}`}
+              onClick={() => { onChange(opt); setOpen(false) }}>
+              {opt} {unit && <span className="dpicker-opt-unit">{unit}</span>}
+            </div>
+          ))}
         </div>
-        <span className="picker-val">{value}</span>
-        {unit && <span className="picker-unit">{unit}</span>}
-      </div>
+      )}
     </div>
   )
 }
-
-function LineChart({ data, period, setPeriod }) {
-  const [tooltip, setTooltip] = useState(null)
-
-  if (!data || data.length < 2) return (
-    <div>
-      <div style={{ display:'flex', gap:6, marginBottom:12 }}>
-        {['1M','3M','ALL'].map(p => (
-          <button key={p} onClick={() => setPeriod(p)} style={{
-            padding:'5px 14px', borderRadius:99, fontSize:12, fontWeight:700, cursor:'pointer', border:'none',
-            background: period === p ? '#00C853' : 'rgba(255,255,255,0.08)',
-            color: period === p ? '#001a0d' : 'rgba(255,255,255,0.6)',
-          }}>{p === '1M' ? '1 мес' : p === '3M' ? '3 мес' : 'Всё'}</button>
-        ))}
-      </div>
-      <div style={{ textAlign:'center', padding:'28px 0' }}>
-        <div style={{ fontSize:36, marginBottom:8 }}>📊</div>
-        <div style={{ fontSize:14, fontWeight:700, opacity:0.6, marginBottom:4 }}>Нужно минимум 2 тренировки</div>
-        <div style={{ fontSize:12, opacity:0.35 }}>для отображения графика</div>
-      </div>
-    </div>
-  )
-
-  const vals = data.map(d => d.val)
-  const minV = Math.floor(Math.min(...vals) * 0.95)
-  const maxV = Math.ceil(Math.max(...vals) * 1.05)
-  const range = maxV - minV || 1
-  const W = 400; const H = 140; const padL = 36; const padR = 10; const padT = 14; const padB = 22
-
-  const pts = data.map((d, i) => ({
-    x: padL + (i / (data.length - 1)) * (W - padL - padR),
-    y: padT + (1 - (d.val - minV) / range) * (H - padT - padB),
-    ...d
-  }))
-
-  function smoothPath(points) {
-    if (points.length < 2) return ''
-    let d = `M${points[0].x},${points[0].y}`
-    for (let i = 1; i < points.length; i++) {
-      const prev = points[i - 1]; const curr = points[i]
-      const cpx = (prev.x + curr.x) / 2
-      d += ` C${cpx},${prev.y} ${cpx},${curr.y} ${curr.x},${curr.y}`
-    }
-    return d
-  }
-
-  const path = smoothPath(pts)
-  const area = path + ` L${pts[pts.length-1].x},${H-padB} L${pts[0].x},${H-padB} Z`
-
-  const gridLines = [0, 0.25, 0.5, 0.75, 1].map(t => ({
-    val: Math.round(minV + range * t),
-    y: padT + (1 - t) * (H - padT - padB)
-  }))
-
-  const first = vals[0]; const last = vals[vals.length - 1]
-  const diff = last - first
-  const pct = first > 0 ? ((diff / first) * 100).toFixed(1) : 0
-
-  return (
-    <div>
-      <div style={{ display:'flex', gap:6, marginBottom:12 }}>
-        {['1M','3M','ALL'].map(p => (
-          <button key={p} onClick={() => setPeriod(p)} style={{
-            padding:'5px 14px', borderRadius:99, fontSize:12, fontWeight:700, cursor:'pointer', border:'none',
-            background: period === p ? '#00C853' : 'rgba(255,255,255,0.08)',
-            color: period === p ? '#001a0d' : 'rgba(255,255,255,0.6)',
-          }}>{p === '1M' ? '1 мес' : p === '3M' ? '3 мес' : 'Всё'}</button>
-        ))}
-      </div>
-
-      <div style={{ position:'relative' }}>
-        <svg viewBox={`0 0 ${W} ${H}`} style={{ width:'100%', height:H, overflow:'visible' }}>
-          <defs>
-            <linearGradient id="cg2" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%" stopColor="#69F0AE" stopOpacity="0.22"/>
-              <stop offset="100%" stopColor="#69F0AE" stopOpacity="0"/>
-            </linearGradient>
-          </defs>
-          {gridLines.map((g, i) => (
-            <g key={i}>
-              <line x1={padL} y1={g.y} x2={W-padR} y2={g.y} stroke="rgba(255,255,255,0.07)" strokeWidth="1"/>
-              <text x={padL-4} y={g.y+4} textAnchor="end" fontSize="9" fill="rgba(255,255,255,0.35)">{g.val}</text>
-            </g>
-          ))}
-          <path d={area} fill="url(#cg2)"/>
-          <path d={path} fill="none" stroke="#69F0AE" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>
-          {pts.map((p, i) => (
-            <g key={i} style={{ cursor:'pointer' }}
-              onMouseEnter={() => setTooltip(p)}
-              onMouseLeave={() => setTooltip(null)}>
-              <circle cx={p.x} cy={p.y} r="14" fill="transparent"/>
-              <circle cx={p.x} cy={p.y} r={tooltip?.label === p.label ? 6 : 4}
-                fill="#69F0AE" stroke="#0f0f0f" strokeWidth="2"/>
-            </g>
-          ))}
-          {tooltip && (() => {
-            const tx = Math.min(Math.max(tooltip.x, 48), W-48)
-            const ty = tooltip.y - 16
-            return (
-              <g>
-                <rect x={tx-38} y={ty-16} width={76} height={26} rx="7" fill="#222" stroke="rgba(105,240,174,0.4)" strokeWidth="1"/>
-                <text x={tx} y={ty+1} textAnchor="middle" fontSize="11" fill="#69F0AE" fontWeight="700">{tooltip.val} kg</text>
-                <text x={tx} y={ty+14} textAnchor="middle" fontSize="9" fill="rgba(255,255,255,0.45)">{tooltip.label}</text>
-              </g>
-            )
-          })()}
-        </svg>
-      </div>
-
-      <div style={{ display:'flex', justifyContent:'space-between', marginTop:12, background:'rgba(255,255,255,0.04)', borderRadius:12, padding:'10px 14px' }}>
-        <div style={{ textAlign:'center' }}>
-          <div style={{ fontSize:14, fontWeight:800 }}>{first} kg</div>
-          <div style={{ fontSize:9, opacity:0.4, marginTop:2, textTransform:'uppercase', letterSpacing:'0.5px' }}>Старт</div>
-        </div>
-        <div style={{ textAlign:'center' }}>
-          <div style={{ fontSize:14, fontWeight:800, color: diff >= 0 ? '#69F0AE' : '#FF5252' }}>{diff >= 0 ? '+' : ''}{diff} kg</div>
-          <div style={{ fontSize:9, opacity:0.4, marginTop:2, textTransform:'uppercase', letterSpacing:'0.5px' }}>Прирост</div>
-        </div>
-        <div style={{ textAlign:'center' }}>
-          <div style={{ fontSize:14, fontWeight:800, color: Number(pct) >= 0 ? '#69F0AE' : '#FF5252' }}>{Number(pct) >= 0 ? '+' : ''}{pct}%</div>
-          <div style={{ fontSize:9, opacity:0.4, marginTop:2, textTransform:'uppercase', letterSpacing:'0.5px' }}>Рост</div>
-        </div>
-        <div style={{ textAlign:'center' }}>
-          <div style={{ fontSize:14, fontWeight:800 }}>{last} kg</div>
-          <div style={{ fontSize:9, opacity:0.4, marginTop:2, textTransform:'uppercase', letterSpacing:'0.5px' }}>Сейчас</div>
-        </div>
-      </div>
-    </div>
-  )
-}
-
 function ModalItem({ ex, onSelect }) {
   const img = EXERCISE_IMAGES[ex.name]
   return (
@@ -555,8 +443,18 @@ export default function App() {
     const { data: ex } = await supabase.from('exercises').select('id').eq('name',selectedEx).single()
     const { data: w } = await supabase.from('workouts').insert({ workout_date: new Date().toISOString().split('T')[0], exercise_id: ex.id }).select().single()
     await supabase.from('sets').insert(filled.map((s,i) => ({ workout_id:w.id, set_no:i+1, weight:s.weight, reps:s.reps, time_sec:null })))
-    setSaved(true); setTimerSecs(90)
+    setSaved(true)
     setTimeout(() => { setSaved(false); setSelectedEx(null) }, 1500)
+  }
+
+  const deleteDay = async (date, workouts) => {
+    if (!window.confirm(`Удалить тренировку за ${date}?`)) return
+    const ids = workouts.map(w => w.id)
+    for (const id of ids) {
+      await supabase.from('sets').delete().eq('workout_id', id)
+      await supabase.from('workouts').delete().eq('id', id)
+    }
+    setSaved(p => !p)
   }
 
   const copyDay = async (date, workouts) => {
@@ -609,7 +507,7 @@ export default function App() {
 
       <div className="header">
         <div className="header-left">
-          <img src="/icon.ico" alt="logo" className="header-logo" onError={e=>e.target.style.display='none'}/>
+          <img src="/gymbro_logo.ico" alt="logo" className="header-logo" onError={e=>e.target.style.display='none'}/>
           <h1>Gym BRO</h1>
         </div>
         {streak >= 1 && <div className="streak-badge">{streak}🔥</div>}
@@ -618,12 +516,19 @@ export default function App() {
       {tab === 'add' && (
         <div className="section">
           <div className="date-label">{todayLabel()}</div>
-          {timerSecs !== null && (
-            <div className="timer-card">
-              <div><div className="timer-lbl">Отдых между подходами</div><div className="timer-num">{Math.floor(timerSecs/60)}:{String(timerSecs%60).padStart(2,'0')}</div></div>
-              <button className="timer-skip" onClick={() => setTimerSecs(null)}>Пропустить</button>
-            </div>
-          )}
+          <div className="timer-card">
+            {timerSecs !== null ? (
+              <>
+                <div><div className="timer-lbl">⏱ Отдых</div><div className="timer-num">{Math.floor(timerSecs/60)}:{String(timerSecs%60).padStart(2,'0')}</div></div>
+                <button className="timer-skip" onClick={() => setTimerSecs(null)}>Стоп ✕</button>
+              </>
+            ) : (
+              <>
+                <div><div className="timer-lbl">Таймер отдыха</div><div style={{fontSize:13,opacity:0.4,marginTop:2}}>90 секунд</div></div>
+                <button className="timer-start" onClick={() => setTimerSecs(90)}>Старт ▶</button>
+              </>
+            )}
+          </div>
           {!selectedEx ? (
             <button className="ex-selector-btn" onClick={() => setShowExModal(true)}>
               <span style={{opacity:0.45}}>Выбери упражнение...</span>
@@ -654,12 +559,12 @@ export default function App() {
                 <div key={i} className="set-row">
                   <span className="set-num">{i+1}</span>
                   {exType === 'timed' ? (
-                    <ScrollPicker options={TIME_OPTIONS} value={s.weight} onChange={v=>updateSet(i,'weight',v)} unit="s"/>
+                    <DropdownPicker options={TIME_OPTIONS} value={s.weight} onChange={v=>updateSet(i,'weight',v)} unit="s" label={`Подход ${i+1} — Время`}/>
                   ) : (
                     <>
-                      <ScrollPicker options={weightOpts} value={s.weight} onChange={v=>updateSet(i,'weight',v)} unit="кг"/>
+                      <DropdownPicker options={weightOpts} value={s.weight} onChange={v=>updateSet(i,'weight',v)} unit="кг" label={`Подход ${i+1} — Вес`}/>
                       <span className="set-sep">×</span>
-                      <ScrollPicker options={REPS_OPTIONS} value={s.reps} onChange={v=>updateSet(i,'reps',v)} unit="пвт"/>
+                      <DropdownPicker options={REPS_OPTIONS} value={s.reps} onChange={v=>updateSet(i,'reps',v)} unit="повт" label={`Подход ${i+1} — Повторения`}/>
                     </>
                   )}
                 </div>
@@ -690,6 +595,7 @@ export default function App() {
                     <div className="day-actions">
                       <button className={`day-action-btn${copiedDay===date?' ok':''}`} onClick={() => copyDay(date,ws)}>{copiedDay===date?'✅ Скопировано':'📋 Копировать'}</button>
                       <button className="day-action-btn" onClick={() => setEditModal({date,workouts:ws.map(w=>({...w,sets:w.sets?[...w.sets]:[]}))})}> ✏️ Редактировать</button>
+                      <button className="day-action-btn del" onClick={() => deleteDay(date,ws)}>🗑 Удалить</button>
                     </div>
                     {ws.map(w => (
                       <div key={w.id} className="hist-card">
