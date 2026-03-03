@@ -1073,11 +1073,12 @@ export default function App() {
       {tab === 'add' && (
         <div className="section">
 
-          {(timerSecs !== null || stopwatchRunning) && (
+          {(timerSecs !== null || stopwatchRunning || timerMode === 'stopwatch') && (
             <div style={{background: timerMode==='stopwatch' ? 'linear-gradient(135deg,rgba(48,209,88,0.1),rgba(48,209,88,0.05))' : 'linear-gradient(135deg,rgba(255,159,10,0.1),rgba(255,159,10,0.05))',border: timerMode==='stopwatch' ? '1px solid rgba(48,209,88,0.2)' : '1px solid rgba(255,159,10,0.2)',borderRadius:20,padding:'16px 18px',marginBottom:16}}>
               <div style={{display:'flex',gap:8,marginBottom:12}}>
                 <button onClick={()=>{setTimerMode('countdown');setStopwatchRunning(false);setStopwatchSecs(0);if(timerSecs===null){setTimerSecs(timerDuration);setTimerPaused(true)}}} style={{flex:1,padding:'7px 0',borderRadius:10,border:'none',cursor:'pointer',fontSize:13,fontWeight:700,background:timerMode==='countdown'?'rgba(255,159,10,0.2)':'rgba(255,255,255,0.06)',color:timerMode==='countdown'?'#FF9F0A':'rgba(255,255,255,0.4)'}}>⏱ Таймер</button>
-                <button onClick={()=>{setTimerMode('stopwatch');setTimerSecs(null);setTimerPaused(false);setStopwatchRunning(false)}} style={{flex:1,padding:'7px 0',borderRadius:10,border:'none',cursor:'pointer',fontSize:13,fontWeight:700,background:timerMode==='stopwatch'?'rgba(48,209,88,0.2)':'rgba(255,255,255,0.06)',color:timerMode==='stopwatch'?'#30D158':'rgba(255,255,255,0.4)'}}>⏲ Секундомер</button>
+                <button onClick={()=>{setTimerMode('stopwatch');setTimerSecs(null);setTimerPaused(false)}} style={{flex:1,padding:'7px 0',borderRadius:10,border:'none',cursor:'pointer',fontSize:13,fontWeight:700,background:timerMode==='stopwatch'?'rgba(48,209,88,0.2)':'rgba(255,255,255,0.06)',color:timerMode==='stopwatch'?'#30D158':'rgba(255,255,255,0.4)'}}>⏲ Секундомер</button>
+                <button onClick={()=>{setTimerSecs(null);setTimerPaused(false);setStopwatchRunning(false);setStopwatchSecs(0);setTimerMode('countdown')}} style={{width:32,height:32,borderRadius:10,border:'none',cursor:'pointer',background:'rgba(255,255,255,0.06)',color:'rgba(255,255,255,0.35)',fontSize:13,display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0}}>✕</button>
               </div>
               {timerMode === 'countdown' ? (<>
                 <div style={{display:'flex',alignItems:'baseline',gap:8,marginBottom:12}}>
@@ -1091,7 +1092,7 @@ export default function App() {
                     {timerPaused ? '▶ Продолжить' : '⏸ Пауза'}
                   </button>
                   <button onClick={()=>{setTimerSecs(timerDuration);setTimerPaused(true)}} style={{flex:1,padding:'9px 0',borderRadius:12,border:'none',cursor:'pointer',fontWeight:700,fontSize:14,background:'rgba(255,255,255,0.07)',color:'rgba(255,255,255,0.7)'}}>↺ Заново</button>
-                  <button onClick={()=>{setTimerSecs(null);setTimerPaused(false)}} style={{width:36,height:36,borderRadius:10,border:'none',cursor:'pointer',background:'rgba(255,255,255,0.07)',color:'rgba(255,255,255,0.4)',fontSize:14,display:'flex',alignItems:'center',justifyContent:'center'}}>✕</button>
+
                 </div>
                 <div style={{fontSize:11,opacity:0.35,marginBottom:6,fontWeight:600,textTransform:'uppercase',letterSpacing:'0.5px'}}>Изменить время</div>
                 <DropdownPicker options={Array.from({length:50},(_,i)=>(i+1)*5)} value={timerDuration} onChange={v=>{setTimerDuration(v);setTimerSecs(v);setTimerPaused(true)}} unit="сек" label=""/>
@@ -1106,7 +1107,7 @@ export default function App() {
                     {stopwatchRunning ? '⏸ Пауза' : '▶ Старт'}
                   </button>
                   <button onClick={()=>{setStopwatchSecs(0);setStopwatchRunning(false)}} style={{flex:1,padding:'9px 0',borderRadius:12,border:'none',cursor:'pointer',fontWeight:700,fontSize:14,background:'rgba(255,255,255,0.07)',color:'rgba(255,255,255,0.7)'}}>↺ Сброс</button>
-                  <button onClick={()=>{setStopwatchRunning(false);setStopwatchSecs(0);setTimerMode('countdown')}} style={{width:36,height:36,borderRadius:10,border:'none',cursor:'pointer',background:'rgba(255,255,255,0.07)',color:'rgba(255,255,255,0.4)',fontSize:14,display:'flex',alignItems:'center',justifyContent:'center'}}>✕</button>
+
                 </div>
               </>)}
             </div>
@@ -1346,7 +1347,7 @@ export default function App() {
           </button>
           {openPrs.__all__ && <div style={{background:'rgba(255,255,255,0.04)',borderRadius:14,overflow:'hidden',border:'1px solid rgba(255,255,255,0.07)',marginBottom:4}}>
           {prs.map(([name,pr], prIdx)=>{
-            const isOpen=openPrs[name]; const img=EXERCISE_IMAGES[name]
+            const isOpen=openPrs[name]; const img=EXERCISE_IMAGES[ruName(name)]
             return (
               <div key={name} style={{borderBottom: prIdx<prs.length-1 ? '1px solid rgba(255,255,255,0.06)' : 'none'}}>
                 <button style={{width:'100%',background:'none',border:'none',cursor:'pointer',padding:'11px 16px',display:'flex',alignItems:'center',gap:10,textAlign:'left'}} onClick={()=>setOpenPrs(p=>({...p,[name]:!p[name]}))}>
