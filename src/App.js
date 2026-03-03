@@ -810,9 +810,11 @@ export default function App() {
       const totalKg = sData?.reduce((s,r) => s+r.weight*r.reps, 0) || 0
       setStats({ totalW, monthW, totalKg })
       const { data: pData } = await supabase.from('workouts').select('workout_date,exercises(name),sets(weight,reps)')
+      const ENG_TO_RUS = {'Bench Press':'Жим лёжа','Squat':'Приседания','Deadlift':'Становая тяга','Romanian Deadlift':'Румынская тяга','Overhead Press':'Жим над головой','Leg Press':'Жим ногами','Barbell Row':'Тяга штанги в наклоне','Lat Pulldown':'Тяга вниз','Seated Cable Row':'Тяга сидя','Incline Dumbbell Press':'Жим гантелей наклон','Dumbbell Bench':'Жим гантелей лёжа','Dumbbell Flyes':'Разводка гантелей','Flat Dumbbell Flyes':'Разводка лёжа','Lunges':'Выпады','Leg Curl':'Сгибание ног','Leg Extension':'Разгибание ног','Push-Ups':'Отжимания','Pull-Ups':'Подтягивания','Crunches':'Скручивания','Hyperextension':'Гиперэкстензия','Biceps':'Бицепс','Triceps':'Трицепс','Plank':'Планка','Arnold Press':'Жим Арнольда','Cable Fly':'Кроссовер','Bulgarian Split Squat':'Болгарские выпады','Hammer Curl':'Молотки','Skull Crushers':'Французский жим','Face Pull':'Тяга к лицу','Hip Thrust':'Ягодичный мост','Shrugs':'Шраги','Dips':'Отжимания на брусьях','T-Bar Row':'Тяга Т-штанги'}
       const map = {}
       pData?.forEach(w => {
-        const name = w.exercises?.name; if (!name) return
+        const rawName = w.exercises?.name; if (!rawName) return
+        const name = ENG_TO_RUS[rawName] || rawName
         w.sets?.forEach(s => { if (s.weight>0&&s.reps>0) { const est=s.weight*(1+s.reps/30); if (!map[name]||est>map[name].est) map[name]={est:parseFloat(est.toFixed(1)),weight:s.weight,reps:s.reps,date:w.workout_date} } })
       })
       setPrs(Object.entries(map).sort((a,b) => b[1].est-a[1].est))
@@ -1297,18 +1299,26 @@ export default function App() {
             })}
           </div>
           <div className="prog-title">🏆 Личные рекорды</div>
-          {prs.map(([name,pr])=>{
+          <div style={{background:'rgba(255,255,255,0.04)',borderRadius:16,overflow:'hidden',border:'1px solid rgba(255,255,255,0.07)'}}>
+          {prs.map(([name,pr], prIdx)=>{
             const isOpen=openPrs[name]; const img=EXERCISE_IMAGES[name]
             return (
-              <div key={name} className="pr-group">
-                <button className={`pr-hdr${isOpen?' open':''}`} onClick={()=>setOpenPrs(p=>({...p,[name]:!p[name]}))}>
-                  <div className="pr-hdr-left">{img?<img src={img} alt={name} className="pr-thumb" onError={e=>e.target.style.display='none'}/>:<div className="pr-thumb-ph">🏋️</div>}<span className="pr-name">{name}</span></div>
-                  <div style={{display:'flex',alignItems:'center',gap:10}}><span className="pr-val">{pr.est} kg</span><span className="day-chev" style={{transform:isOpen?'rotate(180deg)':'none'}}>▼</span></div>
+              <div key={name} style={{borderBottom: prIdx<prs.length-1 ? '1px solid rgba(255,255,255,0.06)' : 'none'}}>
+                <button style={{width:'100%',background:'none',border:'none',cursor:'pointer',padding:'11px 16px',display:'flex',alignItems:'center',gap:10,textAlign:'left'}} onClick={()=>setOpenPrs(p=>({...p,[name]:!p[name]}))}>
+                  {img ? <img src={img} alt={name} style={{width:32,height:32,borderRadius:7,objectFit:'cover',flexShrink:0}} onError={e=>e.target.style.display='none'}/> : <div style={{width:32,height:32,borderRadius:7,background:'rgba(255,255,255,0.07)',display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0,fontSize:16}}>🏋️</div>}
+                  <span style={{flex:1,color:'rgba(255,255,255,0.85)',fontSize:14,fontWeight:600}}>{name}</span>
+                  <span style={{color:'#30D158',fontSize:14,fontWeight:700,marginRight:8}}>{pr.weight} кг</span>
+                  <span style={{color:'rgba(255,255,255,0.25)',fontSize:11,display:'inline-block',transition:'transform 0.2s',transform:isOpen?'rotate(180deg)':'none'}}>▼</span>
                 </button>
-                {isOpen&&<div className="pr-detail">{img&&<img src={img} alt={name} className="pr-detail-img" onError={e=>e.target.style.display='none'}/>}<div><div className="pr-detail-sets">{pr.weight} кг × {pr.reps} повт</div><div className="pr-detail-date">{new Date(pr.date).toLocaleDateString('ru',{day:'numeric',month:'long',year:'numeric'})}</div><div className="pr-detail-est">Оценка 1RM: {pr.est} kg</div></div></div>}
+                {isOpen && <div style={{padding:'2px 16px 12px 58px',display:'flex',gap:16,flexWrap:'wrap',alignItems:'center'}}>
+                  <span style={{fontSize:13,color:'rgba(255,255,255,0.6)',fontWeight:600}}>{pr.weight} кг × {pr.reps} повт</span>
+                  <span style={{fontSize:12,color:'rgba(255,255,255,0.3)'}}>{new Date(pr.date).toLocaleDateString('ru',{day:'numeric',month:'short',year:'numeric'})}</span>
+                  <span style={{fontSize:12,color:'rgba(255,159,10,0.65)'}}>1RM ≈ {pr.est} кг</span>
+                </div>}
               </div>
             )
           })}
+          </div>
           <div className="prog-title">📊 График роста</div>
           <div className="chart-wrap">
             <select className="chart-ex-select" value={chartEx} onChange={e=>setChartEx(e.target.value)}>{exercises.map(e=><option key={e.id} value={e.name}>{e.name}</option>)}</select>
