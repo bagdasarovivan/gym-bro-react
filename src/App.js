@@ -41,6 +41,44 @@ const EXERCISE_IMAGES = {
 }
 
 
+
+const EXERCISE_MUSCLES = {
+  'Bench Press':       ['chest','triceps','shoulders'],
+  'Incline Dumbbell Press': ['chest','shoulders','triceps'],
+  'Dumbbell Bench':    ['chest','triceps','shoulders'],
+  'Dumbbell Flyes':    ['chest','shoulders'],
+  'Flat Dumbbell Flyes':['chest','shoulders'],
+  'Cable Fly':         ['chest','shoulders'],
+  'Push-Ups':          ['chest','triceps','shoulders'],
+  'Overhead Press':    ['shoulders','triceps','traps'],
+  'Arnold Press':      ['shoulders','triceps'],
+  'Lateral Raise':     ['shoulders'],
+  'Face Pull':         ['shoulders','upper_back','traps'],
+  'Shrugs':            ['traps','upper_back'],
+  'Squat':             ['quads','glutes','lower_back','hamstrings'],
+  'Bulgarian Split Squat':['quads','glutes','hamstrings'],
+  'Leg Press':         ['quads','glutes'],
+  'Leg Extension':     ['quads'],
+  'Lunges':            ['quads','glutes','hamstrings'],
+  'Deadlift':          ['lower_back','glutes','hamstrings','traps','lats'],
+  'Romanian Deadlift': ['hamstrings','glutes','lower_back'],
+  'Hip Thrust':        ['glutes','hamstrings'],
+  'Leg Curl':          ['hamstrings'],
+  'Barbell Row':       ['lats','upper_back','biceps','traps'],
+  'Seated Cable Row':  ['lats','upper_back','biceps'],
+  'Lat Pulldown':      ['lats','biceps','upper_back'],
+  'T-Bar Row':         ['lats','upper_back','biceps'],
+  'Pull-Ups':          ['lats','biceps','upper_back'],
+  'Biceps':            ['biceps','forearms'],
+  'Hammer Curl':       ['biceps','forearms'],
+  'Triceps':           ['triceps'],
+  'Skull Crushers':    ['triceps'],
+  'Dips':              ['triceps','chest','shoulders'],
+  'Hyperextension':    ['lower_back','glutes','hamstrings'],
+  'Crunches':          ['abs'],
+  'Plank':             ['abs','lower_back'],
+}
+
 const EXERCISES = Object.keys(EXERCISE_IMAGES).sort((a, b) => a.localeCompare(b))
 
 const DEFAULT_FAVORITES = ['Bench Press','Squat','Deadlift']
@@ -369,6 +407,183 @@ function LineChart({ data, period, setPeriod }) {
           <div key={i} style={{textAlign:'center'}}>
             <div style={{fontSize:14,fontWeight:700,color: i===1||i===2 ? (diff>=0?'#30D158':'#FF453A') : 'white'}}>{val}</div>
             <div style={{fontSize:9,opacity:0.35,marginTop:2,textTransform:'uppercase',letterSpacing:'0.5px'}}>{lbl}</div>
+          </div>
+        ))}
+      </div>
+    </div>
+  )
+}
+
+function MuscleMap({ muscleScores }) {
+  const [hovered, setHovered] = useState(null)
+
+  const getColor = (muscle) => {
+    const score = muscleScores[muscle] || 0
+    if (score === 0) return 'rgba(255,255,255,0.06)'
+    if (score < 0.33) return 'rgba(255,200,0,0.35)'
+    if (score < 0.66) return 'rgba(255,120,0,0.5)'
+    return 'rgba(255,59,48,0.7)'
+  }
+
+  const getStroke = (muscle) => {
+    const score = muscleScores[muscle] || 0
+    if (score === 0) return 'rgba(255,255,255,0.15)'
+    if (score < 0.33) return 'rgba(255,200,0,0.6)'
+    if (score < 0.66) return 'rgba(255,120,0,0.8)'
+    return 'rgba(255,59,48,1)'
+  }
+
+  const muscleNames = {
+    chest: 'Грудь', shoulders: 'Плечи', biceps: 'Бицепс', triceps: 'Трицепс',
+    abs: 'Пресс', quads: 'Квадрицепс', calves: 'Икры', forearms: 'Предплечья',
+    upper_back: 'Верхняя спина', lats: 'Широчайшие', lower_back: 'Поясница',
+    glutes: 'Ягодицы', hamstrings: 'Бицепс бедра', traps: 'Трапеции'
+  }
+
+  const M = (muscle) => ({
+    fill: hovered === muscle ? 'rgba(48,209,88,0.5)' : getColor(muscle),
+    stroke: hovered === muscle ? '#30D158' : getStroke(muscle),
+    strokeWidth: hovered === muscle ? 1.5 : 1,
+    style: { cursor: 'pointer', transition: 'all 0.2s' },
+    onMouseEnter: () => setHovered(muscle),
+    onMouseLeave: () => setHovered(null),
+  })
+
+  return (
+    <div>
+      {hovered && (
+        <div style={{textAlign:'center',marginBottom:10,fontSize:13,fontWeight:700,
+          color: muscleScores[hovered] > 0.66 ? '#FF453A' : muscleScores[hovered] > 0.33 ? '#FF9F0A' : muscleScores[hovered] > 0 ? '#FFD60A' : 'rgba(255,255,255,0.4)'}}>
+          {muscleNames[hovered]} — {muscleScores[hovered] ? Math.round(muscleScores[hovered]*100)+'%' : 'не тренируется'}
+        </div>
+      )}
+      {!hovered && (
+        <div style={{textAlign:'center',marginBottom:10,fontSize:12,opacity:0.3}}>Наведи на мышцу</div>
+      )}
+
+      <div style={{display:'flex',gap:16,justifyContent:'center'}}>
+        {/* FRONT */}
+        <svg viewBox="0 0 160 320" width="140" height="280">
+          {/* Head */}
+          <ellipse cx="80" cy="22" rx="18" ry="20" fill="rgba(255,255,255,0.04)" stroke="rgba(255,255,255,0.15)" strokeWidth="1"/>
+          {/* Neck */}
+          <rect x="73" y="40" width="14" height="12" rx="4" fill="rgba(255,255,255,0.04)" stroke="rgba(255,255,255,0.1)" strokeWidth="1"/>
+
+          {/* Chest */}
+          <path d="M55,52 Q80,48 105,52 L108,80 Q80,88 52,80 Z" {...M('chest')}/>
+
+          {/* Shoulders L */}
+          <ellipse cx="46" cy="60" rx="14" ry="12" {...M('shoulders')}/>
+          {/* Shoulders R */}
+          <ellipse cx="114" cy="60" rx="14" ry="12" {...M('shoulders')}/>
+
+          {/* Biceps L */}
+          <path d="M35,72 Q28,72 26,90 Q24,108 32,112 Q38,108 40,90 Z" {...M('biceps')}/>
+          {/* Biceps R */}
+          <path d="M125,72 Q132,72 134,90 Q136,108 128,112 Q122,108 120,90 Z" {...M('biceps')}/>
+
+          {/* Triceps L (side) */}
+          <path d="M40,74 Q44,74 46,90 Q47,108 42,112 Q38,108 38,90 Z" {...M('triceps')}/>
+          {/* Triceps R */}
+          <path d="M120,74 Q116,74 114,90 Q113,108 118,112 Q122,108 122,90 Z" {...M('triceps')}/>
+
+          {/* Forearms L */}
+          <path d="M29,114 Q24,130 22,148 Q28,150 34,148 Q36,130 35,114 Z" {...M('forearms')}/>
+          {/* Forearms R */}
+          <path d="M131,114 Q136,130 138,148 Q132,150 126,148 Q124,130 125,114 Z" {...M('forearms')}/>
+
+          {/* Abs */}
+          <path d="M60,82 Q80,86 100,82 L102,130 Q80,136 58,130 Z" {...M('abs')}/>
+
+          {/* Hip area */}
+          <path d="M58,130 Q80,136 102,130 L104,148 Q80,152 56,148 Z" fill="rgba(255,255,255,0.04)" stroke="rgba(255,255,255,0.1)" strokeWidth="1"/>
+
+          {/* Quads L */}
+          <path d="M58,150 Q70,148 76,152 L74,220 Q66,224 56,218 Z" {...M('quads')}/>
+          {/* Quads R */}
+          <path d="M102,150 Q90,148 84,152 L86,220 Q94,224 104,218 Z" {...M('quads')}/>
+
+          {/* Knee L */}
+          <ellipse cx="65" cy="224" rx="10" ry="8" fill="rgba(255,255,255,0.04)" stroke="rgba(255,255,255,0.12)" strokeWidth="1"/>
+          {/* Knee R */}
+          <ellipse cx="95" cy="224" rx="10" ry="8" fill="rgba(255,255,255,0.04)" stroke="rgba(255,255,255,0.12)" strokeWidth="1"/>
+
+          {/* Calves L */}
+          <path d="M57,232 Q66,230 72,234 L70,284 Q63,288 56,284 Z" {...M('calves')}/>
+          {/* Calves R */}
+          <path d="M103,232 Q94,230 88,234 L90,284 Q97,288 104,284 Z" {...M('calves')}/>
+
+          {/* Feet */}
+          <ellipse cx="64" cy="292" rx="12" ry="6" fill="rgba(255,255,255,0.04)" stroke="rgba(255,255,255,0.1)" strokeWidth="1"/>
+          <ellipse cx="96" cy="292" rx="12" ry="6" fill="rgba(255,255,255,0.04)" stroke="rgba(255,255,255,0.1)" strokeWidth="1"/>
+        </svg>
+
+        {/* BACK */}
+        <svg viewBox="0 0 160 320" width="140" height="280">
+          {/* Head */}
+          <ellipse cx="80" cy="22" rx="18" ry="20" fill="rgba(255,255,255,0.04)" stroke="rgba(255,255,255,0.15)" strokeWidth="1"/>
+          {/* Neck */}
+          <rect x="73" y="40" width="14" height="12" rx="4" fill="rgba(255,255,255,0.04)" stroke="rgba(255,255,255,0.1)" strokeWidth="1"/>
+
+          {/* Traps */}
+          <path d="M60,52 Q80,44 100,52 L96,68 Q80,72 64,68 Z" {...M('traps')}/>
+
+          {/* Shoulders L back */}
+          <ellipse cx="46" cy="62" rx="14" ry="12" {...M('shoulders')}/>
+          {/* Shoulders R back */}
+          <ellipse cx="114" cy="62" rx="14" ry="12" {...M('shoulders')}/>
+
+          {/* Triceps L back */}
+          <path d="M35,74 Q28,74 26,92 Q24,110 32,114 Q38,110 40,92 Z" {...M('triceps')}/>
+          {/* Triceps R back */}
+          <path d="M125,74 Q132,74 134,92 Q136,110 128,114 Q122,110 120,92 Z" {...M('triceps')}/>
+
+          {/* Forearms L back */}
+          <path d="M29,116 Q24,132 22,150 Q28,152 34,150 Q36,132 35,116 Z" {...M('forearms')}/>
+          {/* Forearms R back */}
+          <path d="M131,116 Q136,132 138,150 Q132,152 126,150 Q124,132 125,116 Z" {...M('forearms')}/>
+
+          {/* Upper back / Lats */}
+          <path d="M52,68 Q64,70 76,74 L74,110 Q60,116 48,106 Q44,90 46,74 Z" {...M('lats')}/>
+          <path d="M108,68 Q96,70 84,74 L86,110 Q100,116 112,106 Q116,90 114,74 Z" {...M('lats')}/>
+
+          {/* Upper back center */}
+          <path d="M64,68 Q80,72 96,68 L94,110 Q80,116 66,110 Z" {...M('upper_back')}/>
+
+          {/* Lower back */}
+          <path d="M62,112 Q80,118 98,112 L100,138 Q80,144 60,138 Z" {...M('lower_back')}/>
+
+          {/* Glutes */}
+          <path d="M56,140 Q68,136 78,140 L80,178 Q68,184 54,176 Z" {...M('glutes')}/>
+          <path d="M104,140 Q92,136 82,140 L80,178 Q92,184 106,176 Z" {...M('glutes')}/>
+
+          {/* Hamstrings L */}
+          <path d="M56,178 Q68,176 74,180 L72,222 Q64,228 54,222 Z" {...M('hamstrings')}/>
+          {/* Hamstrings R */}
+          <path d="M104,178 Q92,176 86,180 L88,222 Q96,228 106,222 Z" {...M('hamstrings')}/>
+
+          {/* Knee L back */}
+          <ellipse cx="64" cy="226" rx="10" ry="7" fill="rgba(255,255,255,0.04)" stroke="rgba(255,255,255,0.12)" strokeWidth="1"/>
+          {/* Knee R back */}
+          <ellipse cx="96" cy="226" rx="10" ry="7" fill="rgba(255,255,255,0.04)" stroke="rgba(255,255,255,0.12)" strokeWidth="1"/>
+
+          {/* Calves L back */}
+          <path d="M56,234 Q65,232 72,236 L70,284 Q63,288 55,284 Z" {...M('calves')}/>
+          {/* Calves R back */}
+          <path d="M104,234 Q95,232 88,236 L90,284 Q97,288 105,284 Z" {...M('calves')}/>
+
+          {/* Feet */}
+          <ellipse cx="64" cy="292" rx="12" ry="6" fill="rgba(255,255,255,0.04)" stroke="rgba(255,255,255,0.1)" strokeWidth="1"/>
+          <ellipse cx="96" cy="292" rx="12" ry="6" fill="rgba(255,255,255,0.04)" stroke="rgba(255,255,255,0.1)" strokeWidth="1"/>
+        </svg>
+      </div>
+
+      {/* Legend */}
+      <div style={{display:'flex',gap:12,justifyContent:'center',marginTop:14,flexWrap:'wrap'}}>
+        {[['rgba(255,59,48,0.7)','rgba(255,59,48,1)','Много'],['rgba(255,120,0,0.5)','rgba(255,120,0,0.8)','Средне'],['rgba(255,200,0,0.35)','rgba(255,200,0,0.6)','Мало'],['rgba(255,255,255,0.06)','rgba(255,255,255,0.15)','Не тренируется']].map(([fill,stroke,label])=>(
+          <div key={label} style={{display:'flex',alignItems:'center',gap:5}}>
+            <div style={{width:14,height:14,borderRadius:4,background:fill,border:`1px solid ${stroke}`}}/>
+            <span style={{fontSize:11,opacity:0.5}}>{label}</span>
           </div>
         ))}
       </div>
@@ -769,7 +984,7 @@ export default function App() {
   if (user === null) return (
     <div className="auth-screen">
       <div className="auth-card">
-        <img src="/images/gymbro_icon.png" alt="logo" className="auth-logo" onError={e=>{e.target.style.display='none'}}/>
+        <img src="/images/gymbro_logo.png" alt="logo" className="auth-logo" onError={e=>{e.target.style.display='none'}}/>
         <div className="auth-title">Gym BRO</div>
         <div className="auth-sub">{authMode==='login' ? 'Войди в свой аккаунт' : 'Создай новый аккаунт'}</div>
         {authError && <div className="auth-err">{authError}</div>}
@@ -812,7 +1027,7 @@ export default function App() {
 
       <div className="header">
         <div className="header-left">
-          <img src="/images/gymbro_icon.png" alt="logo" className="header-logo" onError={e=>e.target.style.display='none'}/>
+          <img src="/images/gymbro_logo.png" alt="logo" className="header-logo" onError={e=>e.target.style.display='none'}/>
           <h1>Gym BRO</h1>
         </div>
         <div style={{display:'flex',alignItems:'center',gap:8}}>
@@ -1006,7 +1221,18 @@ export default function App() {
         )
       })()}
 
-      {tab === 'progress' && (
+      {tab === 'progress' && (() => {
+        // Compute muscle scores from last 30 days history
+        const thirtyDaysAgo = new Date(Date.now() - 30*24*60*60*1000).toISOString().split('T')[0]
+        const recentHistory = history.filter(w => w.workout_date >= thirtyDaysAgo)
+        const muscleCounts = {}
+        recentHistory.forEach(w => {
+          const muscles = EXERCISE_MUSCLES[w.exercises?.name] || []
+          muscles.forEach(m => { muscleCounts[m] = (muscleCounts[m] || 0) + 1 })
+        })
+        const maxCount = Math.max(1, ...Object.values(muscleCounts))
+        const muscleScores = Object.fromEntries(Object.entries(muscleCounts).map(([m,c]) => [m, c/maxCount]))
+        return (
         <div className="section">
           {stats && (
             <div className="stats-row">
@@ -1015,6 +1241,11 @@ export default function App() {
               <div className="stat-card"><div className="stat-val" style={{color:'#69F0AE',fontSize:18}}>{stats.totalKg>=1000?`${(stats.totalKg/1000).toFixed(1)}K`:Math.round(stats.totalKg)} kg</div><div className="stat-lbl">поднято</div></div>
             </div>
           )}
+          <div className="prog-title">💪 Нагрузка по мышцам</div>
+          <div className="chart-wrap" style={{padding:'16px 8px'}}>
+            <div style={{fontSize:11,opacity:0.35,textAlign:'center',marginBottom:12,textTransform:'uppercase',letterSpacing:'0.5px'}}>За последние 30 дней</div>
+            <MuscleMap muscleScores={muscleScores}/>
+          </div>
           <div className="prog-title">📅 Календарь</div>
           <div className="cal-nav">
             <button className="cal-btn" onClick={()=>{if(calMonth===0){setCalMonth(11);setCalYear(y=>y-1)}else setCalMonth(m=>m-1)}}>◀</button>
@@ -1049,7 +1280,8 @@ export default function App() {
             <LineChart data={chartData} period={chartPeriod} setPeriod={setChartPeriod}/>
           </div>
         </div>
-      )}
+        )
+      })()}
 
       {showExModal && (
         <div className="modal-overlay" onClick={e=>{if(e.target.classList.contains('modal-overlay')){setShowExModal(false);setModalSearch('')}}}>
