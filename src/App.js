@@ -213,6 +213,122 @@ input[type=number]::-webkit-inner-spin-button{-webkit-appearance:none}
 .nav-lbl{font-size:10px;font-weight:600;letter-spacing:0.2px}
 @media(max-width:480px){.nav-bar{width:100%}}`
 
+function LineChart({ data, period, setPeriod }) {
+  const [tooltip, setTooltip] = useState(null)
+
+  const periods = [{ id:'1M', label:'1 мес' }, { id:'3M', label:'3 мес' }, { id:'ALL', label:'Всё' }]
+
+  const noData = (
+    <div>
+      <div style={{display:'flex',gap:6,marginBottom:14}}>
+        {periods.map(p => (
+          <button key={p.id} onClick={() => setPeriod(p.id)} style={{
+            padding:'6px 14px',borderRadius:99,fontSize:12,fontWeight:700,cursor:'pointer',border:'none',
+            background: period===p.id ? '#30D158' : '#2c2c2e',
+            color: period===p.id ? '#000' : 'rgba(255,255,255,0.5)',
+          }}>{p.label}</button>
+        ))}
+      </div>
+      <div style={{textAlign:'center',padding:'28px 0'}}>
+        <div style={{fontSize:36,marginBottom:8}}>📊</div>
+        <div style={{fontSize:14,fontWeight:600,opacity:0.5,marginBottom:4}}>Нужно минимум 2 тренировки</div>
+        <div style={{fontSize:12,opacity:0.3}}>для отображения графика</div>
+      </div>
+    </div>
+  )
+
+  if (!data || data.length < 2) return noData
+
+  const vals = data.map(d => d.val)
+  const minV = Math.floor(Math.min(...vals) * 0.95)
+  const maxV = Math.ceil(Math.max(...vals) * 1.05)
+  const range = maxV - minV || 1
+  const W = 400; const H = 140; const padL = 36; const padR = 10; const padT = 14; const padB = 22
+
+  const pts = data.map((d, i) => ({
+    x: padL + (i / (data.length - 1)) * (W - padL - padR),
+    y: padT + (1 - (d.val - minV) / range) * (H - padT - padB),
+    ...d
+  }))
+
+  function smoothPath(points) {
+    if (points.length < 2) return ''
+    let d = `M${points[0].x},${points[0].y}`
+    for (let i = 1; i < points.length; i++) {
+      const prev = points[i-1]; const curr = points[i]
+      const cpx = (prev.x + curr.x) / 2
+      d += ` C${cpx},${prev.y} ${cpx},${curr.y} ${curr.x},${curr.y}`
+    }
+    return d
+  }
+
+  const path = smoothPath(pts)
+  const area = path + ` L${pts[pts.length-1].x},${H-padB} L${pts[0].x},${H-padB} Z`
+  const gridLines = [0, 0.25, 0.5, 0.75, 1].map(t => ({
+    val: Math.round(minV + range * t),
+    y: padT + (1 - t) * (H - padT - padB)
+  }))
+
+  const first = vals[0]; const last = vals[vals.length-1]
+  const diff = +(last - first).toFixed(1)
+  const pct = first > 0 ? ((diff / first) * 100).toFixed(1) : 0
+
+  return (
+    <div>
+      <div style={{display:'flex',gap:6,marginBottom:14}}>
+        {periods.map(p => (
+          <button key={p.id} onClick={() => setPeriod(p.id)} style={{
+            padding:'6px 14px',borderRadius:99,fontSize:12,fontWeight:700,cursor:'pointer',border:'none',
+            background: period===p.id ? '#30D158' : '#2c2c2e',
+            color: period===p.id ? '#000' : 'rgba(255,255,255,0.5)',
+          }}>{p.label}</button>
+        ))}
+      </div>
+      <svg viewBox={`0 0 ${W} ${H}`} style={{width:'100%',height:H,overflow:'visible',display:'block'}}>
+        <defs>
+          <linearGradient id="cg2" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stopColor="#30D158" stopOpacity="0.2"/>
+            <stop offset="100%" stopColor="#30D158" stopOpacity="0"/>
+          </linearGradient>
+        </defs>
+        {gridLines.map((g,i) => (
+          <g key={i}>
+            <line x1={padL} y1={g.y} x2={W-padR} y2={g.y} stroke="rgba(255,255,255,0.06)" strokeWidth="1"/>
+            <text x={padL-4} y={g.y+4} textAnchor="end" fontSize="9" fill="rgba(255,255,255,0.3)">{g.val}</text>
+          </g>
+        ))}
+        <path d={area} fill="url(#cg2)"/>
+        <path d={path} fill="none" stroke="#30D158" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>
+        {pts.map((p,i) => (
+          <g key={i} style={{cursor:'pointer'}} onMouseEnter={()=>setTooltip(p)} onMouseLeave={()=>setTooltip(null)}>
+            <circle cx={p.x} cy={p.y} r="14" fill="transparent"/>
+            <circle cx={p.x} cy={p.y} r={tooltip?.label===p.label?6:4} fill="#30D158" stroke="#000" strokeWidth="2"/>
+          </g>
+        ))}
+        {tooltip && (() => {
+          const tx = Math.min(Math.max(tooltip.x,48), W-48)
+          const ty = tooltip.y - 16
+          return (
+            <g>
+              <rect x={tx-38} y={ty-16} width={76} height={26} rx="7" fill="#1c1c1e" stroke="rgba(48,209,88,0.4)" strokeWidth="1"/>
+              <text x={tx} y={ty+1} textAnchor="middle" fontSize="11" fill="#30D158" fontWeight="700">{tooltip.val} kg</text>
+              <text x={tx} y={ty+14} textAnchor="middle" fontSize="9" fill="rgba(255,255,255,0.4)">{tooltip.label}</text>
+            </g>
+          )
+        })()}
+      </svg>
+      <div style={{display:'flex',justifyContent:'space-between',marginTop:14,background:'rgba(255,255,255,0.04)',borderRadius:12,padding:'10px 14px'}}>
+        {[['Старт', first+' kg'], ['Прирост', (diff>=0?'+':'')+diff+' kg'], ['Рост', (Number(pct)>=0?'+':'')+pct+'%'], ['Сейчас', last+' kg']].map(([lbl,val],i) => (
+          <div key={i} style={{textAlign:'center'}}>
+            <div style={{fontSize:14,fontWeight:700,color: i===1||i===2 ? (diff>=0?'#30D158':'#FF453A') : 'white'}}>{val}</div>
+            <div style={{fontSize:9,opacity:0.35,marginTop:2,textTransform:'uppercase',letterSpacing:'0.5px'}}>{lbl}</div>
+          </div>
+        ))}
+      </div>
+    </div>
+  )
+}
+
 function DropdownPicker({ options, value, onChange, unit = '', label = '' }) {
   const [open, setOpen] = useState(false)
   const ref = useRef(null)
@@ -329,6 +445,7 @@ export default function App() {
   const [chartData, setChartData] = useState([])
   const [chartPeriod, setChartPeriod] = useState('ALL')
   const [timerSecs, setTimerSecs] = useState(null)
+  const [timerDuration, setTimerDuration] = useState(90)
   const timerRef = useRef(null)
   const historyLoaded = useRef(false)
 
@@ -519,13 +636,28 @@ export default function App() {
           <div className="timer-card">
             {timerSecs !== null ? (
               <>
-                <div><div className="timer-lbl">⏱ Отдых</div><div className="timer-num">{Math.floor(timerSecs/60)}:{String(timerSecs%60).padStart(2,'0')}</div></div>
+                <div>
+                  <div className="timer-lbl">⏱ Отдых</div>
+                  <div className="timer-num">{Math.floor(timerSecs/60)}:{String(timerSecs%60).padStart(2,'0')}</div>
+                </div>
                 <button className="timer-skip" onClick={() => setTimerSecs(null)}>Стоп ✕</button>
               </>
             ) : (
               <>
-                <div><div className="timer-lbl">Таймер отдыха</div><div style={{fontSize:13,opacity:0.4,marginTop:2}}>90 секунд</div></div>
-                <button className="timer-start" onClick={() => setTimerSecs(90)}>Старт ▶</button>
+                <div style={{flex:1}}>
+                  <div className="timer-lbl">Таймер отдыха</div>
+                  <div style={{display:'flex',alignItems:'center',gap:8,marginTop:6}}>
+                    {[30,60,90,120,180].map(t => (
+                      <button key={t} onClick={() => setTimerDuration(t)}
+                        style={{padding:'4px 10px',borderRadius:99,fontSize:12,fontWeight:700,border:'none',cursor:'pointer',
+                          background: timerDuration===t ? '#30D158' : '#2c2c2e',
+                          color: timerDuration===t ? '#000' : 'rgba(255,255,255,0.5)'}}>
+                        {t}s
+                      </button>
+                    ))}
+                  </div>
+                </div>
+                <button className="timer-start" onClick={() => setTimerSecs(timerDuration)}>▶</button>
               </>
             )}
           </div>
