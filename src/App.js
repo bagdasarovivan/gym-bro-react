@@ -761,6 +761,7 @@ export default function App() {
   const [workoutDate, setWorkoutDate] = useState(new Date().toISOString().split('T')[0])
   const [showDateModal, setShowDateModal] = useState(false)
   const [workoutExercises, setWorkoutExercises] = useState([])
+  const [kbHeight, setKbHeight] = useState(0)
   const historyLoaded = useRef(false)
 
   const handleAuth = async () => {
@@ -782,6 +783,16 @@ export default function App() {
   }
 
   useEffect(() => { const s = document.createElement('style'); s.textContent = CSS; document.head.appendChild(s); return () => document.head.removeChild(s) }, [])
+
+  // Track virtual keyboard height for iOS Safari
+  useEffect(() => {
+    const vv = window.visualViewport
+    if (!vv) return
+    const update = () => setKbHeight(Math.max(0, window.innerHeight - vv.height - vv.offsetTop))
+    vv.addEventListener('resize', update)
+    vv.addEventListener('scroll', update)
+    return () => { vv.removeEventListener('resize', update); vv.removeEventListener('scroll', update) }
+  }, [])
 
   // Auth listener
   useEffect(() => {
