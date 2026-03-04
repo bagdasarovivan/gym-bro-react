@@ -526,39 +526,40 @@ function MuscleMap({ muscleScores, period = 7 }) {
 
   // SVG viewBox matches image 1536x1024
   // Front figure center ~384, Back figure center ~1130
+  // Bilateral muscles split into _L/_R to fix iOS compound-path hit-test bug
   const zones = {
-    // === FRONT ===
+    // === FRONT (single) ===
     chest: "M 338,232 Q 426,214 514,232 Q 521,274 506,325 Q 426,343 346,325 Q 331,274 338,232 Z",
+    abs:   "M 354,327 Q 426,340 498,327 Q 506,371 501,417 Q 496,463 486,485 Q 426,494 366,485 Q 356,463 351,417 Q 346,371 354,327 Z",
 
-    shoulders: "M 286,204 Q 321,186 354,204 Q 366,232 361,278 Q 331,297 291,278 Q 271,251 286,204 Z M 498,204 Q 531,186 566,204 Q 581,251 561,278 Q 521,297 491,278 Q 486,232 498,204 Z",
+    // === FRONT (bilateral) ===
+    shoulders_L: "M 286,204 Q 321,186 354,204 Q 366,232 361,278 Q 331,297 291,278 Q 271,251 286,204 Z",
+    shoulders_R: "M 498,204 Q 531,186 566,204 Q 581,251 561,278 Q 521,297 491,278 Q 486,232 498,204 Z",
+    biceps_L:    "M 251,288 Q 278,278 296,290 Q 304,325 301,371 Q 294,399 274,399 Q 248,389 238,362 Q 234,327 251,288 Z",
+    biceps_R:    "M 556,290 Q 574,278 601,288 Q 618,327 614,362 Q 604,389 578,399 Q 558,399 551,371 Q 548,325 556,290 Z",
+    triceps_L:   "M 294,290 Q 314,281 328,294 Q 336,327 334,374 Q 326,401 304,401 Q 290,392 288,362 Q 286,327 294,290 Z",
+    triceps_R:   "M 524,294 Q 538,281 558,290 Q 566,327 564,362 Q 562,392 548,401 Q 526,401 518,374 Q 516,327 524,294 Z",
+    forearms_L:  "M 231,405 Q 258,396 278,408 Q 286,438 284,475 Q 276,498 254,498 Q 228,488 218,461 Q 214,429 231,405 Z",
+    forearms_R:  "M 574,408 Q 594,396 621,405 Q 638,429 634,461 Q 624,488 598,498 Q 576,498 568,475 Q 566,438 574,408 Z",
+    quads_L:     "M 358,500 Q 388,491 411,503 Q 418,535 416,593 Q 414,648 404,679 Q 381,692 358,683 Q 338,667 334,627 Q 331,577 338,535 Z",
+    quads_R:     "M 441,503 Q 464,491 494,500 Q 514,535 518,577 Q 521,627 514,667 Q 494,692 471,692 Q 448,679 436,648 Q 434,593 441,503 Z",
+    calves_L:    "M 348,713 Q 374,704 394,713 Q 404,741 402,787 Q 398,824 378,836 Q 354,840 338,827 Q 328,799 331,762 Z",
+    calves_R:    "M 458,713 Q 478,704 504,713 Q 521,762 514,799 Q 504,827 474,836 Q 454,836 450,799 Q 448,762 458,713 Z",
 
-    biceps: "M 251,288 Q 278,278 296,290 Q 304,325 301,371 Q 294,399 274,399 Q 248,389 238,362 Q 234,327 251,288 Z M 556,290 Q 574,278 601,288 Q 618,327 614,362 Q 604,389 578,399 Q 558,399 551,371 Q 548,325 556,290 Z",
-
-    triceps: "M 294,290 Q 314,281 328,294 Q 336,327 334,374 Q 326,401 304,401 Q 290,392 288,362 Q 286,327 294,290 Z M 524,294 Q 538,281 558,290 Q 566,327 564,362 Q 562,392 548,401 Q 526,401 518,374 Q 516,327 524,294 Z",
-
-    forearms: "M 231,405 Q 258,396 278,408 Q 286,438 284,475 Q 276,498 254,498 Q 228,488 218,461 Q 214,429 231,405 Z M 574,408 Q 594,396 621,405 Q 638,429 634,461 Q 624,488 598,498 Q 576,498 568,475 Q 566,438 574,408 Z",
-
-    abs: "M 354,327 Q 426,340 498,327 Q 506,371 501,417 Q 496,463 486,485 Q 426,494 366,485 Q 356,463 351,417 Q 346,371 354,327 Z",
-
-    quads: "M 358,500 Q 388,491 411,503 Q 418,535 416,593 Q 414,648 404,679 Q 381,692 358,683 Q 338,667 334,627 Q 331,577 338,535 Z M 441,503 Q 464,491 494,500 Q 514,535 518,577 Q 521,627 514,667 Q 494,692 471,692 Q 448,679 436,648 Q 434,593 441,503 Z",
-
-    calves: "M 348,713 Q 374,704 394,713 Q 404,741 402,787 Q 398,824 378,836 Q 354,840 338,827 Q 328,799 331,762 Z M 458,713 Q 478,704 504,713 Q 521,762 514,799 Q 504,827 474,836 Q 454,836 450,799 Q 448,762 458,713 Z",
-
-    // === BACK ===
-    traps: "M 1015,204 Q 1105,186 1195,204 Q 1203,239 1190,269 Q 1105,281 1020,269 Q 1007,239 1015,204 Z",
-
+    // === BACK (single) ===
+    traps:      "M 1015,204 Q 1105,186 1195,204 Q 1203,239 1190,269 Q 1105,281 1020,269 Q 1007,239 1015,204 Z",
     upper_back: "M 1020,272 Q 1105,285 1190,272 Q 1200,313 1193,355 Q 1183,383 1105,392 Q 1027,383 1017,355 Q 1010,313 1020,272 Z",
-
-    lats: "M 973,239 Q 1000,226 1017,241 Q 1023,278 1025,334 Q 1023,380 1010,401 Q 987,408 967,389 Q 953,364 957,318 Z M 1193,241 Q 1210,226 1237,239 Q 1253,278 1253,318 Q 1257,364 1243,389 Q 1223,408 1200,401 Q 1187,380 1185,334 Q 1187,278 1193,241 Z",
-
     lower_back: "M 1030,392 Q 1105,405 1180,392 Q 1187,424 1183,457 Q 1173,479 1105,485 Q 1037,479 1027,457 Q 1023,424 1030,392 Z",
 
-    glutes: "M 1033,485 Q 1070,475 1097,488 Q 1103,516 1100,559 Q 1093,596 1067,605 Q 1037,602 1020,584 Q 1010,556 1017,519 Z M 1113,488 Q 1140,475 1177,485 Q 1193,519 1190,556 Q 1183,584 1143,602 Q 1117,602 1110,559 Q 1107,516 1113,488 Z",
-
-    hamstrings: "M 1025,609 Q 1053,599 1077,611 Q 1087,642 1085,695 Q 1080,734 1057,744 Q 1030,744 1013,725 Q 1000,697 1003,655 Z M 1133,611 Q 1157,599 1185,609 Q 1207,655 1197,697 Q 1183,725 1153,744 Q 1130,744 1125,695 Q 1123,642 1133,611 Z",
-
-    calves_back: "M 1020,753 Q 1045,744 1067,753 Q 1077,781 1075,821 Q 1067,849 1043,855 Q 1020,852 1007,833 Q 997,803 1003,775 Z M 1143,753 Q 1165,744 1190,753 Q 1207,775 1203,803 Q 1193,833 1167,855 Q 1143,849 1135,821 Q 1133,781 1143,753 Z",
-
+    // === BACK (bilateral) ===
+    lats_L:        "M 973,239 Q 1000,226 1017,241 Q 1023,278 1025,334 Q 1023,380 1010,401 Q 987,408 967,389 Q 953,364 957,318 Z",
+    lats_R:        "M 1193,241 Q 1210,226 1237,239 Q 1253,278 1253,318 Q 1257,364 1243,389 Q 1223,408 1200,401 Q 1187,380 1185,334 Q 1187,278 1193,241 Z",
+    glutes_L:      "M 1033,485 Q 1070,475 1097,488 Q 1103,516 1100,559 Q 1093,596 1067,605 Q 1037,602 1020,584 Q 1010,556 1017,519 Z",
+    glutes_R:      "M 1113,488 Q 1140,475 1177,485 Q 1193,519 1190,556 Q 1183,584 1143,602 Q 1117,602 1110,559 Q 1107,516 1113,488 Z",
+    hamstrings_L:  "M 1025,609 Q 1053,599 1077,611 Q 1087,642 1085,695 Q 1080,734 1057,744 Q 1030,744 1013,725 Q 1000,697 1003,655 Z",
+    hamstrings_R:  "M 1133,611 Q 1157,599 1185,609 Q 1207,655 1197,697 Q 1183,725 1153,744 Q 1130,744 1125,695 Q 1123,642 1133,611 Z",
+    calves_back_L: "M 1020,753 Q 1045,744 1067,753 Q 1077,781 1075,821 Q 1067,849 1043,855 Q 1020,852 1007,833 Q 997,803 1003,775 Z",
+    calves_back_R: "M 1143,753 Q 1165,744 1190,753 Q 1207,775 1203,803 Q 1193,833 1167,855 Q 1143,849 1135,821 Q 1133,781 1143,753 Z",
   }
 
   const hoveredCount = muscleScores[hovered] || 0
@@ -573,6 +574,9 @@ function MuscleMap({ muscleScores, period = 7 }) {
     style: { cursor: 'pointer', transition: 'all 0.15s' },
     onMouseEnter: () => setHovered(muscle),
     onMouseLeave: () => setHovered(null),
+    onClick: () => setHovered(prev => prev === muscle ? null : muscle),
+    onTouchStart: (e) => { e.preventDefault(); setHovered(muscle); },
+    onTouchEnd: (e) => { e.preventDefault(); },
   })
 
   return (
@@ -608,22 +612,32 @@ function MuscleMap({ muscleScores, period = 7 }) {
         >
           {/* FRONT zones */}
           <path d={zones.chest} {...handleZone('chest')}/>
-          <path d={zones.shoulders} {...handleZone('shoulders')}/>
-          <path d={zones.biceps} {...handleZone('biceps')}/>
-          <path d={zones.triceps} {...handleZone('triceps')}/>
-          <path d={zones.forearms} {...handleZone('forearms')}/>
+          <path d={zones.shoulders_L} {...handleZone('shoulders')}/>
+          <path d={zones.shoulders_R} {...handleZone('shoulders')}/>
+          <path d={zones.biceps_L} {...handleZone('biceps')}/>
+          <path d={zones.biceps_R} {...handleZone('biceps')}/>
+          <path d={zones.triceps_L} {...handleZone('triceps')}/>
+          <path d={zones.triceps_R} {...handleZone('triceps')}/>
+          <path d={zones.forearms_L} {...handleZone('forearms')}/>
+          <path d={zones.forearms_R} {...handleZone('forearms')}/>
           <path d={zones.abs} {...handleZone('abs')}/>
-          <path d={zones.quads} {...handleZone('quads')}/>
-          <path d={zones.calves} {...handleZone('calves')}/>
+          <path d={zones.quads_L} {...handleZone('quads')}/>
+          <path d={zones.quads_R} {...handleZone('quads')}/>
+          <path d={zones.calves_L} {...handleZone('calves')}/>
+          <path d={zones.calves_R} {...handleZone('calves')}/>
 
           {/* BACK zones */}
           <path d={zones.traps} {...handleZone('traps')}/>
           <path d={zones.upper_back} {...handleZone('upper_back')}/>
-          <path d={zones.lats} {...handleZone('lats')}/>
+          <path d={zones.lats_L} {...handleZone('lats')}/>
+          <path d={zones.lats_R} {...handleZone('lats')}/>
           <path d={zones.lower_back} {...handleZone('lower_back')}/>
-          <path d={zones.glutes} {...handleZone('glutes')}/>
-          <path d={zones.hamstrings} {...handleZone('hamstrings')}/>
-          <path d={zones.calves_back} {...handleZone('calves_back')}/>
+          <path d={zones.glutes_L} {...handleZone('glutes')}/>
+          <path d={zones.glutes_R} {...handleZone('glutes')}/>
+          <path d={zones.hamstrings_L} {...handleZone('hamstrings')}/>
+          <path d={zones.hamstrings_R} {...handleZone('hamstrings')}/>
+          <path d={zones.calves_back_L} {...handleZone('calves_back')}/>
+          <path d={zones.calves_back_R} {...handleZone('calves_back')}/>
         </svg>
       </div>
 
