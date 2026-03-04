@@ -1571,7 +1571,7 @@ export default function App() {
 
       {showExModal && (
         <div className="modal-overlay" style={{paddingBottom:kbHeight}} onClick={e=>{if(e.target.classList.contains('modal-overlay')){setShowExModal(false);setModalSearch('')}}}>
-          <div className="modal">
+          <div className="modal" style={{maxHeight:`calc(85vh - ${kbHeight}px)`}}>
             <div className="modal-handle"/>
             <div className="modal-hdr">
               <div className="modal-title">Выбери упражнение</div>
