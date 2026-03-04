@@ -586,7 +586,7 @@ function MuscleMap({ muscleScores, period = 7 }) {
               {muscleNames[hovered] || muscleNames[hovered.replace('_back','')]}
             </span>
             <span style={{fontSize:12,opacity:0.5}}>
-              {hoveredCount > 0 ? `${hoveredPct}% (${hoveredCount} из ${recommended} рекомендуемых)` : 'не тренируется'}
+              {hoveredCount > 0 ? `${hoveredPct}%` : 'не тренируется'}
             </span>
           </div>
         ) : (
@@ -1433,7 +1433,8 @@ export default function App() {
         // Compute muscle scores
         const daysAgoDate = new Date(Date.now() - musclePeriod*24*60*60*1000).toISOString().split('T')[0]
         const recentHistory = history.filter(w => w.workout_date >= daysAgoDate)
-        const muscleCounts = {}
+        // Count unique training days per muscle (not exercise occurrences)
+        const muscleDates = {}
         recentHistory.forEach(w => {
           const wName = ruName(w.exercises?.name)
           // Check if exercise has grip variant (e.g. "Тяга вниз (Широкий)")
@@ -1444,8 +1445,12 @@ export default function App() {
           } else {
             muscles = EXERCISE_MUSCLES[wName] || []
           }
-          muscles.forEach(m => { muscleCounts[m] = (muscleCounts[m] || 0) + 1 })
+          muscles.forEach(m => {
+            if (!muscleDates[m]) muscleDates[m] = new Set()
+            muscleDates[m].add(w.workout_date)
+          })
         })
+        const muscleCounts = Object.fromEntries(Object.entries(muscleDates).map(([m, dates]) => [m, dates.size]))
         const muscleScores = muscleCounts
         return (
         <div className="section">
