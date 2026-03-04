@@ -927,7 +927,7 @@ export default function App() {
           })
         }
       }
-      const pts = Object.entries(byDate).sort(([a],[b])=>a.localeCompare(b)).map(([date,val])=>({ val, label: new Date(date+'T12:00:00').toLocaleDateString('ru',{day:'numeric',month:'short'}) })).filter(p=>p.val>0)
+      const pts = Object.entries(byDate).sort(([a],[b])=>a.localeCompare(b)).map(([date,val])=>({ val, date, label: new Date(date+'T12:00:00').toLocaleDateString('ru',{day:'numeric',month:'short'}) })).filter(p=>p.val>0)
       setChartData(pts)
     }
     load()
@@ -1281,7 +1281,7 @@ export default function App() {
                           <div style={{marginBottom:12}}>
                             <div style={{fontSize:11,opacity:0.4,textTransform:'uppercase',letterSpacing:'0.5px',marginBottom:6}}>Хват</div>
                             <div style={{display:'flex',gap:6,flexWrap:'wrap'}}>
-                              {GRIP_OPTIONS.map(g => (
+                              {(GRIP_MUSCLES[ex.name] ? Object.keys(GRIP_MUSCLES[ex.name]) : GRIP_OPTIONS).map(g => (
                                 <button key={g} onClick={()=>setWorkoutExercises(prev=>prev.map((e,i)=>i!==exIdx?e:{...e,grip:g}))}
                                   style={{padding:'5px 12px',borderRadius:99,fontSize:12,fontWeight:600,border:'none',cursor:'pointer',
                                     background: ex.grip===g ? '#FF9F0A' : 'rgba(255,255,255,0.08)',
@@ -1498,7 +1498,13 @@ export default function App() {
           <div className="prog-title">📊 График роста</div>
           <div className="chart-wrap">
             <select className="chart-ex-select" value={chartEx} onChange={e=>setChartEx(e.target.value)}>{exercises.map(e=><option key={e.id} value={e.name}>{ruName(e.name)}</option>)}</select>
-            <LineChart data={chartData} period={chartPeriod} setPeriod={setChartPeriod}/>
+            <LineChart data={(() => {
+              if (chartPeriod === 'ALL') return chartData
+              const months = chartPeriod === '1M' ? 1 : 3
+              const cutoff = new Date(); cutoff.setMonth(cutoff.getMonth() - months)
+              const cutoffStr = cutoff.toISOString().split('T')[0]
+              return chartData.filter(p => p.date >= cutoffStr)
+            })()} period={chartPeriod} setPeriod={setChartPeriod}/>
           </div>
         </div>
         )
