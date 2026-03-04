@@ -30,7 +30,6 @@ const EXERCISE_IMAGES = {
   'Жим гантелей лёжа':'/images/dumbbell_bench.png',
   'Жим гантелей наклон':'/images/incline_dumbbell_press.png',
   'Жим штанги в наклоне':'/images/incline_bench_press.png',
-  'Жим узким хватом':'/images/close_grip_bench.png',
   'Разводка гантелей':'/images/dumbbell_flyes.png',
   'Разводка лёжа':'/images/flat_dumbbell_flyes.png',
   'Кроссовер':'/images/cable_fly.png',
@@ -58,7 +57,6 @@ const EXERCISE_IMAGES = {
   'Изолированные сгибания':'/images/concentration_curl.png',
   'Сгибания на скамье Скотта':'/images/scott_curl.png',
   'Сгибания на блоке':'/images/cable_curl.png',
-  'Обратные сгибания':'/images/reverse_curl.png',
   // Трицепс
   'Французский жим':'/images/french_press.png',
   'Разгибания на блоке':'/images/cable_pushdown.png',
@@ -97,7 +95,6 @@ const EXERCISE_MUSCLES = {
   'Жим гантелей лёжа':           ['chest','triceps','shoulders'],
   'Жим гантелей наклон':         ['chest','shoulders','triceps'],
   'Жим штанги в наклоне':        ['chest','shoulders','triceps'],
-  'Жим узким хватом':            ['chest','triceps'],
   'Разводка гантелей':           ['chest','shoulders'],
   'Разводка лёжа':               ['chest','shoulders'],
   'Кроссовер':                   ['chest','shoulders'],
@@ -126,11 +123,9 @@ const EXERCISE_MUSCLES = {
   'Изолированные сгибания':      ['biceps'],
   'Сгибания на скамье Скотта':   ['biceps'],
   'Сгибания на блоке':           ['biceps','forearms'],
-  'Обратные сгибания':           ['biceps','forearms'],
   // Трицепс
   'Французский жим':             ['triceps'],
   'Разгибания на блоке':         ['triceps'],
-  'Разгибания из-за головы':     ['triceps'],
   'Трицепс гантель':             ['triceps'],
   'Отжимания на брусьях':        ['triceps','chest','shoulders'],
   // Квадрицепс
