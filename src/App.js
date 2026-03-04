@@ -272,7 +272,7 @@ input[type=number]::-webkit-inner-spin-button{-webkit-appearance:none}
 .pr-detail-sets{font-size:16px;font-weight:700}
 .pr-detail-date{font-size:12px;opacity:0.4;margin-top:3px}
 .pr-detail-est{font-size:13px;color:#30D158;margin-top:4px}
-.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:100;display:flex;align-items:flex-end;justify-content:center;animation:fov 0.2s ease;backdrop-filter:blur(8px)}
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:100;display:flex;align-items:flex-end;justify-content:center;animation:fov 0.2s ease;backdrop-filter:blur(8px);padding-bottom:env(keyboard-inset-height,0px)}
 @keyframes fov{from{opacity:0}to{opacity:1}}
 .modal{background:#1c1c1e;border-radius:20px 20px 0 0;width:100%;max-width:480px;max-height:85vh;display:flex;flex-direction:column;animation:sup 0.3s cubic-bezier(0.34,1.1,0.64,1)}
 @keyframes sup{from{transform:translateY(100%)}to{transform:translateY(0)}}
@@ -859,9 +859,9 @@ export default function App() {
     if (!chartEx || tab !== 'progress') return
     async function load() {
       const enName = Object.entries(EN_TO_RU).find(([,v])=>v===chartEx)?.[0] || chartEx
-      let exRes = await supabase.from('exercises').select('id').eq('name', chartEx).maybeSingle()
-      if (!exRes.data) exRes = await supabase.from('exercises').select('id').eq('name', enName).maybeSingle()
-      const ex = exRes.data
+      let exRes = await supabase.from('exercises').select('id').eq('name', chartEx).limit(1)
+      if (!exRes.data?.length) exRes = await supabase.from('exercises').select('id').eq('name', enName).limit(1)
+      const ex = exRes.data?.[0]
       if (!ex) { setChartData([]); return }
       const { data } = await supabase.from('workouts').select('workout_date,sets(weight,reps)').eq('exercise_id',ex.id).eq('user_id', user.id).order('workout_date',{ascending:true}).limit(50)
       const pts = (data||[]).map(w => { const best = (w.sets||[]).filter(s=>s.weight>0&&s.reps>0).reduce((b,s)=>{ const e=s.weight*(1+s.reps/30); return e>b.e?{e,w:s.weight,r:s.reps}:b },{e:0,w:0,r:0}); return { val: best.w, label: new Date(w.workout_date).toLocaleDateString('ru',{day:'numeric',month:'short'}) }}).filter(p=>p.val>0)
@@ -1421,7 +1421,7 @@ export default function App() {
             <div className="modal-handle"/>
             <div className="modal-hdr">
               <div className="modal-title">Выбери упражнение</div>
-              <div className="modal-srch-wrap"><span className="modal-srch-icon">🔍</span><input className="modal-srch" placeholder="Поиск..." value={modalSearch} onChange={e=>setModalSearch(e.target.value)} autoFocus/></div>
+              <div className="modal-srch-wrap"><span className="modal-srch-icon">🔍</span><input className="modal-srch" placeholder="Поиск..." value={modalSearch} onChange={e=>setModalSearch(e.target.value)}/></div>
             </div>
             <div className="modal-list">
               {!modalSearch&&favFiltered.length>0&&<><div className="modal-sect-lbl">⭐ Избранные</div>{favFiltered.map(ex=><ModalItem key={ex.id} ex={ex} onSelect={()=>addExToWorkout(ex.name)}/>)}<div className="modal-sect-lbl">Все упражнения</div></>}
