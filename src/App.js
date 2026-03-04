@@ -488,22 +488,37 @@ function LineChart({ data, period, setPeriod }) {
   )
 }
 
-function MuscleMap({ muscleScores }) {
+function MuscleMap({ muscleScores, period = 7 }) {
   const [hovered, setHovered] = useState(null)
 
+  const getLevel = (count) => {
+    if (!count) return 'none'
+    if (period === 7) {
+      if (count === 1) return 'low'
+      if (count === 2) return 'medium'
+      return 'high'
+    } else {
+      if (count <= 2) return 'low'
+      if (count <= 5) return 'medium'
+      if (count <= 8) return 'high'
+      return 'excellent'
+    }
+  }
   const getColor = (muscle) => {
-    const score = muscleScores[muscle] || 0
-    if (score === 0) return 'rgba(255,255,255,0)'
-    if (score < 0.33) return 'rgba(255,214,0,0.45)'
-    if (score < 0.66) return 'rgba(100,210,100,0.5)'
-    return 'rgba(0,160,60,0.65)'
+    const level = getLevel(muscleScores[muscle] || 0)
+    if (level === 'none')      return 'rgba(255,255,255,0)'
+    if (level === 'low')       return 'rgba(255,214,0,0.45)'
+    if (level === 'medium')    return 'rgba(100,210,100,0.5)'
+    if (level === 'high')      return 'rgba(0,160,60,0.65)'
+    return 'rgba(48,209,88,0.75)' // excellent
   }
   const getStroke = (muscle) => {
-    const score = muscleScores[muscle] || 0
-    if (score === 0) return hovered === muscle ? 'rgba(255,255,255,0.4)' : 'rgba(255,255,255,0)'
-    if (score < 0.33) return 'rgba(255,214,0,0.9)'
-    if (score < 0.66) return 'rgba(100,210,100,1)'
-    return 'rgba(0,200,70,1)'
+    const level = getLevel(muscleScores[muscle] || 0)
+    if (level === 'none')      return hovered === muscle ? 'rgba(255,255,255,0.4)' : 'rgba(255,255,255,0)'
+    if (level === 'low')       return 'rgba(255,214,0,0.9)'
+    if (level === 'medium')    return 'rgba(100,210,100,1)'
+    if (level === 'high')      return 'rgba(0,200,70,1)'
+    return 'rgba(48,209,88,1)' // excellent
   }
   const muscleNames = {
     chest:'Грудь', shoulders:'Плечи', biceps:'Бицепс', triceps:'Трицепс',
@@ -549,12 +564,13 @@ function MuscleMap({ muscleScores }) {
 
   }
 
-  const score = muscleScores[hovered] || 0
-  const scoreColor = score > 0.66 ? '#00C853' : score > 0.33 ? '#64D264' : score > 0 ? '#FFD60A' : 'rgba(255,255,255,0.3)'
+  const hoveredCount = muscleScores[hovered] || 0
+  const hoveredLevel = getLevel(hoveredCount)
+  const scoreColor = hoveredLevel === 'excellent' ? '#30D158' : hoveredLevel === 'high' ? '#00A03C' : hoveredLevel === 'medium' ? '#64D264' : hoveredLevel === 'low' ? '#FFD60A' : 'rgba(255,255,255,0.3)'
 
   const handleZone = (muscle) => ({
-    fill: hovered === muscle ? (score > 0 ? getColor(muscle) : 'rgba(255,255,255,0.12)') : getColor(muscle),
-    stroke: hovered === muscle ? (score > 0 ? getStroke(muscle) : 'rgba(255,255,255,0.5)') : getStroke(muscle),
+    fill: hovered === muscle ? (hoveredCount > 0 ? getColor(muscle) : 'rgba(255,255,255,0.12)') : getColor(muscle),
+    stroke: hovered === muscle ? (hoveredCount > 0 ? getStroke(muscle) : 'rgba(255,255,255,0.5)') : getStroke(muscle),
     strokeWidth: hovered === muscle ? 1.5 : 0.8,
     style: { cursor: 'pointer', transition: 'all 0.15s' },
     onMouseEnter: () => setHovered(muscle),
@@ -572,7 +588,7 @@ function MuscleMap({ muscleScores }) {
               {muscleNames[hovered] || muscleNames[hovered.replace('_back','')]}
             </span>
             <span style={{fontSize:12,opacity:0.5}}>
-              {score > 0 ? Math.round(score*100)+'% нагрузки' : 'не тренируется'}
+              {hoveredCount > 0 ? hoveredCount+' раз' : 'не тренируется'}
             </span>
           </div>
         ) : (
@@ -1432,8 +1448,7 @@ export default function App() {
           }
           muscles.forEach(m => { muscleCounts[m] = (muscleCounts[m] || 0) + 1 })
         })
-        const maxCount = Math.max(1, ...Object.values(muscleCounts))
-        const muscleScores = Object.fromEntries(Object.entries(muscleCounts).map(([m,c]) => [m, c/maxCount]))
+        const muscleScores = muscleCounts
         return (
         <div className="section">
           {stats && (
@@ -1454,9 +1469,12 @@ export default function App() {
                 }}>{label}</button>
               ))}
             </div>
-            <MuscleMap muscleScores={muscleScores}/>
+            <MuscleMap muscleScores={muscleScores} period={musclePeriod}/>
             <div style={{display:'flex',justifyContent:'center',gap:14,marginTop:12}}>
-              {[['#FFD60A','Мало'],['#64D264','Средне'],['#00A03C','Много'],['rgba(255,255,255,0.2)','Нет']].map(([color,label])=>(
+              {(musclePeriod === 30
+                ? [['#FFD60A','Мало'],['#64D264','Средне'],['#00A03C','Много'],['#30D158','Отлично'],['rgba(255,255,255,0.2)','Нет']]
+                : [['#FFD60A','Мало'],['#64D264','Средне'],['#00A03C','Много'],['rgba(255,255,255,0.2)','Нет']]
+              ).map(([color,label])=>(
                 <div key={label} style={{display:'flex',alignItems:'center',gap:5}}>
                   <div style={{width:10,height:10,borderRadius:3,background:color,flexShrink:0}}/>
                   <span style={{fontSize:11,color:'rgba(255,255,255,0.4)',fontWeight:500}}>{label}</span>
