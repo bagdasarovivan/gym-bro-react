@@ -8,6 +8,10 @@ const LIGHT_WEIGHTS = [...new Set([
   ...Array.from({ length: 21 }, (_, i) => 10 + i * 2),
   ...Array.from({ length: 21 }, (_, i) => 50 + i * 5),
 ])].sort((a, b) => a - b)
+const MACHINE_WEIGHTS = [...new Set([
+  ...Array.from({ length: 11 }, (_, i) => i * 5),
+  ...Array.from({ length: 20 }, (_, i) => 55 + i * 5),
+])].sort((a, b) => a - b)
 const REPS_OPTIONS = Array.from({ length: 51 }, (_, i) => i)
 const TIME_OPTIONS = Array.from({ length: 51 }, (_, i) => i * 5)
 
@@ -81,6 +85,42 @@ const EXERCISE_MUSCLES = {
 }
 
 
+
+const GRIP_EXERCISES = ['Тяга вниз', 'Тяга сидя', 'Подтягивания', 'Тяга штанги в наклоне', 'Жим лёжа']
+const GRIP_OPTIONS = ['Стандартный', 'Широкий', 'Узкий', 'Обратный']
+const GRIP_MUSCLES = {
+  'Тяга вниз': {
+    'Стандартный': ['lats','biceps','upper_back'],
+    'Широкий':     ['lats','upper_back'],
+    'Узкий':       ['lats','biceps','upper_back'],
+    'Обратный':    ['lats','biceps'],
+  },
+  'Тяга сидя': {
+    'Стандартный': ['lats','upper_back','biceps'],
+    'Широкий':     ['upper_back','lats'],
+    'Узкий':       ['lats','upper_back','biceps'],
+    'Обратный':    ['biceps','lats'],
+  },
+  'Подтягивания': {
+    'Стандартный': ['lats','biceps','upper_back'],
+    'Широкий':     ['lats','upper_back'],
+    'Узкий':       ['lats','biceps'],
+    'Обратный':    ['biceps','lats'],
+  },
+  'Тяга штанги в наклоне': {
+    'Стандартный': ['lats','upper_back','biceps','traps'],
+    'Широкий':     ['upper_back','lats','traps'],
+    'Узкий':       ['lats','biceps','upper_back'],
+    'Обратный':    ['biceps','lats','upper_back'],
+  },
+  'Жим лёжа': {
+    'Стандартный': ['chest','triceps','shoulders'],
+    'Широкий':     ['chest','shoulders'],
+    'Узкий':       ['triceps','chest'],
+    'Обратный':    ['chest','triceps'],
+  },
+}
+
 const MONTH_MOTIVATIONS = {
   1:  ['Первая тренировка месяца! Отличное начало', 'Старт дан! Так держать', 'Первый шаг самый важный!'],
   2:  ['Уже вторая! Входишь в ритм', 'Два раза это уже привычка!', 'Продолжаешь значит серьёзно настроен'],
@@ -110,7 +150,7 @@ const DEFAULT_FAVORITES = ['Жим лёжа','Приседания','Стано�
 
 function getWeightOptions(exName) {
   const t = EXERCISE_TYPE[exName] || 'light'
-  return t === 'heavy' ? HEAVY_WEIGHTS : t === 'timed' ? TIME_OPTIONS : LIGHT_WEIGHTS
+  return t === 'heavy' ? HEAVY_WEIGHTS : t === 'timed' ? TIME_OPTIONS : t === 'machine' ? MACHINE_WEIGHTS : LIGHT_WEIGHTS
 }
 
 
@@ -859,12 +899,22 @@ export default function App() {
     if (!chartEx || tab !== 'progress') return
     async function load() {
       const enName = Object.entries(EN_TO_RU).find(([,v])=>v===chartEx)?.[0] || chartEx
-      let exRes = await supabase.from('exercises').select('id').eq('name', chartEx).limit(1)
-      if (!exRes.data?.length) exRes = await supabase.from('exercises').select('id').eq('name', enName).limit(1)
-      const ex = exRes.data?.[0]
-      if (!ex) { setChartData([]); return }
-      const { data } = await supabase.from('workouts').select('workout_date,sets(weight,reps)').eq('exercise_id',ex.id).eq('user_id', user.id).order('workout_date',{ascending:true}).limit(50)
-      const pts = (data||[]).map(w => { const best = (w.sets||[]).filter(s=>s.weight>0&&s.reps>0).reduce((b,s)=>{ const e=s.weight*(1+s.reps/30); return e>b.e?{e,w:s.weight,r:s.reps}:b },{e:0,w:0,r:0}); return { val: best.w, label: new Date(w.workout_date).toLocaleDateString('ru',{day:'numeric',month:'short'}) }}).filter(p=>p.val>0)
+      // Try exact name, then EN name, then partial match
+      let exIds = []
+      const r1 = await supabase.from('exercises').select('id').eq('name', chartEx)
+      if (r1.data?.length) exIds = r1.data.map(e=>e.id)
+      if (!exIds.length) {
+        const r2 = await supabase.from('exercises').select('id').eq('name', enName)
+        if (r2.data?.length) exIds = r2.data.map(e=>e.id)
+      }
+      if (!exIds.length) { setChartData([]); return }
+      const { data } = await supabase.from('workouts').select('workout_date,sets(weight,reps)').in('exercise_id',exIds).eq('user_id', user.id).order('workout_date',{ascending:true}).limit(50)
+      const byDate = {}
+      ;(data||[]).forEach(w => {
+        const best = (w.sets||[]).filter(s=>s.weight>0&&s.reps>0).reduce((b,s)=>s.weight>b?s.weight:b, 0)
+        if (!byDate[w.workout_date] || best > byDate[w.workout_date]) byDate[w.workout_date] = best
+      })
+      const pts = Object.entries(byDate).sort(([a],[b])=>a.localeCompare(b)).map(([date,val])=>({ val, label: new Date(date+'T12:00:00').toLocaleDateString('ru',{day:'numeric',month:'short'}) })).filter(p=>p.val>0)
       setChartData(pts)
     }
     load()
@@ -927,7 +977,8 @@ export default function App() {
     }
     const defaultWeight = lastSess?.sets?.length ? Math.max(...lastSess.sets.map(s=>s.weight||0)) : 0
     const defaultReps = lastSess?.sets?.length ? (lastSess.sets.sort((a,b)=>b.weight-a.weight)[0]?.reps || 0) : 0
-    setWorkoutExercises(prev => [...prev, { name, open: true, lastSession: lastSess, sets: [{ weight: defaultWeight, reps: defaultReps }] }])
+    const grip = GRIP_EXERCISES.includes(name) ? 'Стандартный' : null
+    setWorkoutExercises(prev => [...prev, { name, grip, open: true, lastSession: lastSess, sets: [{ weight: defaultWeight, reps: defaultReps }] }])
   }
 
   const saveWorkout = async () => {
@@ -938,9 +989,10 @@ export default function App() {
       const exIsTimed = (EXERCISE_TYPE[exItem.name] || 'light') === 'timed'
       const filled = exItem.sets.filter(s => exIsTimed ? s.weight > 0 : (s.weight > 0 && s.reps > 0))
       if (!filled.length) continue
-      let { data: ex } = await supabase.from('exercises').select('id').eq('name', exItem.name).single()
+      const saveName = (exItem.grip && exItem.grip !== 'Стандартный') ? `${exItem.name} (${exItem.grip})` : exItem.name
+      let { data: ex } = await supabase.from('exercises').select('id').eq('name', saveName).single()
       if (!ex) {
-        const { data: inserted } = await supabase.from('exercises').insert({ name: exItem.name }).select().single()
+        const { data: inserted } = await supabase.from('exercises').insert({ name: saveName }).select().single()
         ex = inserted
       }
       if (!ex) continue
@@ -1198,7 +1250,10 @@ export default function App() {
                         ? <img src={EXERCISE_IMAGES[ex.name]} alt={ex.name} style={{width:36,height:36,borderRadius:8,objectFit:'cover',flexShrink:0}} onError={e=>e.target.style.display='none'}/>
                         : <div style={{width:36,height:36,borderRadius:8,background:'rgba(255,255,255,0.07)',display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0,fontSize:18}}>🏋️</div>
                       }
-                      <span style={{flex:1,fontSize:15,fontWeight:700,color:'rgba(255,255,255,0.9)'}}>{ex.name}</span>
+                      <div style={{flex:1}}>
+                        <span style={{fontSize:15,fontWeight:700,color:'rgba(255,255,255,0.9)'}}>{ex.name}</span>
+                        {ex.grip && ex.grip !== 'Стандартный' && <span style={{fontSize:11,color:'rgba(255,159,10,0.8)',marginLeft:6,fontWeight:600}}>({ex.grip})</span>}
+                      </div>
                       <span style={{fontSize:12,color:'rgba(255,255,255,0.3)',marginRight:4}}>{ex.sets.filter(s=>s.weight>0&&s.reps>0).length} подх.</span>
                       <button onClick={e=>{e.stopPropagation();setWorkoutExercises(prev=>prev.filter((_,i)=>i!==exIdx))}}
                         style={{background:'rgba(255,59,48,0.1)',border:'none',borderRadius:8,padding:'4px 8px',color:'#FF453A',cursor:'pointer',fontSize:12,fontWeight:700,marginRight:4}}>✕</button>
@@ -1209,6 +1264,21 @@ export default function App() {
                         {ex.lastSession && (
                           <div style={{fontSize:12,color:'rgba(255,255,255,0.35)',marginBottom:10,padding:'7px 10px',background:'rgba(255,255,255,0.03)',borderRadius:8}}>
                             💡 Прошлый раз: {ex.lastSession.sets?.sort((a,b)=>a.set_no-b.set_no).map(s=>s.time_sec>0?`${s.time_sec}s`:`${s.weight}×${s.reps}`).join(' · ')}
+                          </div>
+                        )}
+                        {ex.grip !== null && ex.grip !== undefined && (
+                          <div style={{marginBottom:12}}>
+                            <div style={{fontSize:11,opacity:0.4,textTransform:'uppercase',letterSpacing:'0.5px',marginBottom:6}}>Хват</div>
+                            <div style={{display:'flex',gap:6,flexWrap:'wrap'}}>
+                              {GRIP_OPTIONS.map(g => (
+                                <button key={g} onClick={()=>setWorkoutExercises(prev=>prev.map((e,i)=>i!==exIdx?e:{...e,grip:g}))}
+                                  style={{padding:'5px 12px',borderRadius:99,fontSize:12,fontWeight:600,border:'none',cursor:'pointer',
+                                    background: ex.grip===g ? '#FF9F0A' : 'rgba(255,255,255,0.08)',
+                                    color: ex.grip===g ? '#000' : 'rgba(255,255,255,0.6)'}}>
+                                  {g}
+                                </button>
+                              ))}
+                            </div>
                           </div>
                         )}
                         {ex.sets.map((s,si) => (
@@ -1326,7 +1396,15 @@ export default function App() {
         const recentHistory = history.filter(w => w.workout_date >= daysAgoDate)
         const muscleCounts = {}
         recentHistory.forEach(w => {
-          const muscles = EXERCISE_MUSCLES[ruName(w.exercises?.name)] || []
+          const wName = ruName(w.exercises?.name)
+          // Check if exercise has grip variant (e.g. "Тяга вниз (Широкий)")
+          const gripMatch = wName.match(/^(.+) \((.+)\)$/)
+          let muscles = []
+          if (gripMatch && GRIP_MUSCLES[gripMatch[1]]?.[gripMatch[2]]) {
+            muscles = GRIP_MUSCLES[gripMatch[1]][gripMatch[2]]
+          } else {
+            muscles = EXERCISE_MUSCLES[wName] || []
+          }
           muscles.forEach(m => { muscleCounts[m] = (muscleCounts[m] || 0) + 1 })
         })
         const maxCount = Math.max(1, ...Object.values(muscleCounts))
