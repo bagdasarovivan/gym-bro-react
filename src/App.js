@@ -308,9 +308,9 @@ input[type=number]::-webkit-inner-spin-button{-webkit-appearance:none}
 .pr-detail-sets{font-size:16px;font-weight:700}
 .pr-detail-date{font-size:12px;opacity:0.4;margin-top:3px}
 .pr-detail-est{font-size:13px;color:#30D158;margin-top:4px}
-.modal-overlay{position:fixed;left:0;right:0;top:0;bottom:0;background:rgba(0,0,0,0.6);z-index:100;display:flex;align-items:flex-end;justify-content:center;animation:fov 0.2s ease;backdrop-filter:blur(8px)}
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:100;display:flex;align-items:flex-end;justify-content:center;animation:fov 0.2s ease;backdrop-filter:blur(8px);padding-bottom:env(keyboard-inset-height,0px)}
 @keyframes fov{from{opacity:0}to{opacity:1}}
-.modal{background:#1c1c1e;border-radius:20px 20px 0 0;width:100%;max-width:480px;max-height:80dvh;max-height:80vh;display:flex;flex-direction:column;animation:sup 0.3s cubic-bezier(0.34,1.1,0.64,1)}
+.modal{background:#1c1c1e;border-radius:20px 20px 0 0;width:100%;max-width:480px;max-height:85vh;display:flex;flex-direction:column;animation:sup 0.3s cubic-bezier(0.34,1.1,0.64,1)}
 @keyframes sup{from{transform:translateY(100%)}to{transform:translateY(0)}}
 .modal-handle{width:36px;height:4px;background:rgba(255,255,255,0.15);border-radius:99px;margin:10px auto 0;flex-shrink:0}
 .modal-hdr{padding:14px 18px 12px;border-bottom:1px solid rgba(255,255,255,0.06);flex-shrink:0}
@@ -895,30 +895,32 @@ export default function App() {
     if (!chartEx || tab !== 'progress') return
     async function load() {
       const enName = Object.entries(EN_TO_RU).find(([,v])=>v===chartEx)?.[0] || chartEx
-      // Always query DB directly - don't rely on history state
+      const matchName = (n) => !n ? false : (n === chartEx || n === enName || ruName(n) === chartEx)
       const byDate = {}
-      // Get exercise IDs for both RU and EN names
-      const { data: exRows } = await supabase.from('exercises').select('id').or(`name.eq.${chartEx},name.eq.${enName}`)
-      const exIds = (exRows||[]).map(e=>e.id)
-      if (!exIds.length) { setChartData([]); return }
-      const { data: wRows } = await supabase.from('workouts')
-        .select('workout_date,sets(weight,reps)')
-        .in('exercise_id', exIds)
-        .eq('user_id', user.id)
-        .order('workout_date', {ascending:true})
-        .limit(100)
-      ;(wRows||[]).forEach(w => {
+      // First try from already-loaded history
+      history.forEach(w => {
+        if (!matchName(w.exercises?.name)) return
         const best = (w.sets||[]).filter(s=>s.weight>0&&s.reps>0).reduce((b,s)=>s.weight>b?s.weight:b, 0)
         if (best > 0 && (!byDate[w.workout_date] || best > byDate[w.workout_date])) byDate[w.workout_date] = best
       })
-      const pts = Object.entries(byDate)
-        .sort(([a],[b])=>a.localeCompare(b))
-        .map(([date,val])=>({ val, label: new Date(date+'T12:00:00').toLocaleDateString('ru',{day:'numeric',month:'short'}) }))
-        .filter(p=>p.val>0)
+      // If nothing found, query DB directly
+      if (Object.keys(byDate).length === 0) {
+        const r1 = await supabase.from('exercises').select('id').eq('name', chartEx)
+        const r2 = !r1.data?.length ? await supabase.from('exercises').select('id').eq('name', enName) : {data:[]}
+        const exIds = [...(r1.data||[]), ...(r2.data||[])].map(e=>e.id)
+        if (exIds.length) {
+          const { data } = await supabase.from('workouts').select('workout_date,sets(weight,reps)').in('exercise_id',exIds).eq('user_id', user.id).order('workout_date',{ascending:true}).limit(50)
+          ;(data||[]).forEach(w => {
+            const best = (w.sets||[]).filter(s=>s.weight>0&&s.reps>0).reduce((b,s)=>s.weight>b?s.weight:b, 0)
+            if (best > 0 && (!byDate[w.workout_date] || best > byDate[w.workout_date])) byDate[w.workout_date] = best
+          })
+        }
+      }
+      const pts = Object.entries(byDate).sort(([a],[b])=>a.localeCompare(b)).map(([date,val])=>({ val, label: new Date(date+'T12:00:00').toLocaleDateString('ru',{day:'numeric',month:'short'}) })).filter(p=>p.val>0)
       setChartData(pts)
     }
     load()
-  }, [chartEx, tab])
+  }, [chartEx, tab, history])
 
   useEffect(() => {
     if (!selectedEx) return
@@ -1492,12 +1494,12 @@ export default function App() {
       })()}
 
       {showExModal && (
-        <div className="modal-overlay" onClick={e=>{if(e.target.classList.contains('modal-overlay')){setShowExModal(false);setModalSearch('')}}}>
+        <div className="modal-overlay" style={{paddingBottom:kbHeight}} onClick={e=>{if(e.target.classList.contains('modal-overlay')){setShowExModal(false);setModalSearch('')}}}>
           <div className="modal">
             <div className="modal-handle"/>
             <div className="modal-hdr">
               <div className="modal-title">Выбери упражнение</div>
-              <div className="modal-srch-wrap"><span className="modal-srch-icon">🔍</span><input className="modal-srch" placeholder="Поиск..." value={modalSearch} onChange={e=>setModalSearch(e.target.value)} onFocus={e=>{setTimeout(()=>e.target.scrollIntoView({block:'nearest'}),300)}}/></div>
+              <div className="modal-srch-wrap"><span className="modal-srch-icon">🔍</span><input className="modal-srch" placeholder="Поиск..." value={modalSearch} onChange={e=>setModalSearch(e.target.value)}/></div>
             </div>
             <div className="modal-list">
               {!modalSearch&&favFiltered.length>0&&<><div className="modal-sect-lbl">⭐ Избранные</div>{favFiltered.map(ex=><ModalItem key={ex.id} ex={ex} onSelect={()=>addExToWorkout(ex.name)}/>)}<div className="modal-sect-lbl">Все упражнения</div></>}
