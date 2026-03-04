@@ -670,12 +670,12 @@ function ModalItem({ ex, onSelect }) {
 function EditModal({ data, onClose, onSave }) {
   const [workouts, setWorkouts] = useState(data.workouts.map(w => ({
     ...w,
-    editSets: w.sets?.sort((a,b) => a.set_no-b.set_no).map(s => ({ weight: String(s.weight), reps: String(s.reps) })) || []
+    editSets: w.sets?.sort((a,b) => a.set_no-b.set_no).map(s => ({ weight: String(s.weight), reps: String(s.reps), time_sec: s.time_sec ?? null })) || []
   })))
 
   const upd = (wi, si, f, v) => setWorkouts(prev => prev.map((w,i) => i!==wi?w:{...w,editSets:w.editSets.map((s,j) => j!==si?s:{...s,[f]:v})}))
   const del = (wi, si) => setWorkouts(prev => prev.map((w,i) => i!==wi?w:{...w,editSets:w.editSets.filter((_,j)=>j!==si)}))
-  const add = (wi) => setWorkouts(prev => prev.map((w,i) => i!==wi?w:{...w,editSets:[...w.editSets,{weight:'0',reps:'0'}]}))
+  const add = (wi) => setWorkouts(prev => prev.map((w,i) => i!==wi?w:{...w,editSets:[...w.editSets,{weight:'0',reps:'0',time_sec:null}]}))
 
   return (
     <div className="modal-overlay" onClick={e=>{if(e.target.classList.contains('modal-overlay'))onClose()}}>
@@ -685,22 +685,31 @@ function EditModal({ data, onClose, onSave }) {
           <div className="modal-title" style={{marginBottom:0}}>✏️ {formatDateShort(data.date)}</div>
         </div>
         <div className="modal-body">
-          {workouts.map((w, wi) => (
+          {workouts.map((w, wi) => {
+            const isTimed = (EXERCISE_TYPE[ruName(w.exercises?.name)] || 'light') === 'timed'
+            return (
             <div key={w.id} style={{marginBottom:20}}>
               <div style={{fontSize:14,fontWeight:700,marginBottom:10,opacity:0.7}}>{ruName(w.exercises?.name)}</div>
               {w.editSets.map((s,si) => (
                 <div key={si} className="edit-row">
                   <span style={{opacity:0.3,width:18,fontSize:12,textAlign:'center'}}>{si+1}</span>
-                  <input className="edit-inp" type="number" value={s.weight} onChange={e=>upd(wi,si,'weight',e.target.value)} placeholder="кг"/>
-                  <span style={{opacity:0.3,fontSize:14}}>×</span>
-                  <input className="edit-inp" type="number" value={s.reps} onChange={e=>upd(wi,si,'reps',e.target.value)} placeholder="повт"/>
+                  {isTimed ? (
+                    <input className="edit-inp" type="number" value={s.time_sec ?? ''} onChange={e=>upd(wi,si,'time_sec',e.target.value)} placeholder="сек" style={{flex:2}}/>
+                  ) : (
+                    <>
+                      <input className="edit-inp" type="number" value={s.weight} onChange={e=>upd(wi,si,'weight',e.target.value)} placeholder="кг"/>
+                      <span style={{opacity:0.3,fontSize:14}}>×</span>
+                      <input className="edit-inp" type="number" value={s.reps} onChange={e=>upd(wi,si,'reps',e.target.value)} placeholder="повт"/>
+                    </>
+                  )}
                   <button className="edit-del" onClick={()=>del(wi,si)}>✕</button>
                 </div>
               ))}
               <button className="set-btn" style={{width:'100%',marginTop:4}} onClick={()=>add(wi)}>➕ Подход</button>
               <button className="edit-save-btn" onClick={()=>onSave(w.id,w.editSets)}>💾 Сохранить {w.exercises?.name}</button>
             </div>
-          ))}
+          )})}
+
         </div>
       </div>
     </div>
@@ -884,7 +893,7 @@ export default function App() {
           }
         })
       })
-      setPrs(Object.entries(map).sort((a,b) => b[1].est-a[1].est))
+      setPrs(Object.entries(map).sort((a,b) => (b[1].est ?? -Infinity) - (a[1].est ?? -Infinity)))
     }
     load()
   }, [tab])
@@ -906,7 +915,7 @@ export default function App() {
     if (!chartEx || tab !== 'progress') return
     async function load() {
       const enName = Object.entries(EN_TO_RU).find(([,v])=>v===chartEx)?.[0] || chartEx
-      const matchName = (n) => !n ? false : (n === chartEx || n === enName || ruName(n) === chartEx)
+      const matchName = (n) => !n ? false : (n === chartEx || n === enName || ruName(n) === chartEx || n.startsWith(chartEx + ' (') || n.startsWith(enName + ' ('))
       const byDate = {}
       // First try from already-loaded history
       history.forEach(w => {
@@ -916,11 +925,13 @@ export default function App() {
       })
       // If nothing found, query DB directly
       if (Object.keys(byDate).length === 0) {
-        const r1 = await supabase.from('exercises').select('id').eq('name', chartEx)
-        const r2 = !r1.data?.length ? await supabase.from('exercises').select('id').eq('name', enName) : {data:[]}
-        const exIds = [...(r1.data||[]), ...(r2.data||[])].map(e=>e.id)
+        const r1a = await supabase.from('exercises').select('id').eq('name', chartEx)
+        const r1b = await supabase.from('exercises').select('id').ilike('name', `${chartEx} (%)`)
+        const r2a = (!r1a.data?.length && !r1b.data?.length) ? await supabase.from('exercises').select('id').eq('name', enName) : {data:[]}
+        const r2b = (!r1a.data?.length && !r1b.data?.length) ? await supabase.from('exercises').select('id').ilike('name', `${enName} (%)`) : {data:[]}
+        const exIds = [...(r1a.data||[]), ...(r1b.data||[]), ...(r2a.data||[]), ...(r2b.data||[])].map(e=>e.id)
         if (exIds.length) {
-          const { data } = await supabase.from('workouts').select('workout_date,sets(weight,reps)').in('exercise_id',exIds).eq('user_id', user.id).order('workout_date',{ascending:true}).limit(50)
+          const { data } = await supabase.from('workouts').select('workout_date,sets(weight,reps)').in('exercise_id',exIds).eq('user_id', user.id).order('workout_date',{ascending:false}).limit(200)
           ;(data||[]).forEach(w => {
             const best = (w.sets||[]).filter(s=>s.weight>0&&s.reps>0).reduce((b,s)=>s.weight>b?s.weight:b, 0)
             if (best > 0 && (!byDate[w.workout_date] || best > byDate[w.workout_date])) byDate[w.workout_date] = best
@@ -981,11 +992,13 @@ export default function App() {
   const addExToWorkout = async (name) => {
     setShowExModal(false)
     setModalSearch('')
-    // fetch last session for this exercise
+    // fetch last session for this exercise (including grip variants)
     let lastSess = null
-    const { data: exDb } = await supabase.from('exercises').select('id').eq('name', name).single()
-    if (exDb) {
-      const { data: lastW } = await supabase.from('workouts').select('workout_date,sets(set_no,weight,reps,time_sec)').eq('exercise_id', exDb.id).eq('user_id', user.id).order('workout_date',{ascending:false}).limit(1).single()
+    const { data: exDbExact } = await supabase.from('exercises').select('id').eq('name', name)
+    const { data: exDbGrip } = await supabase.from('exercises').select('id').ilike('name', `${name} (%)`)
+    const allExIds = [...(exDbExact||[]), ...(exDbGrip||[])].map(e => e.id)
+    if (allExIds.length) {
+      const { data: lastW } = await supabase.from('workouts').select('workout_date,sets(set_no,weight,reps,time_sec)').in('exercise_id', allExIds).eq('user_id', user.id).order('workout_date',{ascending:false}).limit(1).single()
       lastSess = lastW || null
     }
     const grip = GRIP_EXERCISES.includes(name) ? 'Стандартный' : null
@@ -1008,6 +1021,7 @@ export default function App() {
       }
       if (!ex) continue
       const { data: w } = await supabase.from('workouts').insert({ workout_date: workoutDate, exercise_id: ex.id, user_id: user.id }).select().single()
+      if (!w) { saveWorkout._saving = false; continue }
       const exIsTimed2 = (EXERCISE_TYPE[exItem.name] || 'light') === 'timed'
       await supabase.from('sets').insert(filled.map((s,i) => ({
         workout_id: w.id, set_no: i+1,
@@ -1068,7 +1082,7 @@ export default function App() {
 
   const saveEdit = async (workoutId, newSets) => {
     await supabase.from('sets').delete().eq('workout_id', workoutId)
-    await supabase.from('sets').insert(newSets.map((s,i) => ({ workout_id:workoutId, set_no:i+1, weight:parseFloat(s.weight)||0, reps:parseInt(s.reps)||0, time_sec:null })))
+    await supabase.from('sets').insert(newSets.map((s,i) => ({ workout_id:workoutId, set_no:i+1, weight:parseFloat(s.weight)||0, reps:parseInt(s.reps)||0, time_sec: s.time_sec != null ? parseFloat(s.time_sec)||0 : null })))
     setEditModal(null); setSaved(p => !p)
   }
 
@@ -1244,7 +1258,7 @@ export default function App() {
           ) : (
             <>
               <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:16}}>
-                <button onClick={()=>{setWorkoutStarted(false);setWorkoutExercises([]);setSaved(false)}} style={{background:'none',border:'none',color:'rgba(255,255,255,0.45)',fontSize:14,cursor:'pointer',padding:'4px 0',fontWeight:600}}>← Назад</button>
+                <button onClick={()=>{if(workoutExercises.length>0&&!window.confirm('Выйти? Все упражнения будут потеряны.'))return;setWorkoutStarted(false);setWorkoutExercises([]);setSaved(false)}} style={{background:'none',border:'none',color:'rgba(255,255,255,0.45)',fontSize:14,cursor:'pointer',padding:'4px 0',fontWeight:600}}>← Назад</button>
                 <div style={{fontSize:13,color:'rgba(255,255,255,0.5)',fontWeight:600}}>
                   📅 {new Date(workoutDate+'T12:00:00').toLocaleDateString('ru',{day:'numeric',month:'long'})}
                 </div>
