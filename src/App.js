@@ -8,10 +8,7 @@ const LIGHT_WEIGHTS = [...new Set([
   ...Array.from({ length: 21 }, (_, i) => 10 + i * 2),
   ...Array.from({ length: 21 }, (_, i) => 50 + i * 5),
 ])].sort((a, b) => a - b)
-const MACHINE_WEIGHTS = [...new Set([
-  ...Array.from({ length: 11 }, (_, i) => i * 5),
-  ...Array.from({ length: 20 }, (_, i) => 55 + i * 5),
-])].sort((a, b) => a - b)
+const MACHINE_WEIGHTS = Array.from({ length: 61 }, (_, i) => i * 5)
 const REPS_OPTIONS = Array.from({ length: 51 }, (_, i) => i)
 const TIME_OPTIONS = Array.from({ length: 51 }, (_, i) => i * 5)
 
@@ -117,7 +114,6 @@ const GRIP_MUSCLES = {
     'Стандартный': ['chest','triceps','shoulders'],
     'Широкий':     ['chest','shoulders'],
     'Узкий':       ['triceps','chest'],
-    'Обратный':    ['chest','triceps'],
   },
 }
 
@@ -899,26 +895,32 @@ export default function App() {
     if (!chartEx || tab !== 'progress') return
     async function load() {
       const enName = Object.entries(EN_TO_RU).find(([,v])=>v===chartEx)?.[0] || chartEx
-      // Try exact name, then EN name, then partial match
-      let exIds = []
-      const r1 = await supabase.from('exercises').select('id').eq('name', chartEx)
-      if (r1.data?.length) exIds = r1.data.map(e=>e.id)
-      if (!exIds.length) {
-        const r2 = await supabase.from('exercises').select('id').eq('name', enName)
-        if (r2.data?.length) exIds = r2.data.map(e=>e.id)
-      }
-      if (!exIds.length) { setChartData([]); return }
-      const { data } = await supabase.from('workouts').select('workout_date,sets(weight,reps)').in('exercise_id',exIds).eq('user_id', user.id).order('workout_date',{ascending:true}).limit(50)
+      const matchName = (n) => !n ? false : (n === chartEx || n === enName || ruName(n) === chartEx)
       const byDate = {}
-      ;(data||[]).forEach(w => {
+      // First try from already-loaded history
+      history.forEach(w => {
+        if (!matchName(w.exercises?.name)) return
         const best = (w.sets||[]).filter(s=>s.weight>0&&s.reps>0).reduce((b,s)=>s.weight>b?s.weight:b, 0)
-        if (!byDate[w.workout_date] || best > byDate[w.workout_date]) byDate[w.workout_date] = best
+        if (best > 0 && (!byDate[w.workout_date] || best > byDate[w.workout_date])) byDate[w.workout_date] = best
       })
+      // If nothing found, query DB directly
+      if (Object.keys(byDate).length === 0) {
+        const r1 = await supabase.from('exercises').select('id').eq('name', chartEx)
+        const r2 = !r1.data?.length ? await supabase.from('exercises').select('id').eq('name', enName) : {data:[]}
+        const exIds = [...(r1.data||[]), ...(r2.data||[])].map(e=>e.id)
+        if (exIds.length) {
+          const { data } = await supabase.from('workouts').select('workout_date,sets(weight,reps)').in('exercise_id',exIds).eq('user_id', user.id).order('workout_date',{ascending:true}).limit(50)
+          ;(data||[]).forEach(w => {
+            const best = (w.sets||[]).filter(s=>s.weight>0&&s.reps>0).reduce((b,s)=>s.weight>b?s.weight:b, 0)
+            if (best > 0 && (!byDate[w.workout_date] || best > byDate[w.workout_date])) byDate[w.workout_date] = best
+          })
+        }
+      }
       const pts = Object.entries(byDate).sort(([a],[b])=>a.localeCompare(b)).map(([date,val])=>({ val, label: new Date(date+'T12:00:00').toLocaleDateString('ru',{day:'numeric',month:'short'}) })).filter(p=>p.val>0)
       setChartData(pts)
     }
     load()
-  }, [chartEx, tab])
+  }, [chartEx, tab, history])
 
   useEffect(() => {
     if (!selectedEx) return
@@ -975,10 +977,8 @@ export default function App() {
       const { data: lastW } = await supabase.from('workouts').select('workout_date,sets(set_no,weight,reps,time_sec)').eq('exercise_id', exDb.id).eq('user_id', user.id).order('workout_date',{ascending:false}).limit(1).single()
       lastSess = lastW || null
     }
-    const defaultWeight = lastSess?.sets?.length ? Math.max(...lastSess.sets.map(s=>s.weight||0)) : 0
-    const defaultReps = lastSess?.sets?.length ? (lastSess.sets.sort((a,b)=>b.weight-a.weight)[0]?.reps || 0) : 0
     const grip = GRIP_EXERCISES.includes(name) ? 'Стандартный' : null
-    setWorkoutExercises(prev => [...prev, { name, grip, open: true, lastSession: lastSess, sets: [{ weight: defaultWeight, reps: defaultReps }] }])
+    setWorkoutExercises(prev => [...prev, { name, grip, open: true, lastSession: lastSess, sets: [{ weight: 0, reps: 0 }] }])
   }
 
   const saveWorkout = async () => {
@@ -1257,7 +1257,7 @@ export default function App() {
                       <span style={{fontSize:12,color:'rgba(255,255,255,0.3)',marginRight:4}}>{ex.sets.filter(s=>s.weight>0&&s.reps>0).length} подх.</span>
                       <button onClick={e=>{e.stopPropagation();setWorkoutExercises(prev=>prev.filter((_,i)=>i!==exIdx))}}
                         style={{background:'rgba(255,59,48,0.1)',border:'none',borderRadius:8,padding:'4px 8px',color:'#FF453A',cursor:'pointer',fontSize:12,fontWeight:700,marginRight:4}}>✕</button>
-                      <span style={{color:'rgba(255,255,255,0.25)',fontSize:11,display:'inline-block',transform:isOpen?'rotate(180deg)':'none',transition:'transform 0.2s'}}>▼</span>
+                      <span style={{color:'rgba(255,255,255,0.4)',fontSize:20,display:'inline-block',transform:isOpen?'rotate(180deg)':'none',transition:'transform 0.2s',padding:'2px 8px',minWidth:32,textAlign:'center'}}>▼</span>
                     </button>
                     {isOpen && (
                       <div style={{padding:'0 14px 14px'}}>
