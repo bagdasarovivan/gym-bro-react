@@ -491,10 +491,23 @@ function LineChart({ data, period, setPeriod }) {
 function MuscleMap({ muscleScores, period = 7 }) {
   const [hovered, setHovered] = useState(null)
 
-  const recommended = period === 7 ? 2 : 8
-  const getPct = (count) => count ? Math.round((count / recommended) * 100) : 0
-  const getLevel = (count) => {
-    const pct = getPct(count)
+  // Per-muscle recommended sessions per week (×4 for 30-day period)
+  const RECOMMENDED_WEEKLY = {
+    chest: 2, shoulders: 3, biceps: 3, triceps: 3, forearms: 3,
+    abs: 3, quads: 2, calves: 3,
+    traps: 2, upper_back: 2, lats: 2, lower_back: 2,
+    glutes: 2, hamstrings: 2,
+  }
+  const getRecommended = (muscle) => {
+    const weekly = RECOMMENDED_WEEKLY[muscle] ?? 2
+    return period === 7 ? weekly : weekly * 4
+  }
+  const getPct = (count, muscle) => {
+    if (!count) return 0
+    return Math.round((count / getRecommended(muscle)) * 100)
+  }
+  const getLevel = (count, muscle) => {
+    const pct = getPct(count, muscle)
     if (pct === 0)   return 'none'
     if (pct < 50)    return 'low'
     if (pct < 90)    return 'normal'
@@ -502,7 +515,7 @@ function MuscleMap({ muscleScores, period = 7 }) {
     return 'overload'
   }
   const getColor = (muscle) => {
-    const level = getLevel(muscleScores[muscle] || 0)
+    const level = getLevel(muscleScores[muscle] || 0, muscle)
     if (level === 'none')      return 'rgba(255,255,255,0)'
     if (level === 'low')       return 'rgba(255,214,10,0.45)'
     if (level === 'normal')    return 'rgba(48,200,94,0.5)'
@@ -510,7 +523,7 @@ function MuscleMap({ muscleScores, period = 7 }) {
     return 'rgba(255,69,58,0.6)' // overload
   }
   const getStroke = (muscle) => {
-    const level = getLevel(muscleScores[muscle] || 0)
+    const level = getLevel(muscleScores[muscle] || 0, muscle)
     if (level === 'none')      return hovered === muscle ? 'rgba(255,255,255,0.4)' : 'rgba(255,255,255,0)'
     if (level === 'low')       return 'rgba(255,214,10,0.9)'
     if (level === 'normal')    return 'rgba(48,200,94,1)'
@@ -563,8 +576,8 @@ function MuscleMap({ muscleScores, period = 7 }) {
   }
 
   const hoveredCount = muscleScores[hovered] || 0
-  const hoveredLevel = getLevel(hoveredCount)
-  const hoveredPct = getPct(hoveredCount)
+  const hoveredLevel = getLevel(hoveredCount, hovered)
+  const hoveredPct = getPct(hoveredCount, hovered)
   const scoreColor = hoveredLevel === 'overload' ? '#FF453A' : hoveredLevel === 'excellent' ? '#30D158' : hoveredLevel === 'normal' ? '#30C85E' : hoveredLevel === 'low' ? '#FFD60A' : 'rgba(255,255,255,0.3)'
 
   const handleZone = (muscle) => ({
