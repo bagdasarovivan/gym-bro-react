@@ -706,6 +706,7 @@ export default function App() {
   const [chartEx, setChartEx] = useState('')
   const [chartData, setChartData] = useState([])
   const [chartPeriod, setChartPeriod] = useState('ALL')
+  const [musclePeriod, setMusclePeriod] = useState(30)
   const [timerSecs, setTimerSecs] = useState(null)
   const [timerDuration, setTimerDuration] = useState(90)
   const timerRef = useRef(null)
@@ -858,10 +859,12 @@ export default function App() {
     if (!chartEx || tab !== 'progress') return
     async function load() {
       const enName = Object.entries(EN_TO_RU).find(([,v])=>v===chartEx)?.[0] || chartEx
-      const { data: ex } = await supabase.from('exercises').select('id').eq('name', chartEx).maybeSingle().then(r => r.data ? r : supabase.from('exercises').select('id').eq('name', enName).maybeSingle())
-      if (!ex) return
-      const { data } = await supabase.from('workouts').select('workout_date,sets(weight,reps)').eq('exercise_id',ex.id).eq('user_id', user.id).order('workout_date',{ascending:true}).limit(30)
-      const pts = (data||[]).map(w => ({ val: Math.max(...(w.sets?.filter(s=>s.weight>0).map(s=>s.weight)||[0])), label: new Date(w.workout_date).toLocaleDateString('ru',{day:'numeric',month:'short'}) })).filter(p=>p.val>0)
+      let exRes = await supabase.from('exercises').select('id').eq('name', chartEx).maybeSingle()
+      if (!exRes.data) exRes = await supabase.from('exercises').select('id').eq('name', enName).maybeSingle()
+      const ex = exRes.data
+      if (!ex) { setChartData([]); return }
+      const { data } = await supabase.from('workouts').select('workout_date,sets(weight,reps)').eq('exercise_id',ex.id).eq('user_id', user.id).order('workout_date',{ascending:true}).limit(50)
+      const pts = (data||[]).map(w => { const best = (w.sets||[]).filter(s=>s.weight>0&&s.reps>0).reduce((b,s)=>{ const e=s.weight*(1+s.reps/30); return e>b.e?{e,w:s.weight,r:s.reps}:b },{e:0,w:0,r:0}); return { val: best.w, label: new Date(w.workout_date).toLocaleDateString('ru',{day:'numeric',month:'short'}) }}).filter(p=>p.val>0)
       setChartData(pts)
     }
     load()
@@ -932,7 +935,8 @@ export default function App() {
     if (saveWorkout._saving) return
     saveWorkout._saving = true
     for (const exItem of workoutExercises) {
-      const filled = exItem.sets.filter(s => (s.weight > 0 && s.reps > 0) || s.time_sec > 0)
+      const exIsTimed = (EXERCISE_TYPE[exItem.name] || 'light') === 'timed'
+      const filled = exItem.sets.filter(s => exIsTimed ? s.weight > 0 : (s.weight > 0 && s.reps > 0))
       if (!filled.length) continue
       let { data: ex } = await supabase.from('exercises').select('id').eq('name', exItem.name).single()
       if (!ex) {
@@ -941,7 +945,13 @@ export default function App() {
       }
       if (!ex) continue
       const { data: w } = await supabase.from('workouts').insert({ workout_date: workoutDate, exercise_id: ex.id, user_id: user.id }).select().single()
-      await supabase.from('sets').insert(filled.map((s,i) => ({ workout_id: w.id, set_no: i+1, weight: s.weight||0, reps: s.reps||0, time_sec: s.time_sec||null })))
+      const exIsTimed2 = (EXERCISE_TYPE[exItem.name] || 'light') === 'timed'
+      await supabase.from('sets').insert(filled.map((s,i) => ({
+        workout_id: w.id, set_no: i+1,
+        weight: exIsTimed2 ? 0 : (s.weight||0),
+        reps: exIsTimed2 ? 0 : (s.reps||0),
+        time_sec: exIsTimed2 ? (s.weight||0) : null
+      })))
       const maxSaved = Math.max(...filled.map(s => s.weight))
       const repsSaved = filled.find(s => s.weight === maxSaved)?.reps || 0
       const existingPr = prs.find(([name]) => name === exItem.name)
@@ -1311,9 +1321,9 @@ export default function App() {
       })()}
 
       {tab === 'progress' && (() => {
-        // Compute muscle scores from last 30 days history
-        const thirtyDaysAgo = new Date(Date.now() - 30*24*60*60*1000).toISOString().split('T')[0]
-        const recentHistory = history.filter(w => w.workout_date >= thirtyDaysAgo)
+        // Compute muscle scores
+        const daysAgoDate = new Date(Date.now() - musclePeriod*24*60*60*1000).toISOString().split('T')[0]
+        const recentHistory = history.filter(w => w.workout_date >= daysAgoDate)
         const muscleCounts = {}
         recentHistory.forEach(w => {
           const muscles = EXERCISE_MUSCLES[ruName(w.exercises?.name)] || []
@@ -1332,7 +1342,15 @@ export default function App() {
           )}
           <div className="prog-title">💪 Нагрузка по мышцам</div>
           <div className="chart-wrap" style={{padding:'16px 8px'}}>
-            <div style={{fontSize:11,opacity:0.35,textAlign:'center',marginBottom:12,textTransform:'uppercase',letterSpacing:'0.5px'}}>За последние 30 дней</div>
+            <div style={{display:'flex',gap:6,justifyContent:'center',marginBottom:14}}>
+              {[[7,'7 дней'],[30,'30 дней']].map(([days,label]) => (
+                <button key={days} onClick={()=>setMusclePeriod(days)} style={{
+                  padding:'6px 18px',borderRadius:99,fontSize:12,fontWeight:700,cursor:'pointer',border:'none',
+                  background: musclePeriod===days ? '#30D158' : '#2c2c2e',
+                  color: musclePeriod===days ? '#000' : 'rgba(255,255,255,0.5)',
+                }}>{label}</button>
+              ))}
+            </div>
             <MuscleMap muscleScores={muscleScores}/>
             <div style={{display:'flex',justifyContent:'center',gap:14,marginTop:12}}>
               {[['#FFD60A','Мало'],['#64D264','Средне'],['#00A03C','Много'],['rgba(255,255,255,0.2)','Нет']].map(([color,label])=>(
