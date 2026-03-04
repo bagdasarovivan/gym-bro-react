@@ -148,9 +148,10 @@ function formatDateShort(d) {
 // todayLabel removed
 
 function buildCopyText(date, workouts) {
-  const lines = [`📅 ${date} · ${workouts.length} exercises`]
-  workouts.forEach(w => {
-    const sets = w.sets?.sort((a,b) => b.set_no-a.set_no)
+  const lines = [`📅 ${date} · ${workouts.length} упр.`]
+  const reversed = [...workouts].reverse()
+  reversed.forEach(w => {
+    const sets = w.sets?.sort((a,b) => a.set_no-b.set_no)
       .map(s => s.time_sec > 0 ? `${s.time_sec}s` : `${s.weight}×${s.reps}`).join(', ')
     lines.push(`${w.exercises?.name}: ${sets}`)
   })
@@ -921,6 +922,8 @@ export default function App() {
 
   const saveWorkout = async () => {
     if (!workoutExercises.length) return
+    if (saveWorkout._saving) return
+    saveWorkout._saving = true
     for (const exItem of workoutExercises) {
       const filled = exItem.sets.filter(s => s.weight > 0 && s.reps > 0)
       if (!filled.length) continue
@@ -950,8 +953,16 @@ export default function App() {
     setStreak(monthCount)
     setStreakAlert({ type: 'month', count: monthCount, msg: getMotivation(monthCount) })
     setTimeout(() => setStreakAlert(null), 4500)
+    saveWorkout._saving = false
     setSaved(true)
     setTimeout(() => { setSaved(false); setWorkoutStarted(false); setWorkoutExercises([]) }, 2000)
+  }
+
+  const deleteWorkout = async (workoutId) => {
+    if (!window.confirm('Удалить это упражнение из тренировки?')) return
+    await supabase.from('sets').delete().eq('workout_id', workoutId)
+    await supabase.from('workouts').delete().eq('id', workoutId)
+    setSaved(p => !p)
   }
 
   const deleteDay = async (date, workouts) => {
@@ -981,7 +992,11 @@ export default function App() {
     setEditModal(null); setSaved(p => !p)
   }
 
-  const filtered = exercises.filter(e => e.name.toLowerCase().includes(modalSearch.toLowerCase()))
+  const filtered = exercises.filter(e => {
+    const q = modalSearch.toLowerCase().trim()
+    if (!q) return true
+    return e.name.toLowerCase().includes(q)
+  })
   const favFiltered = filtered.filter(e => favorites.includes(e.name))
   const restFiltered = filtered.filter(e => !favorites.includes(e.name))
   const grouped = history.reduce((acc,w) => { if(!acc[w.workout_date]) acc[w.workout_date]=[]; acc[w.workout_date].push(w); return acc }, {})
@@ -1207,7 +1222,7 @@ export default function App() {
                 <span style={{opacity:0.4,fontSize:20}}>⏄</span>
               </button>
               {workoutExercises.length > 0 && (
-                <button className={`save-btn${saved?' done':''}`} onClick={saveWorkout}>
+                <button className={`save-btn${saved?' done':''}`} onClick={saveWorkout} disabled={saved}>
                   {saved ? '✅ Тренировка сохранена!' : `💾 Сохранить тренировку (${workoutExercises.length} упр.)`}
                 </button>
               )}
@@ -1271,8 +1286,11 @@ export default function App() {
                         <button className="day-action-btn del" onClick={() => deleteDay(date,ws)}>🗑 Удалить</button>
                       </div>
                       {ws.map(w => (
-                        <div key={w.id} className="hist-card">
-                          <div className="hist-ex">{ruName(w.exercises?.name)}</div>
+                        <div key={w.id} className="hist-card" style={{position:'relative'}}>
+                          <div style={{display:'flex',alignItems:'center',justifyContent:'space-between'}}>
+                            <div className="hist-ex">{ruName(w.exercises?.name)}</div>
+                            <button onClick={()=>deleteWorkout(w.id)} style={{background:'none',border:'none',cursor:'pointer',fontSize:16,opacity:0.4,padding:'0 4px',color:'#ff453a'}} title="Удалить упражнение">✕</button>
+                          </div>
                           <div className="chips">{w.sets?.sort((a,b)=>a.set_no-b.set_no).map((s,i) => <span key={i} className="chip">{s.time_sec>0?`${s.time_sec}s`:`${s.weight}×${s.reps}`}</span>)}</div>
                         </div>
                       ))}
