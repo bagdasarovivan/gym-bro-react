@@ -826,8 +826,15 @@ export default function App() {
       const map = {}
       pData?.forEach(w => {
         const rawName = w.exercises?.name; if (!rawName) return
-        const name = ENG_TO_RUS[rawName] || rawName
-        w.sets?.forEach(s => { if (s.weight>0&&s.reps>0) { const est=s.weight*(1+s.reps/30); if (!map[name]||est>map[name].est) map[name]={est:parseFloat(est.toFixed(1)),weight:s.weight,reps:s.reps,date:w.workout_date} } })
+        const name = EN_TO_RU[rawName] || rawName
+        w.sets?.forEach(s => {
+          if (s.weight>0&&s.reps>0) {
+            const est=s.weight*(1+s.reps/30)
+            if (!map[name]||est>map[name].est) map[name]={est:parseFloat(est.toFixed(1)),weight:s.weight,reps:s.reps,date:w.workout_date}
+          } else if (s.time_sec>0) {
+            if (!map[name]||s.time_sec>map[name].time_sec) map[name]={est:null,weight:0,reps:0,time_sec:s.time_sec,date:w.workout_date}
+          }
+        })
       })
       setPrs(Object.entries(map).sort((a,b) => b[1].est-a[1].est))
     }
@@ -925,7 +932,7 @@ export default function App() {
     if (saveWorkout._saving) return
     saveWorkout._saving = true
     for (const exItem of workoutExercises) {
-      const filled = exItem.sets.filter(s => s.weight > 0 && s.reps > 0)
+      const filled = exItem.sets.filter(s => (s.weight > 0 && s.reps > 0) || s.time_sec > 0)
       if (!filled.length) continue
       let { data: ex } = await supabase.from('exercises').select('id').eq('name', exItem.name).single()
       if (!ex) {
@@ -934,7 +941,7 @@ export default function App() {
       }
       if (!ex) continue
       const { data: w } = await supabase.from('workouts').insert({ workout_date: workoutDate, exercise_id: ex.id, user_id: user.id }).select().single()
-      await supabase.from('sets').insert(filled.map((s,i) => ({ workout_id: w.id, set_no: i+1, weight: s.weight, reps: s.reps, time_sec: null })))
+      await supabase.from('sets').insert(filled.map((s,i) => ({ workout_id: w.id, set_no: i+1, weight: s.weight||0, reps: s.reps||0, time_sec: s.time_sec||null })))
       const maxSaved = Math.max(...filled.map(s => s.weight))
       const repsSaved = filled.find(s => s.weight === maxSaved)?.reps || 0
       const existingPr = prs.find(([name]) => name === exItem.name)
@@ -1370,13 +1377,12 @@ export default function App() {
                 <button style={{width:'100%',background:'none',border:'none',cursor:'pointer',padding:'11px 16px',display:'flex',alignItems:'center',gap:10,textAlign:'left'}} onClick={()=>setOpenPrs(p=>({...p,[name]:!p[name]}))}>
                   {img ? <img src={img} alt={name} style={{width:32,height:32,borderRadius:7,objectFit:'cover',flexShrink:0}} onError={e=>e.target.style.display='none'}/> : <div style={{width:32,height:32,borderRadius:7,background:'rgba(255,255,255,0.07)',display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0,fontSize:16}}>🏋️</div>}
                   <span style={{flex:1,color:'rgba(255,255,255,0.85)',fontSize:14,fontWeight:600}}>{ruName(name)}</span>
-                  <span style={{color:'#30D158',fontSize:14,fontWeight:700,marginRight:8}}>{pr.weight} кг</span>
+                  <span style={{color:'#30D158',fontSize:14,fontWeight:700,marginRight:8}}>{pr.time_sec>0 ? `${pr.time_sec}с` : `~${pr.est} кг`}</span>
                   <span style={{color:'rgba(255,255,255,0.25)',fontSize:11,display:'inline-block',transition:'transform 0.2s',transform:isOpen?'rotate(180deg)':'none'}}>▼</span>
                 </button>
                 {isOpen && <div style={{padding:'2px 16px 12px 58px',display:'flex',gap:16,flexWrap:'wrap',alignItems:'center'}}>
-                  <span style={{fontSize:13,color:'rgba(255,255,255,0.6)',fontWeight:600}}>{pr.weight} кг × {pr.reps} повт</span>
+                  <span style={{fontSize:13,color:'rgba(255,255,255,0.6)',fontWeight:600}}>{pr.time_sec>0 ? `${pr.time_sec}с` : `${pr.weight} кг × ${pr.reps} повт`}</span>
                   <span style={{fontSize:12,color:'rgba(255,255,255,0.3)'}}>{new Date(pr.date).toLocaleDateString('ru',{day:'numeric',month:'short',year:'numeric'})}</span>
-                  <span style={{fontSize:12,color:'rgba(255,159,10,0.65)'}}>1RM ≈ {pr.est} кг</span>
                 </div>}
               </div>
             )
