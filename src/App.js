@@ -269,7 +269,17 @@ const LEGACY_NAMES = {
 
 function normalizeName(name) {
   if (!name) return name
-  return LEGACY_NAMES[name] || LEGACY_NAMES[ruName(name)] || ruName(name)
+  const ru = EN_TO_RU[name] || name
+  // Check direct match first
+  if (LEGACY_NAMES[ru]) return LEGACY_NAMES[ru]
+  // Strip grip variant e.g. "Тяга вниз (Узкий)" → "Тяга вниз" then remap
+  const base = ru.replace(/\s*\([^)]*\)\s*$/, '').trim()
+  if (LEGACY_NAMES[base]) {
+    const grip = ru.match(/\(([^)]*)\)/)?.[1]
+    const newBase = LEGACY_NAMES[base]
+    return grip ? `${newBase} (${grip})` : newBase
+  }
+  return ru
 }
 
 function getExImage(name) {
@@ -1038,7 +1048,7 @@ export default function App() {
       const map = {}
       pData?.forEach(w => {
         const rawName = w.exercises?.name; if (!rawName) return
-        const name = EN_TO_RU[rawName] || rawName
+        const name = normalizeName(rawName)
         w.sets?.forEach(s => {
           if (s.weight>0&&s.reps>0) {
             const est=s.weight*(1+s.reps/30)
@@ -1070,7 +1080,7 @@ export default function App() {
     if (!chartEx || tab !== 'progress') return
     async function load() {
       const enName = Object.entries(EN_TO_RU).find(([,v])=>v===chartEx)?.[0] || chartEx
-      const matchName = (n) => !n ? false : (n === chartEx || n === enName || ruName(n) === chartEx || n.startsWith(chartEx + ' (') || n.startsWith(enName + ' ('))
+      const matchName = (n) => !n ? false : (normalizeName(n) === chartEx || normalizeName(n).replace(/\s*\([^)]*\)\s*$/, '').trim() === chartEx || n === chartEx || n === enName || ruName(n) === chartEx || n.startsWith(chartEx + ' (') || n.startsWith(enName + ' ('))
       const byDate = {}
       // First try from already-loaded history
       history.forEach(w => {
