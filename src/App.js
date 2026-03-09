@@ -24,6 +24,7 @@ const EXERCISE_TYPE = {
   'Ягодичный мост':'heavy','Шраги':'heavy','Отжимания на брусьях':'light','Тяга Т-штанги':'heavy',
   'Подъём гантелей на бицепс':'light','Изолированные сгибания на бицепс':'light',
   'Разгибание из-за головы на трицепс':'light','Разводка гантелей стоя':'light',
+  'Молотки лёжа':'light','Тяга гантели в наклоне':'light',
 }
 
 const EXERCISE_IMAGES = {
@@ -50,6 +51,7 @@ const EXERCISE_IMAGES = {
   'Тяга вертикального блока':'/images/lat_pulldown.png',
   'Тяга сидя':'/images/seated_cable_row.png',
   'Тяга штанги в наклоне':'/images/barbell_row.png',
+  'Тяга гантели в наклоне':'/images/single_arm_dumbbell_row.png',
   'Тяга Т-штанги':'/images/t_bar_row.png',
   'Подтягивания':'/images/pull_ups.png',
   'Гиперэкстензия':'/images/hyperextension.png',
@@ -57,6 +59,7 @@ const EXERCISE_IMAGES = {
   'Подъём штанги на бицепс':'/images/barbell_curl.png',
   'Подъём гантелей на бицепс':'/images/dumbbell_curl.png',
   'Молотки':'/images/hammer_curl.png',
+  'Молотки лёжа':'/images/lying_hammer_curl.png',
   'Изолированные сгибания на бицепс':'/images/concentration_curl.png',
   'Сгибания на скамье Скотта':'/images/scott_curl.png',
   'Сгибания на блоке':'/images/cable_curl.png',
@@ -115,6 +118,7 @@ const EXERCISE_MUSCLES = {
   'Шраги':                       ['traps','upper_back'],
   // Спина
   'Тяга штанги в наклоне':       ['lats','upper_back','biceps','traps'],
+  'Тяга гантели в наклоне':      ['lats','upper_back','biceps'],
   'Тяга сидя':                   ['lats','upper_back','biceps'],
   'Тяга вертикального блока':                   ['lats','biceps','upper_back'],
   'Тяга Т-штанги':               ['lats','upper_back','biceps'],
@@ -124,6 +128,7 @@ const EXERCISE_MUSCLES = {
   'Подъём штанги на бицепс':          ['biceps','forearms'],
   'Подъём гантелей на бицепс':   ['biceps','forearms'],
   'Молотки':                     ['biceps','forearms'],
+  'Молотки лёжа':                ['biceps','forearms'],
   'Изолированные сгибания на бицепс': ['biceps'],
   'Гантели на бицепс':                   ['biceps'],
   'Сгибания на скамье Скотта':   ['biceps'],
@@ -248,12 +253,32 @@ const EN_TO_RU = {
 }
 function ruName(name) { return EN_TO_RU[name] || name }
 
+// Маппинг старых названий из БД → новые (для спрайтов и отображения)
+const LEGACY_NAMES = {
+  'Тяга вниз':                      'Тяга вертикального блока',
+  'Бицепс':                         'Гантели на бицепс',
+  'Трицепс':                        'Разгибание из-за головы на трицепс',
+  'Трицепс гантель':                'Разгибание из-за головы на трицепс',
+  'Подъём гантелей стоя':           'Подъём гантелей на бицепс',
+  'Подъём штанги стоя':             'Подъём штанги на бицепс',
+  'Изолированные сгибания':         'Изолированные сгибания на бицепс',
+  'Разгибания из-за головы':        'Разгибание из-за головы на трицепс',
+  'Lateral Raise':                  'Разводка гантелей стоя',
+  'Подъём ног в висе':              'Подъём ног в висе на пресс',
+}
+
+function normalizeName(name) {
+  if (!name) return name
+  return LEGACY_NAMES[name] || LEGACY_NAMES[ruName(name)] || ruName(name)
+}
+
 function getExImage(name) {
   if (!name) return null
-  const ru = ruName(name)
-  if (EXERCISE_IMAGES[ru]) return EXERCISE_IMAGES[ru]
+  const norm = normalizeName(name)
+  if (EXERCISE_IMAGES[norm]) return EXERCISE_IMAGES[norm]
   if (EXERCISE_IMAGES[name]) return EXERCISE_IMAGES[name]
-  const base = ru.replace(/\s*\([^)]*\)\s*$/, '').trim()
+  // Strip grip variant e.g. "Тяга вертикального блока (Узкий)" → "Тяга вертикального блока"
+  const base = norm.replace(/\s*\([^)]*\)\s*$/, '').trim()
   if (EXERCISE_IMAGES[base]) return EXERCISE_IMAGES[base]
   return null
 }
@@ -817,10 +842,10 @@ function EditModal({ data, onClose, onSave }) {
         </div>
         <div className="modal-body">
           {workouts.map((w, wi) => {
-            const isTimed = (EXERCISE_TYPE[ruName(w.exercises?.name)] || 'light') === 'timed'
+            const isTimed = (EXERCISE_TYPE[normalizeName(w.exercises?.name)] || 'light') === 'timed'
             return (
             <div key={w.id} style={{marginBottom:20}}>
-              <div style={{fontSize:14,fontWeight:700,marginBottom:10,opacity:0.7}}>{ruName(w.exercises?.name)}</div>
+              <div style={{fontSize:14,fontWeight:700,marginBottom:10,opacity:0.7}}>{normalizeName(w.exercises?.name)}</div>
               {w.editSets.map((s,si) => (
                 <div key={si} className="edit-row">
                   <span style={{opacity:0.3,width:18,fontSize:12,textAlign:'center'}}>{si+1}</span>
@@ -1530,7 +1555,7 @@ export default function App() {
                       {ws.map(w => (
                         <div key={w.id} className="hist-card" style={{position:'relative'}}>
                           <div style={{display:'flex',alignItems:'center',justifyContent:'space-between'}}>
-                            <div className="hist-ex">{ruName(w.exercises?.name)}</div>
+                            <div className="hist-ex">{normalizeName(w.exercises?.name)}</div>
                             <button onClick={()=>deleteWorkout(w.id)} style={{background:'none',border:'none',cursor:'pointer',fontSize:16,opacity:0.4,padding:'0 4px',color:'#ff453a'}} title="Удалить упражнение">✕</button>
                           </div>
                           <div className="chips">{w.sets?.sort((a,b)=>a.set_no-b.set_no).map((s,i) => <span key={i} className="chip">{s.time_sec>0?`${s.time_sec}s`:`${s.weight}×${s.reps}`}</span>)}</div>
@@ -1552,7 +1577,7 @@ export default function App() {
         // Count unique training days per muscle (not exercise occurrences)
         const muscleDates = {}
         recentHistory.forEach(w => {
-          const wName = ruName(w.exercises?.name)
+          const wName = normalizeName(w.exercises?.name)
           // Check if exercise has grip variant (e.g. "Тяга вертикального блока (Широкий)")
           const gripMatch = wName.match(/^(.+) \((.+)\)$/)
           let muscles = []
@@ -1631,7 +1656,7 @@ export default function App() {
               <div key={name} style={{borderBottom: prIdx<prs.length-1 ? '1px solid rgba(255,255,255,0.06)' : 'none'}}>
                 <button style={{width:'100%',background:'none',border:'none',cursor:'pointer',padding:'11px 16px',display:'flex',alignItems:'center',gap:10,textAlign:'left'}} onClick={()=>setOpenPrs(p=>({...p,[name]:!p[name]}))}>
                   {img ? <img src={img} alt={name} style={{width:32,height:32,borderRadius:7,objectFit:'cover',flexShrink:0}} onError={e=>e.target.style.display='none'}/> : <div style={{width:32,height:32,borderRadius:7,background:'rgba(255,255,255,0.07)',display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0,fontSize:16}}>🏋️</div>}
-                  <span style={{flex:1,color:'rgba(255,255,255,0.85)',fontSize:14,fontWeight:600}}>{ruName(name)}</span>
+                  <span style={{flex:1,color:'rgba(255,255,255,0.85)',fontSize:14,fontWeight:600}}>{normalizeName(name)}</span>
                   <span style={{color:'#30D158',fontSize:14,fontWeight:700,marginRight:8}}>{pr.time_sec>0 ? `${pr.time_sec}с` : `~${pr.est} кг`}</span>
                   <span style={{color:'rgba(255,255,255,0.25)',fontSize:11,display:'inline-block',transition:'transform 0.2s',transform:isOpen?'rotate(180deg)':'none'}}>▼</span>
                 </button>
@@ -1682,7 +1707,7 @@ export default function App() {
             <div className="modal-list">
               {calDayModal.workouts.map(w=>(
                 <div key={w.id} style={{padding:'12px 10px',borderRadius:12,marginBottom:6,background:'rgba(255,255,255,0.04)',border:'1px solid rgba(255,255,255,0.07)'}}>
-                  <div style={{fontSize:14,fontWeight:700,marginBottom:7}}>{ruName(w.exercises?.name)}</div>
+                  <div style={{fontSize:14,fontWeight:700,marginBottom:7}}>{normalizeName(w.exercises?.name)}</div>
                   <div className="chips">{w.sets?.sort((a,b)=>a.set_no-b.set_no).map((s,i)=><span key={i} className="chip">{s.time_sec>0?`${s.time_sec}s`:`${s.weight}×${s.reps}`}</span>)}</div>
                 </div>
               ))}
