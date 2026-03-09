@@ -14,11 +14,11 @@ const TIME_OPTIONS = Array.from({ length: 51 }, (_, i) => i * 5)
 
 const EXERCISE_TYPE = {
   'Жим лёжа':'heavy','Приседания':'heavy','Становая тяга':'heavy','Румынская тяга':'heavy',
-  'Жим над головой':'heavy','Жим ногами':'heavy','Тяга штанги в наклоне':'heavy','Тяга вниз':'heavy',
+  'Жим над головой':'heavy','Жим ногами':'heavy','Тяга штанги в наклоне':'heavy','Тяга вертикального блока':'heavy',
   'Тяга сидя':'heavy','Жим гантелей наклон':'light','Жим гантелей лёжа':'light',
   'Разводка гантелей':'light','Разводка лёжа':'light','Выпады':'light','Сгибание ног':'light',
   'Разгибание ног':'light','Отжимания':'light','Подтягивания':'light','Скручивания':'light',
-  'Гиперэкстензия':'light','Бицепс':'light','Планка':'timed',
+  'Гиперэкстензия':'light','Гантели на бицепс':'light','Планка':'timed',
   'Жим Арнольда':'light','Кроссовер':'light','Болгарские выпады':'light',
   'Молотки':'light','Французский жим':'light','Тяга к лицу':'light',
   'Ягодичный мост':'heavy','Шраги':'heavy','Отжимания на брусьях':'light','Тяга Т-штанги':'heavy',
@@ -47,7 +47,7 @@ const EXERCISE_IMAGES = {
   // Трапеции / Верх спины
   'Шраги':'/images/shrugs.png',
   // Спина
-  'Тяга вниз':'/images/lat_pulldown.png',
+  'Тяга вертикального блока':'/images/lat_pulldown.png',
   'Тяга сидя':'/images/seated_cable_row.png',
   'Тяга штанги в наклоне':'/images/barbell_row.png',
   'Тяга Т-штанги':'/images/t_bar_row.png',
@@ -60,7 +60,7 @@ const EXERCISE_IMAGES = {
   'Изолированные сгибания на бицепс':'/images/concentration_curl.png',
   'Сгибания на скамье Скотта':'/images/scott_curl.png',
   'Сгибания на блоке':'/images/cable_curl.png',
-  'Бицепс':'/images/biceps.png',
+  'Гантели на бицепс':'/images/biceps.png',
   // Трицепс
   'Французский жим':'/images/french_press.png',
   'Разгибания на блоке':'/images/cable_pushdown.png',
@@ -116,7 +116,7 @@ const EXERCISE_MUSCLES = {
   // Спина
   'Тяга штанги в наклоне':       ['lats','upper_back','biceps','traps'],
   'Тяга сидя':                   ['lats','upper_back','biceps'],
-  'Тяга вниз':                   ['lats','biceps','upper_back'],
+  'Тяга вертикального блока':                   ['lats','biceps','upper_back'],
   'Тяга Т-штанги':               ['lats','upper_back','biceps'],
   'Подтягивания':                ['lats','biceps','upper_back'],
   'Гиперэкстензия':              ['lower_back','glutes','hamstrings'],
@@ -125,7 +125,7 @@ const EXERCISE_MUSCLES = {
   'Подъём гантелей на бицепс':   ['biceps','forearms'],
   'Молотки':                     ['biceps','forearms'],
   'Изолированные сгибания на бицепс': ['biceps'],
-  'Бицепс':                      ['biceps'],
+  'Гантели на бицепс':                   ['biceps'],
   'Сгибания на скамье Скотта':   ['biceps'],
   'Сгибания на блоке':           ['biceps','forearms'],
   // Трицепс
@@ -159,10 +159,10 @@ const EXERCISE_MUSCLES = {
 
 
 
-const GRIP_EXERCISES = ['Тяга вниз', 'Тяга сидя', 'Подтягивания', 'Тяга штанги в наклоне', 'Жим лёжа']
+const GRIP_EXERCISES = ['Тяга вертикального блока', 'Тяга сидя', 'Подтягивания', 'Тяга штанги в наклоне', 'Жим лёжа']
 const GRIP_OPTIONS = ['Стандартный', 'Широкий', 'Узкий', 'Обратный']
 const GRIP_MUSCLES = {
-  'Тяга вниз': {
+  'Тяга вертикального блока': {
     'Стандартный': ['lats','biceps','upper_back'],
     'Широкий':     ['lats','upper_back'],
     'Узкий':       ['lats','biceps','upper_back'],
@@ -234,12 +234,12 @@ const EN_TO_RU = {
   'Bench Press':'Жим лёжа','Squat':'Приседания','Deadlift':'Становая тяга',
   'Romanian Deadlift':'Румынская тяга','Overhead Press':'Жим над головой',
   'Leg Press':'Жим ногами','Barbell Row':'Тяга штанги в наклоне',
-  'Lat Pulldown':'Тяга вниз','Seated Cable Row':'Тяга сидя',
+  'Lat Pulldown':'Тяга вертикального блока','Seated Cable Row':'Тяга сидя',
   'Incline Dumbbell Press':'Жим гантелей наклон','Dumbbell Bench Press':'Жим гантелей лёжа',
   'Dumbbell Flyes':'Разводка гантелей','Flat Dumbbell Flyes':'Разводка лёжа',
   'Lunges':'Выпады','Leg Curl':'Сгибание ног','Leg Extension':'Разгибание ног',
   'Push Ups':'Отжимания','Pull Ups':'Подтягивания','Crunches':'Скручивания',
-  'Hyperextension':'Гиперэкстензия','Biceps':'Бицепс','Triceps':'Разгибание из-за головы на трицепс',
+  'Hyperextension':'Гиперэкстензия','Biceps':'Гантели на бицепс','Triceps':'Разгибание из-за головы на трицепс',
   'Plank':'Планка','Arnold Press':'Жим Арнольда','Cable Fly':'Кроссовер',
   'Bulgarian Split Squat':'Болгарские выпады','Hammer Curl':'Молотки',
   'Skull Crushers':'Французский жим','Face Pull':'Тяга к лицу',
@@ -247,6 +247,16 @@ const EN_TO_RU = {
   'T-Bar Row':'Тяга Т-штанги','Arnold press':'Жим Арнольда',
 }
 function ruName(name) { return EN_TO_RU[name] || name }
+
+function getExImage(name) {
+  if (!name) return null
+  const ru = ruName(name)
+  if (EXERCISE_IMAGES[ru]) return EXERCISE_IMAGES[ru]
+  if (EXERCISE_IMAGES[name]) return EXERCISE_IMAGES[name]
+  const base = ru.replace(/\s*\([^)]*\)\s*$/, '').trim()
+  if (EXERCISE_IMAGES[base]) return EXERCISE_IMAGES[base]
+  return null
+}
 
 function formatMonth(m) {
   if (!m) return ''
@@ -779,7 +789,7 @@ function DropdownPicker({ options, value, onChange, unit = '', label = '', label
   )
 }
 function ModalItem({ ex, onSelect }) {
-  const img = EXERCISE_IMAGES[ex.name]
+  const img = getExImage(ex.name)
   return (
     <div className="modal-item" onClick={onSelect}>
       {img ? <img src={img} alt={ex.name} className="modal-img" onError={e => e.target.style.display='none'}/> : <div className="modal-ph">🏋️</div>}
@@ -999,7 +1009,7 @@ export default function App() {
       }
       setStats({ totalW, monthW, monthKg })
       const { data: pData } = await supabase.from('workouts').select('workout_date,exercises(name),sets(weight,reps)').eq('user_id', user.id)
-      const ENG_TO_RUS = {'Жим лёжа':'Жим лёжа','Приседания':'Приседания','Становая тяга':'Становая тяга','Румынская тяга':'Румынская тяга','Жим над головой':'Жим над головой','Жим ногами':'Жим ногами','Тяга штанги в наклоне':'Тяга штанги в наклоне','Тяга вниз':'Тяга вниз','Тяга сидя':'Тяга сидя','Жим гантелей наклон':'Жим гантелей наклон','Жим гантелей лёжа':'Жим гантелей лёжа','Разводка гантелей':'Разводка гантелей','Разводка лёжа':'Разводка лёжа','Выпады':'Выпады','Сгибание ног':'Сгибание ног','Разгибание ног':'Разгибание ног','Отжимания':'Отжимания','Подтягивания':'Подтягивания','Скручивания':'Скручивания','Гиперэкстензия':'Гиперэкстензия','Бицепс':'Бицепс','Разгибание из-за головы на трицепс':'Разгибание из-за головы на трицепс','Планка':'Планка','Жим Арнольда':'Жим Арнольда','Кроссовер':'Кроссовер','Болгарские выпады':'Болгарские выпады','Молотки':'Молотки','Французский жим':'Французский жим','Тяга к лицу':'Тяга к лицу','Ягодичный мост':'Ягодичный мост','Шраги':'Шраги','Отжимания на брусьях':'Отжимания на брусьях','Тяга Т-штанги':'Тяга Т-штанги','Подъём гантелей на бицепс':'Подъём гантелей на бицепс','Изолированные сгибания на бицепс':'Изолированные сгибания на бицепс','Подъём штанги на бицепс':'Подъём штанги на бицепс','Подъём ног в висе на пресс':'Подъём ног в висе на пресс'}
+      const ENG_TO_RUS = {'Жим лёжа':'Жим лёжа','Приседания':'Приседания','Становая тяга':'Становая тяга','Румынская тяга':'Румынская тяга','Жим над головой':'Жим над головой','Жим ногами':'Жим ногами','Тяга штанги в наклоне':'Тяга штанги в наклоне','Тяга вертикального блока':'Тяга вертикального блока','Тяга сидя':'Тяга сидя','Жим гантелей наклон':'Жим гантелей наклон','Жим гантелей лёжа':'Жим гантелей лёжа','Разводка гантелей':'Разводка гантелей','Разводка лёжа':'Разводка лёжа','Выпады':'Выпады','Сгибание ног':'Сгибание ног','Разгибание ног':'Разгибание ног','Отжимания':'Отжимания','Подтягивания':'Подтягивания','Скручивания':'Скручивания','Гиперэкстензия':'Гиперэкстензия','Гантели на бицепс':'Гантели на бицепс','Разгибание из-за головы на трицепс':'Разгибание из-за головы на трицепс','Планка':'Планка','Жим Арнольда':'Жим Арнольда','Кроссовер':'Кроссовер','Болгарские выпады':'Болгарские выпады','Молотки':'Молотки','Французский жим':'Французский жим','Тяга к лицу':'Тяга к лицу','Ягодичный мост':'Ягодичный мост','Шраги':'Шраги','Отжимания на брусьях':'Отжимания на брусьях','Тяга Т-штанги':'Тяга Т-штанги','Подъём гантелей на бицепс':'Подъём гантелей на бицепс','Изолированные сгибания на бицепс':'Изолированные сгибания на бицепс','Подъём штанги на бицепс':'Подъём штанги на бицепс','Подъём ног в висе на пресс':'Подъём ног в висе на пресс'}
       const map = {}
       pData?.forEach(w => {
         const rawName = w.exercises?.name; if (!rawName) return
@@ -1391,8 +1401,8 @@ export default function App() {
                   <div key={exIdx} style={{background:'rgba(255,255,255,0.04)',borderRadius:16,border:'1px solid rgba(255,255,255,0.07)',marginBottom:10,overflow:'hidden'}}>
                     <button onClick={()=>setWorkoutExercises(prev=>prev.map((e,i)=>i===exIdx?{...e,open:!e.open}:e))}
                       style={{width:'100%',background:'none',border:'none',padding:'12px 14px',display:'flex',alignItems:'center',gap:10,cursor:'pointer',textAlign:'left'}}>
-                      {EXERCISE_IMAGES[ex.name]
-                        ? <img src={EXERCISE_IMAGES[ex.name]} alt={ex.name} style={{width:36,height:36,borderRadius:8,objectFit:'cover',flexShrink:0}} onError={e=>e.target.style.display='none'}/>
+                      {getExImage(ex.name)
+                        ? <img src={getExImage(ex.name)} alt={ex.name} style={{width:36,height:36,borderRadius:8,objectFit:'cover',flexShrink:0}} onError={e=>e.target.style.display='none'}/>
                         : <div style={{width:36,height:36,borderRadius:8,background:'rgba(255,255,255,0.07)',display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0,fontSize:18}}>🏋️</div>
                       }
                       <div style={{flex:1}}>
@@ -1543,7 +1553,7 @@ export default function App() {
         const muscleDates = {}
         recentHistory.forEach(w => {
           const wName = ruName(w.exercises?.name)
-          // Check if exercise has grip variant (e.g. "Тяга вниз (Широкий)")
+          // Check if exercise has grip variant (e.g. "Тяга вертикального блока (Широкий)")
           const gripMatch = wName.match(/^(.+) \((.+)\)$/)
           let muscles = []
           if (gripMatch && GRIP_MUSCLES[gripMatch[1]]?.[gripMatch[2]]) {
@@ -1616,7 +1626,7 @@ export default function App() {
           </button>
           {openPrs.__all__ && <div style={{background:'rgba(255,255,255,0.04)',borderRadius:14,overflow:'hidden',border:'1px solid rgba(255,255,255,0.07)',marginBottom:4}}>
           {prs.map(([name,pr], prIdx)=>{
-            const isOpen=openPrs[name]; const img=EXERCISE_IMAGES[ruName(name)]
+            const isOpen=openPrs[name]; const img=getExImage(name)
             return (
               <div key={name} style={{borderBottom: prIdx<prs.length-1 ? '1px solid rgba(255,255,255,0.06)' : 'none'}}>
                 <button style={{width:'100%',background:'none',border:'none',cursor:'pointer',padding:'11px 16px',display:'flex',alignItems:'center',gap:10,textAlign:'left'}} onClick={()=>setOpenPrs(p=>({...p,[name]:!p[name]}))}>
