@@ -23,7 +23,7 @@ const EXERCISE_TYPE = {
   'Молотки':'light','Французский жим':'light','Тяга к лицу':'light',
   'Ягодичный мост':'heavy','Шраги':'heavy','Отжимания на брусьях':'light','Тяга Т-штанги':'heavy',
   'Подъём гантелей на бицепс':'light','Изолированные сгибания на бицепс':'light',
-  'Разгибание из-за головы на трицепс':'light',
+  'Разгибание из-за головы на трицепс':'light','Разводка гантелей стоя':'light',
 }
 
 const EXERCISE_IMAGES = {
@@ -42,6 +42,7 @@ const EXERCISE_IMAGES = {
   'Жим Арнольда':'/images/arnold_press.png',
   'Тяга к лицу':'/images/face_pull.png',
   'Разводка в наклоне':'/images/bent_over_raise.png',
+  'Разводка гантелей стоя':'/images/bent_over_raise.png',
   'Тяга к подбородку':'/images/upright_row.png',
   // Трапеции / Верх спины
   'Шраги':'/images/shrugs.png',
@@ -106,7 +107,7 @@ const EXERCISE_MUSCLES = {
   // Плечи
   'Жим над головой':             ['shoulders','triceps','traps'],
   'Жим Арнольда':                ['shoulders','triceps'],
-  'Lateral Raise':               ['shoulders'],
+  'Разводка гантелей стоя':               ['shoulders'],
   'Тяга к лицу':                 ['shoulders','upper_back','traps'],
   'Разводка в наклоне':          ['shoulders','upper_back'],
   'Тяга к подбородку':           ['shoulders','traps','biceps'],
@@ -961,9 +962,8 @@ export default function App() {
   }, [user])
 
   useEffect(() => {
-    const weighted = EXERCISES.find(e => !['Скручивания','Планка','Отжимания','Подтягивания'].includes(e))
-    if (!chartEx) setChartEx(weighted || EXERCISES[0])
-  }, [])
+    if (prs.length > 0 && !chartEx) setChartEx(prs[0][0])
+  }, [prs])
 
   useEffect(() => {
     async function load() {
@@ -1635,7 +1635,7 @@ export default function App() {
           </div>}
           <div className="prog-title">📊 График роста</div>
           <div className="chart-wrap">
-            <select className="chart-ex-select" value={chartEx} onChange={e=>setChartEx(e.target.value)}>{exercises.map(e=><option key={e.id} value={e.name}>{ruName(e.name)}</option>)}</select>
+            <select className="chart-ex-select" value={chartEx} onChange={e=>setChartEx(e.target.value)}>{prs.map(([name])=><option key={name} value={name}>{ruName(name)}</option>)}</select>
             <LineChart data={(() => {
               if (chartPeriod === 'ALL') return chartData
               const months = chartPeriod === '1M' ? 1 : 3
