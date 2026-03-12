@@ -307,6 +307,44 @@ function formatDateShort(d) {
 
 // todayLabel removed
 
+const RANK_LEVELS = [
+  { min:1,  max:3,        icon:'🌱', name:'Новичок' },
+  { min:4,  max:7,        icon:'💪', name:'Любитель' },
+  { min:8,  max:11,       icon:'🏃', name:'Спортсмен' },
+  { min:12, max:15,       icon:'🏋️', name:'Атлет' },
+  { min:16, max:19,       icon:'⚡', name:'Профи' },
+  { min:20, max:23,       icon:'🔥', name:'Элита' },
+  { min:24, max:Infinity, icon:'👑', name:'Легенда' },
+]
+function getRank(count) {
+  if (count < 1) return { icon:'💤', name:'Начни!', progress:0, nextAt:1, nextName:'Новичок', isMax:false }
+  const idx = RANK_LEVELS.findIndex(r => count <= r.max)
+  const r = idx >= 0 ? RANK_LEVELS[idx] : RANK_LEVELS[RANK_LEVELS.length-1]
+  const isMax = r.name === 'Легенда'
+  const progress = isMax ? 1 : (count - r.min) / (r.max - r.min + 1)
+  const next = !isMax ? RANK_LEVELS[idx+1] : null
+  return { icon:r.icon, name:r.name, progress, nextAt:next?.min ?? null, nextName:next?.name ?? null, isMax }
+}
+const RANK_QUOTES = {
+  'Новичок':    ['Первый шаг — самый важный. Ты уже сделал его!','Каждый чемпион когда-то был новичком','Начало положено. Дальше только вверх'],
+  'Любитель':   ['Хорошее начало! Продолжай в том же духе','Каждая тренировка — шаг вперёд','Главное — не останавливаться'],
+  'Спортсмен':  ['Ты уже лучше чем вчера','Тело меняется — продолжай','Привычка формируется. Так держать!'],
+  'Атлет':      ['Серьёзный результат! Ты на правильном пути','Дисциплина — твоё суперсило','Такой месяц — повод гордиться собой'],
+  'Профи':      ['Мало кто доходит до этого уровня','Ты — пример для окружающих','Железная воля, железное тело'],
+  'Элита':      ['Это уже образ жизни, не просто тренировки','Зал — твой второй дом','Ты в топе. Продолжай'],
+  'Легенда':    ['Ты просто машина. Таких единицы','Люди отдыхают — ты тренируешься','Легенда — это не титул, это образ жизни'],
+}
+const GREAT_QUOTES = [
+  { text:'Боль временна. Гордость вечна', author:'Арнольд Шварценеггер' },
+  { text:'Не считай дни — делай дни считанными', author:'Мухаммед Али' },
+  { text:'Твоё тело может всё. Сомневается только голова', author:'Unknown' },
+  { text:'Чемпион — это тот кто встаёт когда не может', author:'Джек Демпси' },
+  { text:'Успех — это сумма небольших усилий повторяемых каждый день', author:'Роберт Колье' },
+  { text:'Сначала ты формируешь привычки, потом они формируют тебя', author:'Unknown' },
+  { text:'Не останавливайся когда устал. Останавливайся когда закончил', author:'Unknown' },
+  { text:'Каждая тренировка — инвестиция в себя', author:'Unknown' },
+]
+
 function buildCopyText(date, workouts) {
   const lines = [`📅 ${date} · ${workouts.length} упр.`]
   const reversed = [...workouts].reverse()
@@ -1021,6 +1059,9 @@ export default function App() {
   const [showExportModal, setShowExportModal] = useState(false)
   const [exportPeriod, setExportPeriod] = useState('all')
   const [showClearConfirm, setShowClearConfirm] = useState(false)
+  const [showStreakModal, setShowStreakModal] = useState(false)
+  const [streakModalData, setStreakModalData] = useState(null)
+  const [streakQuote] = useState(() => Math.floor(Math.random() * GREAT_QUOTES.length))
 
   const handleAuth = async () => {
     setAuthLoading(true); setAuthError('')
@@ -1069,6 +1110,62 @@ export default function App() {
     }
     await supabase.from('workouts').delete().eq('user_id', user.id)
     setHistory([]); setPrs([]); setStats(null); setSaved(p => !p)
+  }
+
+  const openStreakModal = async () => {
+    setShowStreakModal(true)
+    setStreakModalData(null)
+    if (!user) return
+    const thisM = new Date().toISOString().slice(0,7)
+    const { data: wData } = await supabase.from('workouts').select('id,workout_date').eq('user_id', user.id)
+    if (!wData) return
+    const monthIds = wData.filter(w => w.workout_date.startsWith(thisM)).map(w => w.id)
+    let monthKg = 0, bestWorkout = null
+    if (monthIds.length > 0) {
+      const { data: sData } = await supabase.from('sets').select('weight,reps,workout_id').gt('weight',0).gt('reps',0).in('workout_id', monthIds)
+      monthKg = (sData||[]).reduce((s,r) => s + r.weight * r.reps, 0)
+      const byDay = {}
+      ;(sData||[]).forEach(s => {
+        const w = wData.find(w => w.id === s.workout_id)
+        if (!w) return
+        byDay[w.workout_date] = (byDay[w.workout_date]||0) + s.weight * s.reps
+      })
+      const bestEntry = Object.entries(byDay).sort((a,b) => b[1]-a[1])[0]
+      if (bestEntry) bestWorkout = { date: bestEntry[0], kg: Math.round(bestEntry[1]) }
+    }
+    const { data: pData } = await supabase.from('workouts').select('workout_date,exercises(name),sets(weight,reps)').eq('user_id', user.id)
+    const allTimePR = {}, beforePR = {}, monthPRmap = {}
+    ;(pData||[]).forEach(w => {
+      const name = normalizeName(w.exercises?.name); if (!name) return
+      w.sets?.forEach(s => {
+        if (s.weight > 0 && s.reps > 0) {
+          const est = s.weight * (1 + s.reps / 30)
+          if (!allTimePR[name] || est > allTimePR[name].est) allTimePR[name] = { est, weight:s.weight, reps:s.reps, date:w.workout_date }
+          if (!w.workout_date.startsWith(thisM)) {
+            if (!beforePR[name] || est > beforePR[name].est) beforePR[name] = { est, weight:s.weight }
+          } else {
+            if (!monthPRmap[name] || est > monthPRmap[name].est) monthPRmap[name] = { est, weight:s.weight }
+          }
+        }
+      })
+    })
+    const monthPRs = Object.values(allTimePR).filter(pr => pr.date?.startsWith(thisM)).length
+    let bestImprovement = null
+    Object.entries(monthPRmap).forEach(([name, cur]) => {
+      const prev = beforePR[name]
+      if (prev && cur.weight > prev.weight) {
+        const diff = parseFloat((cur.weight - prev.weight).toFixed(1))
+        if (!bestImprovement || diff > bestImprovement.diff) bestImprovement = { name, diff }
+      }
+    })
+    const past3 = []
+    for (let i = 1; i <= 3; i++) {
+      const d = new Date(); d.setMonth(d.getMonth() - i)
+      const m = d.toISOString().slice(0,7)
+      const count = new Set(wData.filter(w => w.workout_date.startsWith(m)).map(w => w.workout_date)).size
+      past3.push({ month: m, count })
+    }
+    setStreakModalData({ monthKg: Math.round(monthKg), monthPRs, bestWorkout, bestImprovement, past3 })
   }
 
   useEffect(() => { const s = document.createElement('style'); s.textContent = CSS_ALL; document.head.appendChild(s); return () => document.head.removeChild(s) }, [])
@@ -1488,7 +1585,7 @@ export default function App() {
           }}>
             {'⏱'}
           </button>
-          {streak >= 1 && <div className="streak-badge">{streak}🔥</div>}
+          {streak >= 1 && <button onClick={openStreakModal} className="streak-badge" style={{cursor:'pointer',border:'none'}}>{streak}🔥</button>}
           <button onClick={() => setTab(t => t === 'settings' ? 'add' : 'settings')} style={{
             background: tab==='settings' ? 'rgba(48,209,88,0.15)' : thm.btnBg,
             border: tab==='settings' ? '1px solid rgba(48,209,88,0.3)' : `1px solid ${thm.btnBorder}`,
@@ -2062,6 +2159,117 @@ export default function App() {
           </div>
         </div>
       )}
+
+      {/* Streak / Rank Modal */}
+      {showStreakModal && (() => {
+        const rank = getRank(streak)
+        const quotes = RANK_QUOTES[rank.name] || RANK_QUOTES['Новичок']
+        const motivQuote = quotes[Math.floor(Math.random() * quotes.length)]
+        const greatQ = GREAT_QUOTES[streakQuote]
+        const thisM = new Date().toISOString().slice(0,7)
+        function fMonth(m) {
+          const [y,mo] = m.split('-')
+          const s = new Date(parseInt(y), parseInt(mo)-1).toLocaleDateString('ru',{month:'long',year:'numeric'})
+          return s.charAt(0).toUpperCase()+s.slice(1)
+        }
+        return (
+          <div className="modal-overlay" onClick={e=>{if(e.target===e.currentTarget)setShowStreakModal(false)}}>
+            <div className="modal" style={{background:thm.modalBg,maxHeight:'88dvh'}}>
+              <div className="modal-handle" style={{background:isDark?'rgba(255,255,255,0.15)':'rgba(0,0,0,0.12)'}}/>
+              <div style={{padding:'16px 20px 0',display:'flex',justifyContent:'space-between',alignItems:'center',flexShrink:0}}>
+                <span style={{fontSize:17,fontWeight:700,color:thm.text}}>Статистика месяца</span>
+                <button onClick={()=>setShowStreakModal(false)} style={{background:'none',border:'none',fontSize:22,cursor:'pointer',color:thm.text50,lineHeight:1}}>×</button>
+              </div>
+              <div style={{overflowY:'auto',padding:'16px 20px 32px',flex:1}}>
+
+                {/* Rank block */}
+                <div style={{background:isDark?'rgba(255,255,255,0.05)':'rgba(0,0,0,0.03)',borderRadius:20,padding:'24px 20px',marginBottom:12,border:`1px solid ${thm.border}`,textAlign:'center'}}>
+                  <div style={{fontSize:56,marginBottom:8}}>{rank.icon}</div>
+                  <div style={{fontSize:22,fontWeight:800,color:thm.text,marginBottom:4}}>{rank.name}</div>
+                  <div style={{fontSize:13,color:thm.text50,marginBottom:16}}>{streak} тренировок в этом месяце</div>
+                  {!rank.isMax && (
+                    <div style={{marginBottom:16}}>
+                      <div style={{height:6,background:isDark?'rgba(255,255,255,0.1)':'rgba(0,0,0,0.08)',borderRadius:99,overflow:'hidden'}}>
+                        <div style={{height:'100%',width:`${Math.round(rank.progress*100)}%`,background:'#30D158',borderRadius:99,transition:'width 0.5s ease'}}/>
+                      </div>
+                      <div style={{fontSize:12,color:thm.text40,marginTop:6}}>{rank.nextAt - streak} тренировок до ранга «{rank.nextName}» {RANK_LEVELS.find(r=>r.name===rank.nextName)?.icon}</div>
+                    </div>
+                  )}
+                  {rank.isMax && <div style={{fontSize:12,color:'#30D158',marginBottom:16,fontWeight:700}}>Максимальный ранг достигнут! 🎉</div>}
+                  <div style={{fontSize:14,color:thm.text70,fontStyle:'italic',lineHeight:1.5,marginBottom:10}}>«{motivQuote}»</div>
+                  <div style={{fontSize:13,color:thm.text50,fontStyle:'italic',lineHeight:1.5,borderTop:`1px solid ${thm.border}`,paddingTop:12,marginTop:4}}>
+                    «{greatQ.text}»
+                    <div style={{fontSize:11,color:thm.text35,marginTop:4}}>— {greatQ.author}</div>
+                  </div>
+                </div>
+
+                {/* Month stats */}
+                <div style={{background:isDark?'rgba(255,255,255,0.05)':'rgba(0,0,0,0.03)',borderRadius:20,padding:'18px 20px',marginBottom:12,border:`1px solid ${thm.border}`}}>
+                  <div style={{fontSize:13,fontWeight:700,textTransform:'uppercase',letterSpacing:'0.8px',color:thm.text40,marginBottom:14}}>Статистика месяца</div>
+                  {streakModalData === null ? (
+                    <div style={{textAlign:'center',color:thm.text40,fontSize:14,padding:'12px 0'}}>Загрузка...</div>
+                  ) : (
+                    <div style={{display:'flex',flexDirection:'column',gap:10}}>
+                      <div style={{display:'flex',justifyContent:'space-between',alignItems:'center'}}>
+                        <span style={{fontSize:14,color:thm.text70}}>🏋️ Тренировок</span>
+                        <span style={{fontSize:15,fontWeight:700,color:thm.text}}>{streak}</span>
+                      </div>
+                      <div style={{display:'flex',justifyContent:'space-between',alignItems:'center'}}>
+                        <span style={{fontSize:14,color:thm.text70}}>📦 Поднято</span>
+                        <span style={{fontSize:15,fontWeight:700,color:thm.text}}>{settings.units==='lbs'?`${Math.round(streakModalData.monthKg*2.20462)} lbs`:`${streakModalData.monthKg} кг`}</span>
+                      </div>
+                      <div style={{display:'flex',justifyContent:'space-between',alignItems:'center'}}>
+                        <span style={{fontSize:14,color:thm.text70}}>🏆 Новых рекордов</span>
+                        <span style={{fontSize:15,fontWeight:700,color:streakModalData.monthPRs>0?'#30D158':thm.text}}>{streakModalData.monthPRs}</span>
+                      </div>
+                      {streakModalData.bestWorkout && (
+                        <div style={{display:'flex',justifyContent:'space-between',alignItems:'center'}}>
+                          <span style={{fontSize:14,color:thm.text70}}>🔝 Лучшая тренировка</span>
+                          <span style={{fontSize:14,fontWeight:600,color:thm.text,textAlign:'right'}}>
+                            {formatDateShort(streakModalData.bestWorkout.date)} · {settings.units==='lbs'?`${Math.round(streakModalData.bestWorkout.kg*2.20462)} lbs`:`${streakModalData.bestWorkout.kg} кг`}
+                          </span>
+                        </div>
+                      )}
+                      {streakModalData.bestImprovement && (
+                        <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',flexWrap:'wrap',gap:4}}>
+                          <span style={{fontSize:14,color:thm.text70}}>📈 Лучший прирост</span>
+                          <span style={{fontSize:14,fontWeight:600,color:'#30D158',textAlign:'right',maxWidth:'55%'}}>
+                            {streakModalData.bestImprovement.name} +{settings.units==='lbs'?`${Math.round(streakModalData.bestImprovement.diff*2.20462)} lbs`:`${streakModalData.bestImprovement.diff} кг`}
+                          </span>
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
+
+                {/* Past 3 months */}
+                {streakModalData && streakModalData.past3.some(m=>m.count>0) && (
+                  <div style={{background:isDark?'rgba(255,255,255,0.05)':'rgba(0,0,0,0.03)',borderRadius:20,padding:'18px 20px',border:`1px solid ${thm.border}`}}>
+                    <div style={{fontSize:13,fontWeight:700,textTransform:'uppercase',letterSpacing:'0.8px',color:thm.text40,marginBottom:14}}>Прошлые месяцы</div>
+                    <div style={{display:'flex',flexDirection:'column',gap:10}}>
+                      {streakModalData.past3.map(m => {
+                        const r = getRank(m.count)
+                        return (
+                          <div key={m.month} style={{display:'flex',alignItems:'center',justifyContent:'space-between'}}>
+                            <div style={{display:'flex',alignItems:'center',gap:8}}>
+                              <span style={{fontSize:20}}>{m.count>0?r.icon:'💤'}</span>
+                              <div>
+                                <div style={{fontSize:13,color:thm.text70}}>{fMonth(m.month)}</div>
+                                <div style={{fontSize:12,color:thm.text40}}>{m.count>0?r.name:'Нет тренировок'}</div>
+                              </div>
+                            </div>
+                            <div style={{fontSize:15,fontWeight:700,color:thm.text}}>{m.count} <span style={{fontSize:12,color:thm.text40,fontWeight:500}}>тр.</span></div>
+                          </div>
+                        )
+                      })}
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        )
+      })()}
 
       <div className="nav-bar">
         {[{id:'add',icon:'➕',label:'Тренировка'},{id:'history',icon:'📜',label:'История'},{id:'progress',icon:'📈',label:'Прогресс'}].map(t=>(
