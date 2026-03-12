@@ -513,7 +513,65 @@ input[type=number]::-webkit-inner-spin-button{-webkit-appearance:none}
 .settings-signout-btn{width:100%;padding:14px;background:rgba(255,59,48,0.1);border:1px solid rgba(255,59,48,0.25);border-radius:14px;color:#FF453A;font-size:15px;font-weight:700;cursor:pointer;transition:all 0.15s}
 .settings-signout-btn:active{background:rgba(255,59,48,0.2)}`
 
-function LineChart({ data, period, setPeriod }) {
+const LIGHT_CSS = `
+body{background:#f2f2f7}
+.app[data-theme="light"]{background:#f2f2f7;color:#1c1c1e}
+.app[data-theme="light"] .header{background:rgba(242,242,247,0.92);border-color:rgba(0,0,0,0.08)}
+.app[data-theme="light"] .header h1{color:#1c1c1e}
+.app[data-theme="light"] .onboard-card{background:#fff;border-color:rgba(0,0,0,0.08)}
+.app[data-theme="light"] .date-label{color:rgba(0,0,0,0.35)}
+.app[data-theme="light"] .back-btn{background:#fff;color:rgba(0,0,0,0.7)}.app[data-theme="light"] .back-btn:active{background:#f2f2f7;color:#1c1c1e}
+.app[data-theme="light"] .ex-selector-btn{background:#fff;color:#1c1c1e}.app[data-theme="light"] .ex-selector-btn:active{background:#f2f2f7}
+.app[data-theme="light"] .fav-section{background:#fff}.app[data-theme="light"] .fav-section-name{color:#1c1c1e}
+.app[data-theme="light"] .fav-big-btn{background:#f2f2f7}
+.app[data-theme="light"] .last-hint{background:#fff;color:rgba(0,0,0,0.6)}
+.app[data-theme="light"] .sets-lbl{color:rgba(0,0,0,0.35)}
+.app[data-theme="light"] .set-num{color:rgba(0,0,0,0.25)}
+.app[data-theme="light"] .set-sep{color:rgba(0,0,0,0.2)}
+.app[data-theme="light"] .set-btn{background:#fff;color:rgba(0,0,0,0.7)}.app[data-theme="light"] .set-btn:active{background:#f2f2f7}
+.app[data-theme="light"] .dpicker-btn{background:#fff;border-color:rgba(0,0,0,0.1);color:#1c1c1e}
+.app[data-theme="light"] .dpicker-btn.open{background:#fff;border-color:rgba(48,209,88,0.5)}.app[data-theme="light"] .dpicker-btn:active{background:#f2f2f7}
+.app[data-theme="light"] .dpicker-dropdown{background:#fff;border-color:rgba(0,0,0,0.08);box-shadow:0 8px 32px rgba(0,0,0,0.15)}
+.app[data-theme="light"] .dpicker-opt{color:rgba(0,0,0,0.75)}.app[data-theme="light"] .dpicker-opt:hover{background:rgba(0,0,0,0.04)}
+.app[data-theme="light"] .dpicker-opt.active{color:#30D158;background:rgba(48,209,88,0.08)}
+.app[data-theme="light"] .day-hdr{background:#fff;color:#1c1c1e}.app[data-theme="light"] .day-hdr:active{background:#f2f2f7}
+.app[data-theme="light"] .day-chev{color:rgba(0,0,0,0.3)}
+.app[data-theme="light"] .day-body{background:#fff}.app[data-theme="light"] .day-actions{border-color:rgba(0,0,0,0.05)}
+.app[data-theme="light"] .day-action-btn{color:rgba(0,0,0,0.4)}.app[data-theme="light"] .day-action-btn:hover{color:rgba(0,0,0,0.8)}
+.app[data-theme="light"] .day-action-btn.ok{color:#30D158}.app[data-theme="light"] .day-action-btn+.day-action-btn{border-color:rgba(0,0,0,0.05)}
+.app[data-theme="light"] .hist-card{border-bottom-color:rgba(0,0,0,0.04)}
+.app[data-theme="light"] .hist-ex{color:#1c1c1e}.app[data-theme="light"] .chip{background:#e5e5ea;color:#1c1c1e}
+.app[data-theme="light"] .stat-card{background:#fff}.app[data-theme="light"] .stat-val{color:#1c1c1e}.app[data-theme="light"] .stat-lbl{color:rgba(0,0,0,0.4)}
+.app[data-theme="light"] .prog-title{color:#1c1c1e}
+.app[data-theme="light"] .chart-wrap{background:#fff}
+.app[data-theme="light"] .chart-ex-select{background:#f2f2f7;color:#1c1c1e}.app[data-theme="light"] .chart-ex-select option{background:#f2f2f7;color:#1c1c1e}
+.app[data-theme="light"] .chart-nodata{color:rgba(0,0,0,0.35)}
+.app[data-theme="light"] .cal-btn{background:#fff;color:rgba(0,0,0,0.6)}
+.app[data-theme="light"] .cal-mname{color:#1c1c1e}.app[data-theme="light"] .cal-dow{color:rgba(0,0,0,0.3)}
+.app[data-theme="light"] .cal-cell{background:#fff;color:rgba(0,0,0,0.6)}.app[data-theme="light"] .cal-cell.empty{background:transparent}
+.app[data-theme="light"] .modal{background:#fff}.app[data-theme="light"] .modal-handle{background:rgba(0,0,0,0.15)}
+.app[data-theme="light"] .modal-hdr{background:#fff;border-color:rgba(0,0,0,0.06)}
+.app[data-theme="light"] .modal-title{color:#1c1c1e}
+.app[data-theme="light"] .modal-srch{background:#f2f2f7;color:#1c1c1e}.app[data-theme="light"] .modal-srch::placeholder{color:rgba(0,0,0,0.3)}
+.app[data-theme="light"] .modal-item{color:#1c1c1e}.app[data-theme="light"] .modal-item:active{background:rgba(0,0,0,0.04)}
+.app[data-theme="light"] .modal-ph{background:#f2f2f7}.app[data-theme="light"] .modal-body{background:#fff}.app[data-theme="light"] .modal-sect-lbl{color:rgba(0,0,0,0.35)}
+.app[data-theme="light"] .edit-inp{background:#f2f2f7;color:#1c1c1e}
+.app[data-theme="light"] .nav-bar{background:rgba(255,255,255,0.95);border-top-color:rgba(0,0,0,0.08)}
+.app[data-theme="light"] .settings-card{background:#fff!important;border-color:rgba(0,0,0,0.08)!important}
+.app[data-theme="light"] .settings-section-title{color:rgba(0,0,0,0.4)!important}
+.app[data-theme="light"] .settings-inp{background:#f2f2f7!important;color:#1c1c1e!important}
+.app[data-theme="light"] .settings-row-label{color:#1c1c1e!important}
+.app[data-theme="light"] .settings-toggle{background:rgba(0,0,0,0.06)!important}
+.app[data-theme="light"] .settings-toggle-btn{color:rgba(0,0,0,0.5)!important}
+.app[data-theme="light"] .settings-toggle-btn.active{background:#30D158!important;color:#000!important}
+.app[data-theme="light"] .settings-action-btn{background:rgba(0,0,0,0.04)!important;border-color:rgba(0,0,0,0.08)!important;color:rgba(0,0,0,0.8)!important}
+.app[data-theme="light"] .settings-action-btn.danger{color:#FF453A!important;background:rgba(255,59,48,0.06)!important;border-color:rgba(255,59,48,0.15)!important}
+.app[data-theme="light"] .settings-signout-btn{background:rgba(255,59,48,0.08)!important;border-color:rgba(255,59,48,0.2)!important}
+`
+
+const CSS_ALL = CSS + LIGHT_CSS
+
+function LineChart({ data, period, setPeriod, unit = 'кг' }) {
   const [tooltip, setTooltip] = useState(null)
 
   const periods = [{ id:'1M', label:'1 мес' }, { id:'3M', label:'3 мес' }, { id:'ALL', label:'Всё' }]
@@ -611,14 +669,14 @@ function LineChart({ data, period, setPeriod }) {
           return (
             <g>
               <rect x={tx-38} y={ty-16} width={76} height={26} rx="7" fill="#1c1c1e" stroke="rgba(48,209,88,0.4)" strokeWidth="1"/>
-              <text x={tx} y={ty+1} textAnchor="middle" fontSize="11" fill="#30D158" fontWeight="700">~{tooltip.val} кг</text>
+              <text x={tx} y={ty+1} textAnchor="middle" fontSize="11" fill="#30D158" fontWeight="700">~{tooltip.val} {unit}</text>
               <text x={tx} y={ty+14} textAnchor="middle" fontSize="9" fill="rgba(255,255,255,0.4)">{tooltip.label} · 1ПМ</text>
             </g>
           )
         })()}
       </svg>
       <div style={{display:'flex',justifyContent:'space-between',marginTop:14,background:'rgba(255,255,255,0.04)',borderRadius:12,padding:'10px 14px'}}>
-        {[['Старт', first+' kg'], ['Прирост', (diff>=0?'+':'')+diff+' kg'], ['Рост', (Number(pct)>=0?'+':'')+pct+'%'], ['Сейчас', last+' kg']].map(([lbl,val],i) => (
+        {[['Старт', first+' '+unit], ['Прирост', (diff>=0?'+':'')+diff+' '+unit], ['Рост', (Number(pct)>=0?'+':'')+pct+'%'], ['Сейчас', last+' '+unit]].map(([lbl,val],i) => (
           <div key={i} style={{textAlign:'center'}}>
             <div style={{fontSize:14,fontWeight:700,color: i===1||i===2 ? (diff>=0?'#30D158':'#FF453A') : 'white'}}>{val}</div>
             <div style={{fontSize:9,opacity:0.35,marginTop:2,textTransform:'uppercase',letterSpacing:'0.5px'}}>{lbl}</div>
@@ -960,6 +1018,9 @@ export default function App() {
       return saved ? JSON.parse(saved) : { username: '', weight: '', height: '', units: 'kg', theme: 'dark', language: 'ru' }
     } catch { return { username: '', weight: '', height: '', units: 'kg', theme: 'dark', language: 'ru' } }
   })
+  const [showExportModal, setShowExportModal] = useState(false)
+  const [exportPeriod, setExportPeriod] = useState('all')
+  const [showClearConfirm, setShowClearConfirm] = useState(false)
 
   const handleAuth = async () => {
     setAuthLoading(true); setAuthError('')
@@ -984,26 +1045,23 @@ export default function App() {
     localStorage.setItem('gymBroSettings', JSON.stringify(newSettings))
   }
 
-  const exportWorkouts = async () => {
-    const { data } = await supabase.from('workouts').select('workout_date,exercises(name),sets(set_no,weight,reps,time_sec)').eq('user_id', user.id).order('workout_date', { ascending: false })
+  const exportWorkouts = async (period) => {
+    setShowExportModal(false)
+    let query = supabase.from('workouts').select('workout_date,exercises(name),sets(set_no,weight,reps,time_sec)').eq('user_id', user.id).order('workout_date', { ascending: false })
+    if (period !== 'all') {
+      const days = period === '7d' ? 7 : period === '30d' ? 30 : period === '3m' ? 90 : period === '6m' ? 180 : 365
+      const from = new Date(Date.now() - days * 86400000).toISOString().split('T')[0]
+      query = query.gte('workout_date', from)
+    }
+    const { data } = await query
     const blob = new Blob([JSON.stringify(data || [], null, 2)], { type: 'application/json' })
     const url = URL.createObjectURL(blob)
-    const a = document.createElement('a'); a.href = url; a.download = `gym-bro-export-${new Date().toISOString().split('T')[0]}.json`; a.click()
-    URL.revokeObjectURL(url)
-  }
-
-  const backupData = async () => {
-    const { data: workoutsData } = await supabase.from('workouts').select('workout_date,exercises(name),sets(set_no,weight,reps,time_sec)').eq('user_id', user.id)
-    const { data: favsData } = await supabase.from('user_favorites').select('exercise_name').eq('user_id', user.id)
-    const backup = { exportDate: new Date().toISOString(), settings, workouts: workoutsData || [], favorites: favsData?.map(f => f.exercise_name) || [] }
-    const blob = new Blob([JSON.stringify(backup, null, 2)], { type: 'application/json' })
-    const url = URL.createObjectURL(blob)
-    const a = document.createElement('a'); a.href = url; a.download = `gym-bro-backup-${new Date().toISOString().split('T')[0]}.json`; a.click()
+    const a = document.createElement('a'); a.href = url; a.download = `gym-bro-export-${period}-${new Date().toISOString().split('T')[0]}.json`; a.click()
     URL.revokeObjectURL(url)
   }
 
   const clearHistory = async () => {
-    if (!window.confirm('Удалить ВСЮ историю тренировок? Это действие нельзя отменить.')) return
+    setShowClearConfirm(false)
     const { data: workoutsData } = await supabase.from('workouts').select('id').eq('user_id', user.id)
     const ids = (workoutsData || []).map(w => w.id)
     for (const id of ids) {
@@ -1013,7 +1071,12 @@ export default function App() {
     setHistory([]); setPrs([]); setStats(null); setSaved(p => !p)
   }
 
-  useEffect(() => { const s = document.createElement('style'); s.textContent = CSS; document.head.appendChild(s); return () => document.head.removeChild(s) }, [])
+  useEffect(() => { const s = document.createElement('style'); s.textContent = CSS_ALL; document.head.appendChild(s); return () => document.head.removeChild(s) }, [])
+
+  useEffect(() => {
+    document.body.style.background = settings.theme === 'light' ? '#f2f2f7' : '#000'
+    return () => { document.body.style.background = '' }
+  }, [settings.theme])
 
   // Track virtual keyboard height for iOS Safari
   useEffect(() => {
@@ -1330,6 +1393,35 @@ export default function App() {
   const exType = EXERCISE_TYPE[selectedEx] || 'light'
   const isFav = favorites.includes(selectedEx)
 
+  // kg/lbs helpers
+  const kgToDisplay = (kg) => settings.units === 'lbs' ? Math.round(kg * 2.20462 * 10) / 10 : kg
+  const wUnit = settings.units === 'lbs' ? 'lbs' : 'кг'
+
+  // Theme helpers
+  const isDark = settings.theme !== 'light'
+  const thm = {
+    card: isDark ? '#1c1c1e' : '#ffffff',
+    card2: isDark ? 'rgba(255,255,255,0.04)' : 'rgba(0,0,0,0.03)',
+    input: isDark ? '#2c2c2e' : '#f2f2f7',
+    border: isDark ? 'rgba(255,255,255,0.07)' : 'rgba(0,0,0,0.08)',
+    border2: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.05)',
+    text: isDark ? '#ffffff' : '#1c1c1e',
+    text85: isDark ? 'rgba(255,255,255,0.85)' : 'rgba(0,0,0,0.85)',
+    text70: isDark ? 'rgba(255,255,255,0.7)' : 'rgba(0,0,0,0.7)',
+    text50: isDark ? 'rgba(255,255,255,0.5)' : 'rgba(0,0,0,0.5)',
+    text45: isDark ? 'rgba(255,255,255,0.45)' : 'rgba(0,0,0,0.45)',
+    text40: isDark ? 'rgba(255,255,255,0.4)' : 'rgba(0,0,0,0.4)',
+    text35: isDark ? 'rgba(255,255,255,0.35)' : 'rgba(0,0,0,0.35)',
+    text30: isDark ? 'rgba(255,255,255,0.3)' : 'rgba(0,0,0,0.3)',
+    text28: isDark ? 'rgba(255,255,255,0.28)' : 'rgba(0,0,0,0.28)',
+    text25: isDark ? 'rgba(255,255,255,0.25)' : 'rgba(0,0,0,0.25)',
+    btnBg: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.07)',
+    btnBorder: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)',
+    headerBg: isDark ? 'rgba(0,0,0,0.92)' : 'rgba(242,242,247,0.92)',
+    modalBg: isDark ? '#1c1c1e' : '#ffffff',
+    overlayCard: isDark ? '#1c1c1e' : '#ffffff',
+  }
+
   // Loading state
   if (user === undefined) return (
     <div style={{minHeight:'100vh',background:'#000',display:'flex',alignItems:'center',justifyContent:'center'}}>
@@ -1365,7 +1457,7 @@ export default function App() {
   )
 
   return (
-    <div className="app">
+    <div className="app" data-theme={settings.theme}>
       {showOnboard && (
         <div className="onboard-overlay">
           <div className="onboard-card">
@@ -1389,19 +1481,19 @@ export default function App() {
         </div>
         <div style={{display:'flex',alignItems:'center',gap:8}}>
           <button onClick={() => { setTimerSecs(timerSecs===null?timerDuration:null); setTimerPaused(true) }} style={{
-            background:'rgba(255,255,255,0.08)',border:'1px solid rgba(255,255,255,0.1)',
+            background:thm.btnBg,border:`1px solid ${thm.btnBorder}`,
             borderRadius:99,padding:'6px 12px',cursor:'pointer',
-            color:'rgba(255,255,255,0.8)',fontSize:18,
+            color:thm.text70,fontSize:18,
             fontWeight:700,display:'flex',alignItems:'center'
           }}>
             {'⏱'}
           </button>
           {streak >= 1 && <div className="streak-badge">{streak}🔥</div>}
-          <button onClick={() => setTab('settings')} style={{
-            background: tab==='settings' ? 'rgba(48,209,88,0.15)' : 'rgba(255,255,255,0.08)',
-            border: tab==='settings' ? '1px solid rgba(48,209,88,0.3)' : '1px solid rgba(255,255,255,0.1)',
+          <button onClick={() => setTab(t => t === 'settings' ? 'add' : 'settings')} style={{
+            background: tab==='settings' ? 'rgba(48,209,88,0.15)' : thm.btnBg,
+            border: tab==='settings' ? '1px solid rgba(48,209,88,0.3)' : `1px solid ${thm.btnBorder}`,
             borderRadius:99,padding:'5px 11px',cursor:'pointer',
-            color: tab==='settings' ? '#30D158' : 'rgba(255,255,255,0.6)',fontSize:18,
+            color: tab==='settings' ? '#30D158' : thm.text50,fontSize:18,
             display:'flex',alignItems:'center',lineHeight:1
           }}>⚙️</button>
         </div>
@@ -1453,10 +1545,10 @@ export default function App() {
           {!workoutStarted ? (
             <div style={{display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',flex:1,paddingTop:'20vh',paddingBottom:40,gap:44}}>
               <div style={{textAlign:'center'}}>
-                <div style={{fontSize:12,color:'rgba(255,255,255,0.28)',fontWeight:600,textTransform:'uppercase',letterSpacing:'1.5px',marginBottom:14}}>
+                <div style={{fontSize:12,color:thm.text28,fontWeight:600,textTransform:'uppercase',letterSpacing:'1.5px',marginBottom:14}}>
                   {new Date().toLocaleDateString('ru',{weekday:'long',day:'numeric',month:'long'})}
                 </div>
-                <div style={{fontSize:26,fontWeight:700,color:'rgba(255,255,255,0.8)',letterSpacing:'-0.3px'}}>Тренировка</div>
+                <div style={{fontSize:26,fontWeight:700,color:thm.text70,letterSpacing:'-0.3px'}}>Тренировка</div>
               </div>
               <div style={{position:'relative',display:'flex',alignItems:'center',justifyContent:'center'}}>
                 <style>{`
@@ -1480,15 +1572,15 @@ export default function App() {
                   onTouchStart={e=>e.currentTarget.style.transform='scale(0.95)'}
                   onTouchEnd={e=>e.currentTarget.style.transform='scale(1)'}
                 >
-                  <span style={{fontSize:13,fontWeight:700,color:'rgba(255,255,255,0.75)',letterSpacing:'3px',textTransform:'uppercase'}}>НАЧАТЬ</span>
+                  <span style={{fontSize:13,fontWeight:700,color:thm.text70,letterSpacing:'3px',textTransform:'uppercase'}}>НАЧАТЬ</span>
                 </button>
               </div>
             </div>
           ) : (
             <>
               <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:16}}>
-                <button onClick={()=>{if(workoutExercises.length>0&&!window.confirm('Выйти? Все упражнения будут потеряны.'))return;setWorkoutStarted(false);setWorkoutExercises([]);setSaved(false)}} style={{background:'none',border:'none',color:'rgba(255,255,255,0.45)',fontSize:14,cursor:'pointer',padding:'4px 0',fontWeight:600}}>← Назад</button>
-                <div style={{fontSize:13,color:'rgba(255,255,255,0.5)',fontWeight:600}}>
+                <button onClick={()=>{if(workoutExercises.length>0&&!window.confirm('Выйти? Все упражнения будут потеряны.'))return;setWorkoutStarted(false);setWorkoutExercises([]);setSaved(false)}} style={{background:'none',border:'none',color:thm.text45,fontSize:14,cursor:'pointer',padding:'4px 0',fontWeight:600}}>← Назад</button>
+                <div style={{fontSize:13,color:thm.text50,fontWeight:600}}>
                   📅 {new Date(workoutDate+'T12:00:00').toLocaleDateString('ru',{day:'numeric',month:'long'})}
                 </div>
               </div>
@@ -1497,27 +1589,27 @@ export default function App() {
                 const exType2 = EXERCISE_TYPE[ex.name] || 'light'
                 const wOpts = getWeightOptions(ex.name)
                 return (
-                  <div key={exIdx} style={{background:'rgba(255,255,255,0.04)',borderRadius:16,border:'1px solid rgba(255,255,255,0.07)',marginBottom:10,overflow:'hidden'}}>
+                  <div key={exIdx} style={{background:thm.card2,borderRadius:16,border:`1px solid ${thm.border}`,marginBottom:10,overflow:'hidden'}}>
                     <button onClick={()=>setWorkoutExercises(prev=>prev.map((e,i)=>i===exIdx?{...e,open:!e.open}:e))}
                       style={{width:'100%',background:'none',border:'none',padding:'12px 14px',display:'flex',alignItems:'center',gap:10,cursor:'pointer',textAlign:'left'}}>
                       {getExImage(ex.name)
                         ? <img src={getExImage(ex.name)} alt={ex.name} style={{width:36,height:36,borderRadius:8,objectFit:'cover',flexShrink:0}} onError={e=>e.target.style.display='none'}/>
-                        : <div style={{width:36,height:36,borderRadius:8,background:'rgba(255,255,255,0.07)',display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0,fontSize:18}}>🏋️</div>
+                        : <div style={{width:36,height:36,borderRadius:8,background:thm.btnBg,display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0,fontSize:18}}>🏋️</div>
                       }
                       <div style={{flex:1}}>
-                        <span style={{fontSize:15,fontWeight:700,color:'rgba(255,255,255,0.9)'}}>{ex.name}</span>
+                        <span style={{fontSize:15,fontWeight:700,color:thm.text85}}>{ex.name}</span>
                         {ex.grip && ex.grip !== 'Стандартный' && <span style={{fontSize:11,color:'rgba(255,159,10,0.8)',marginLeft:6,fontWeight:600}}>({ex.grip})</span>}
                       </div>
-                      <span style={{fontSize:12,color:'rgba(255,255,255,0.3)',marginRight:4}}>{ex.sets.filter(s=>s.weight>0&&s.reps>0).length} подх.</span>
+                      <span style={{fontSize:12,color:thm.text30,marginRight:4}}>{ex.sets.filter(s=>s.weight>0&&s.reps>0).length} подх.</span>
                       <button onClick={e=>{e.stopPropagation();setWorkoutExercises(prev=>prev.filter((_,i)=>i!==exIdx))}}
                         style={{background:'rgba(255,59,48,0.1)',border:'none',borderRadius:8,padding:'4px 8px',color:'#FF453A',cursor:'pointer',fontSize:12,fontWeight:700,marginRight:4}}>✕</button>
-                      <span style={{color:'rgba(255,255,255,0.4)',fontSize:20,display:'inline-block',transform:isOpen?'rotate(180deg)':'none',transition:'transform 0.2s',padding:'2px 8px',minWidth:32,textAlign:'center'}}>▼</span>
+                      <span style={{color:thm.text40,fontSize:20,display:'inline-block',transform:isOpen?'rotate(180deg)':'none',transition:'transform 0.2s',padding:'2px 8px',minWidth:32,textAlign:'center'}}>▼</span>
                     </button>
                     {isOpen && (
                       <div style={{padding:'0 14px 14px'}}>
                         {ex.lastSession && (
-                          <div style={{fontSize:12,color:'rgba(255,255,255,0.35)',marginBottom:10,padding:'7px 10px',background:'rgba(255,255,255,0.03)',borderRadius:8}}>
-                            💡 Прошлый раз: {ex.lastSession.sets?.sort((a,b)=>a.set_no-b.set_no).map(s=>s.time_sec>0?`${s.time_sec}s`:`${s.weight}×${s.reps}`).join(' · ')}
+                          <div style={{fontSize:12,color:thm.text35,marginBottom:10,padding:'7px 10px',background:thm.card2,borderRadius:8}}>
+                            💡 Прошлый раз: {ex.lastSession.sets?.sort((a,b)=>a.set_no-b.set_no).map(s=>s.time_sec>0?`${s.time_sec}s`:`${kgToDisplay(s.weight)}×${s.reps}`).join(' · ')}
                           </div>
                         )}
                         {ex.grip !== null && ex.grip !== undefined && (
@@ -1527,7 +1619,7 @@ export default function App() {
                               {(GRIP_MUSCLES[ex.name] ? Object.keys(GRIP_MUSCLES[ex.name]) : GRIP_OPTIONS).map(g => (
                                 <button key={g} onClick={()=>setWorkoutExercises(prev=>prev.map((e,i)=>i!==exIdx?e:{...e,grip:g}))}
                                   style={{padding:'5px 12px',borderRadius:99,fontSize:12,fontWeight:600,border:'none',cursor:'pointer',
-                                    background: ex.grip===g ? '#FF9F0A' : 'rgba(255,255,255,0.08)',
+                                    background: ex.grip===g ? '#FF9F0A' : thm.btnBg,
                                     color: ex.grip===g ? '#000' : 'rgba(255,255,255,0.6)'}}>
                                   {g}
                                 </button>
@@ -1542,7 +1634,7 @@ export default function App() {
                               <DropdownPicker options={TIME_OPTIONS} value={s.weight} onChange={v=>setWorkoutExercises(prev=>prev.map((e,i)=>i!==exIdx?e:{...e,sets:e.sets.map((ss,j)=>j!==si?ss:{...ss,weight:v})}))} unit="s" label={`Подход ${si+1}`}/>
                             ) : (
                               <>
-                                <DropdownPicker options={wOpts} value={s.weight} onChange={v=>setWorkoutExercises(prev=>prev.map((e,i)=>i!==exIdx?e:{...e,sets:e.sets.map((ss,j)=>j!==si?ss:{...ss,weight:v})}))} unit="кг" label={`Подход ${si+1} — Вес`}/>
+                                <DropdownPicker options={wOpts} value={s.weight} onChange={v=>setWorkoutExercises(prev=>prev.map((e,i)=>i!==exIdx?e:{...e,sets:e.sets.map((ss,j)=>j!==si?ss:{...ss,weight:v})}))} unit={settings.units==='lbs'?'':wUnit} labelFn={settings.units==='lbs'?(v=>`${kgToDisplay(v)} lbs`):null} label={`Подход ${si+1} — Вес`}/>
                                 <span className="set-sep">×</span>
                                 <DropdownPicker options={REPS_OPTIONS} value={s.reps} onChange={v=>setWorkoutExercises(prev=>prev.map((e,i)=>i!==exIdx?e:{...e,sets:e.sets.map((ss,j)=>j!==si?ss:{...ss,reps:v})}))} unit="повт" label={`Подход ${si+1} — Повт`}/>
                               </>
@@ -1632,7 +1724,7 @@ export default function App() {
                             <div className="hist-ex">{normalizeName(w.exercises?.name)}</div>
                             <button onClick={()=>deleteWorkout(w.id)} style={{background:'none',border:'none',cursor:'pointer',fontSize:16,opacity:0.4,padding:'0 4px',color:'#ff453a'}} title="Удалить упражнение">✕</button>
                           </div>
-                          <div className="chips">{w.sets?.sort((a,b)=>a.set_no-b.set_no).map((s,i) => <span key={i} className="chip">{s.time_sec>0?`${s.time_sec}s`:`${s.weight}×${s.reps}`}</span>)}</div>
+                          <div className="chips">{w.sets?.sort((a,b)=>a.set_no-b.set_no).map((s,i) => <span key={i} className="chip">{s.time_sec>0?`${s.time_sec}s`:`${kgToDisplay(s.weight)}×${s.reps}`}</span>)}</div>
                         </div>
                       ))}
                     </div>
@@ -1673,7 +1765,7 @@ export default function App() {
             <div className="stats-row">
               <div className="stat-card"><div className="stat-val">{stats.monthW}</div><div className="stat-lbl">{new Date().toLocaleDateString('ru',{month:'long'})}</div></div>
               <div className="stat-card"><div className="stat-val">{stats.totalW}</div><div className="stat-lbl">всего</div></div>
-              <div className="stat-card"><div className="stat-val" style={{color:'#69F0AE',fontSize:18}}>{stats.monthKg>=1000?`${(stats.monthKg/1000).toFixed(1)}K`:Math.round(stats.monthKg)} kg</div><div className="stat-lbl">поднято за месяц</div></div>
+              <div className="stat-card"><div className="stat-val" style={{color:'#69F0AE',fontSize:18}}>{(()=>{const v=settings.units==='lbs'?Math.round(stats.monthKg*2.20462):Math.round(stats.monthKg);return v>=1000?`${(v/1000).toFixed(1)}K`:v})()}{' '}{wUnit}</div><div className="stat-lbl">поднято за месяц</div></div>
             </div>
           )}
           <div className="prog-title">💪 Нагрузка по мышцам</div>
@@ -1713,30 +1805,30 @@ export default function App() {
             })}
           </div>
           <button onClick={()=>setOpenPrs(p=>({...p,__all__:!p.__all__}))} style={{
-            width:'100%',background:'rgba(255,255,255,0.04)',border:'1px solid rgba(255,255,255,0.07)',
+            width:'100%',background:thm.card2,border:`1px solid ${thm.border}`,
             borderRadius:14,padding:'14px 16px',display:'flex',alignItems:'center',justifyContent:'space-between',
             cursor:'pointer',marginBottom:4
           }}>
-            <span style={{fontSize:15,fontWeight:700,color:'rgba(255,255,255,0.85)'}}>🏆 Личные рекорды</span>
+            <span style={{fontSize:15,fontWeight:700,color:thm.text85}}>🏆 Личные рекорды</span>
             <div style={{display:'flex',alignItems:'center',gap:8}}>
-              <span style={{fontSize:12,color:'rgba(255,255,255,0.35)'}}>{prs.length} упр.</span>
-              <span style={{color:'rgba(255,255,255,0.3)',fontSize:12,display:'inline-block',transition:'transform 0.2s',transform:openPrs.__all__?'rotate(180deg)':'none'}}>▼</span>
+              <span style={{fontSize:12,color:thm.text35}}>{prs.length} упр.</span>
+              <span style={{color:thm.text30,fontSize:12,display:'inline-block',transition:'transform 0.2s',transform:openPrs.__all__?'rotate(180deg)':'none'}}>▼</span>
             </div>
           </button>
-          {openPrs.__all__ && <div style={{background:'rgba(255,255,255,0.04)',borderRadius:14,overflow:'hidden',border:'1px solid rgba(255,255,255,0.07)',marginBottom:4}}>
+          {openPrs.__all__ && <div style={{background:thm.card2,borderRadius:14,overflow:'hidden',border:`1px solid ${thm.border}`,marginBottom:4}}>
           {prs.map(([name,pr], prIdx)=>{
             const isOpen=openPrs[name]; const img=getExImage(name)
             return (
-              <div key={name} style={{borderBottom: prIdx<prs.length-1 ? '1px solid rgba(255,255,255,0.06)' : 'none'}}>
+              <div key={name} style={{borderBottom: prIdx<prs.length-1 ? `1px solid ${thm.border2}` : 'none'}}>
                 <button style={{width:'100%',background:'none',border:'none',cursor:'pointer',padding:'11px 16px',display:'flex',alignItems:'center',gap:10,textAlign:'left'}} onClick={()=>setOpenPrs(p=>({...p,[name]:!p[name]}))}>
-                  {img ? <img src={img} alt={name} style={{width:32,height:32,borderRadius:7,objectFit:'cover',flexShrink:0}} onError={e=>e.target.style.display='none'}/> : <div style={{width:32,height:32,borderRadius:7,background:'rgba(255,255,255,0.07)',display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0,fontSize:16}}>🏋️</div>}
-                  <span style={{flex:1,color:'rgba(255,255,255,0.85)',fontSize:14,fontWeight:600}}>{normalizeName(name)}</span>
-                  <span style={{color:'#30D158',fontSize:14,fontWeight:700,marginRight:8}}>{pr.time_sec>0 ? `${pr.time_sec}с` : `~${pr.est} кг`}</span>
-                  <span style={{color:'rgba(255,255,255,0.25)',fontSize:11,display:'inline-block',transition:'transform 0.2s',transform:isOpen?'rotate(180deg)':'none'}}>▼</span>
+                  {img ? <img src={img} alt={name} style={{width:32,height:32,borderRadius:7,objectFit:'cover',flexShrink:0}} onError={e=>e.target.style.display='none'}/> : <div style={{width:32,height:32,borderRadius:7,background:thm.btnBg,display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0,fontSize:16}}>🏋️</div>}
+                  <span style={{flex:1,color:thm.text85,fontSize:14,fontWeight:600}}>{normalizeName(name)}</span>
+                  <span style={{color:'#30D158',fontSize:14,fontWeight:700,marginRight:8}}>{pr.time_sec>0 ? `${pr.time_sec}с` : `~${kgToDisplay(pr.est)} ${wUnit}`}</span>
+                  <span style={{color:thm.text25,fontSize:11,display:'inline-block',transition:'transform 0.2s',transform:isOpen?'rotate(180deg)':'none'}}>▼</span>
                 </button>
                 {isOpen && <div style={{padding:'2px 16px 12px 58px',display:'flex',gap:16,flexWrap:'wrap',alignItems:'center'}}>
-                  <span style={{fontSize:13,color:'rgba(255,255,255,0.6)',fontWeight:600}}>{pr.time_sec>0 ? `${pr.time_sec}с` : `${pr.weight} кг × ${pr.reps} повт`}</span>
-                  <span style={{fontSize:12,color:'rgba(255,255,255,0.3)'}}>{new Date(pr.date).toLocaleDateString('ru',{day:'numeric',month:'short',year:'numeric'})}</span>
+                  <span style={{fontSize:13,color:thm.text50,fontWeight:600}}>{pr.time_sec>0 ? `${pr.time_sec}с` : `${kgToDisplay(pr.weight)} ${wUnit} × ${pr.reps} повт`}</span>
+                  <span style={{fontSize:12,color:thm.text30}}>{new Date(pr.date).toLocaleDateString('ru',{day:'numeric',month:'short',year:'numeric'})}</span>
                 </div>}
               </div>
             )
@@ -1746,12 +1838,15 @@ export default function App() {
           <div className="chart-wrap">
             <select className="chart-ex-select" value={chartEx} onChange={e=>setChartEx(e.target.value)}>{prs.map(([name])=><option key={name} value={name}>{ruName(name)}</option>)}</select>
             <LineChart data={(() => {
-              if (chartPeriod === 'ALL') return chartData
-              const months = chartPeriod === '1M' ? 1 : 3
-              const cutoff = new Date(); cutoff.setMonth(cutoff.getMonth() - months)
-              const cutoffStr = cutoff.toISOString().split('T')[0]
-              return chartData.filter(p => p.date >= cutoffStr)
-            })()} period={chartPeriod} setPeriod={setChartPeriod}/>
+              const base = chartPeriod === 'ALL' ? chartData : (() => {
+                const months = chartPeriod === '1M' ? 1 : 3
+                const cutoff = new Date(); cutoff.setMonth(cutoff.getMonth() - months)
+                const cutoffStr = cutoff.toISOString().split('T')[0]
+                return chartData.filter(p => p.date >= cutoffStr)
+              })()
+              if (settings.units === 'lbs') return base.map(p => ({...p, val: Math.round(p.val * 2.20462 * 10) / 10}))
+              return base
+            })()} period={chartPeriod} setPeriod={setChartPeriod} unit={wUnit}/>
           </div>
         </div>
         )
@@ -1780,9 +1875,9 @@ export default function App() {
             <div className="modal-hdr"><div className="modal-title" style={{marginBottom:0}}>{formatDateShort(calDayModal.date)}</div></div>
             <div className="modal-list">
               {calDayModal.workouts.map(w=>(
-                <div key={w.id} style={{padding:'12px 10px',borderRadius:12,marginBottom:6,background:'rgba(255,255,255,0.04)',border:'1px solid rgba(255,255,255,0.07)'}}>
-                  <div style={{fontSize:14,fontWeight:700,marginBottom:7}}>{normalizeName(w.exercises?.name)}</div>
-                  <div className="chips">{w.sets?.sort((a,b)=>a.set_no-b.set_no).map((s,i)=><span key={i} className="chip">{s.time_sec>0?`${s.time_sec}s`:`${s.weight}×${s.reps}`}</span>)}</div>
+                <div key={w.id} style={{padding:'12px 10px',borderRadius:12,marginBottom:6,background:thm.card2,border:`1px solid ${thm.border}`}}>
+                  <div style={{fontSize:14,fontWeight:700,marginBottom:7,color:thm.text}}>{normalizeName(w.exercises?.name)}</div>
+                  <div className="chips">{w.sets?.sort((a,b)=>a.set_no-b.set_no).map((s,i)=><span key={i} className="chip">{s.time_sec>0?`${s.time_sec}s`:`${kgToDisplay(s.weight)}×${s.reps}`}</span>)}</div>
                 </div>
               ))}
             </div>
@@ -1858,13 +1953,10 @@ export default function App() {
           {/* Данные */}
           <div className="settings-card">
             <div className="settings-section-title">💾 Данные</div>
-            <button className="settings-action-btn" onClick={exportWorkouts}>
+            <button className="settings-action-btn" onClick={()=>setShowExportModal(true)}>
               <span>📤</span> Экспорт тренировок
             </button>
-            <button className="settings-action-btn" onClick={backupData}>
-              <span>🗄</span> Резервная копия
-            </button>
-            <button className="settings-action-btn danger" onClick={clearHistory}>
+            <button className="settings-action-btn danger" onClick={()=>setShowClearConfirm(true)}>
               <span>🗑</span> Очистить историю
             </button>
           </div>
@@ -1872,7 +1964,7 @@ export default function App() {
           {/* Аккаунт */}
           <div className="settings-card">
             <div className="settings-section-title">👤 Аккаунт</div>
-            <div style={{fontSize:13,color:'rgba(255,255,255,0.4)',marginBottom:16,padding:'10px 12px',background:'rgba(255,255,255,0.04)',borderRadius:10}}>
+            <div style={{fontSize:13,color:thm.text40,marginBottom:16,padding:'10px 12px',background:thm.card2,borderRadius:10}}>
               📧 {user?.email}
             </div>
             <button className="settings-signout-btn" onClick={handleSignOut}>
@@ -1886,11 +1978,11 @@ export default function App() {
       {showDateModal && (
         <div style={{position:'fixed',inset:0,background:'rgba(0,0,0,0.7)',zIndex:200,display:'flex',alignItems:'center',justifyContent:'center',backdropFilter:'blur(8px)'}}
           onClick={e=>{if(e.target===e.currentTarget)setShowDateModal(false)}}>
-          <div style={{background:'#1c1c1e',borderRadius:20,padding:'28px 24px',width:'calc(100% - 48px)',maxWidth:320,border:'1px solid rgba(255,255,255,0.1)'}}>
-            <div style={{fontSize:17,fontWeight:700,color:'#fff',marginBottom:20,textAlign:'center'}}>📅 Выбери дату тренировки</div>
+          <div style={{background:thm.overlayCard,borderRadius:20,padding:'28px 24px',width:'calc(100% - 48px)',maxWidth:320,border:`1px solid ${thm.border}`}}>
+            <div style={{fontSize:17,fontWeight:700,color:thm.text,marginBottom:20,textAlign:'center'}}>📅 Выбери дату тренировки</div>
             <div style={{position:'relative',marginBottom:16}}>
-              <div style={{background:'rgba(255,255,255,0.08)',border:'1px solid rgba(255,255,255,0.15)',
-                borderRadius:12,padding:'14px 16px',color:'#fff',fontSize:16,fontWeight:600,
+              <div style={{background:thm.btnBg,border:`1px solid ${thm.btnBorder}`,
+                borderRadius:12,padding:'14px 16px',color:thm.text,fontSize:16,fontWeight:600,
                 display:'flex',alignItems:'center',justifyContent:'space-between'}}>
                 <span>{new Date(workoutDate+'T12:00:00').toLocaleDateString('ru',{day:'numeric',month:'long',year:'numeric'})}</span>
                 <span style={{fontSize:18}}>📅</span>
@@ -1929,6 +2021,44 @@ export default function App() {
           <div>
             <div className="alert-toast-title">{streakAlert.count}-я тренировка месяца!</div>
             <div className="alert-toast-sub">{streakAlert.msg}</div>
+          </div>
+        </div>
+      )}
+
+      {/* Export Period Modal */}
+      {showExportModal && (
+        <div style={{position:'fixed',inset:0,background:'rgba(0,0,0,0.7)',zIndex:200,display:'flex',alignItems:'center',justifyContent:'center',backdropFilter:'blur(8px)'}}
+          onClick={e=>{if(e.target===e.currentTarget)setShowExportModal(false)}}>
+          <div style={{background:thm.overlayCard,borderRadius:20,padding:'28px 24px',width:'calc(100% - 48px)',maxWidth:340,border:`1px solid ${thm.border}`}}>
+            <div style={{fontSize:17,fontWeight:700,color:thm.text,marginBottom:6,textAlign:'center'}}>📤 Экспорт тренировок</div>
+            <div style={{fontSize:13,color:thm.text50,marginBottom:20,textAlign:'center'}}>Выбери период</div>
+            {[['7d','Последние 7 дней'],['30d','Последние 30 дней'],['3m','Последние 3 месяца'],['6m','Последние 6 месяцев'],['1y','Последний год'],['all','Всё время']].map(([val,label])=>(
+              <button key={val} onClick={()=>{setExportPeriod(val);exportWorkouts(val)}} style={{
+                width:'100%',padding:'13px 16px',borderRadius:12,border:`1px solid ${exportPeriod===val?'rgba(48,209,88,0.4)':thm.border}`,
+                background:exportPeriod===val?'rgba(48,209,88,0.1)':thm.card2,
+                color:exportPeriod===val?'#30D158':thm.text,fontSize:14,fontWeight:600,cursor:'pointer',
+                marginBottom:8,textAlign:'left',transition:'all 0.15s'
+              }}>{label}</button>
+            ))}
+            <button onClick={()=>setShowExportModal(false)} style={{width:'100%',padding:'12px',borderRadius:12,border:'none',background:'rgba(255,59,48,0.1)',color:'#FF453A',fontSize:14,fontWeight:600,cursor:'pointer',marginTop:4}}>Отмена</button>
+          </div>
+        </div>
+      )}
+
+      {/* Clear History Confirmation Modal */}
+      {showClearConfirm && (
+        <div style={{position:'fixed',inset:0,background:'rgba(0,0,0,0.7)',zIndex:200,display:'flex',alignItems:'center',justifyContent:'center',backdropFilter:'blur(8px)'}}
+          onClick={e=>{if(e.target===e.currentTarget)setShowClearConfirm(false)}}>
+          <div style={{background:thm.overlayCard,borderRadius:20,padding:'28px 24px',width:'calc(100% - 48px)',maxWidth:320,border:`1px solid ${thm.border}`}}>
+            <div style={{fontSize:32,textAlign:'center',marginBottom:12}}>🗑</div>
+            <div style={{fontSize:17,fontWeight:700,color:thm.text,marginBottom:8,textAlign:'center'}}>Очистить историю?</div>
+            <div style={{fontSize:14,color:thm.text50,marginBottom:24,textAlign:'center',lineHeight:1.5}}>Все тренировки будут удалены безвозвратно. Это действие нельзя отменить.</div>
+            <button onClick={clearHistory} style={{width:'100%',padding:'14px',borderRadius:14,border:'none',background:'#FF3B30',color:'#fff',fontSize:15,fontWeight:700,cursor:'pointer',marginBottom:10}}>
+              Удалить всё
+            </button>
+            <button onClick={()=>setShowClearConfirm(false)} style={{width:'100%',padding:'14px',borderRadius:14,border:`1px solid ${thm.border}`,background:thm.card2,color:thm.text70,fontSize:15,fontWeight:600,cursor:'pointer'}}>
+              Отмена
+            </button>
           </div>
         </div>
       )}
