@@ -18,7 +18,7 @@ const EXERCISE_TYPE = {
   'Тяга горизонтального блока':'heavy','Жим гантелей наклон':'light','Жим гантелей лёжа':'light',
   'Разводка гантелей':'light','Разводка лёжа':'light','Выпады':'light','Сгибание ног':'light',
   'Разгибание ног':'light','Отжимания':'light','Подтягивания':'light','Скручивания':'light',
-  'Гиперэкстензия':'light','Гантели на бицепс':'light','Планка':'timed',
+  'Гиперэкстензия':'light','Планка':'timed',
   'Жим Арнольда':'light','Кроссовер':'light','Болгарские выпады':'light',
   'Молотки':'light','Французский жим':'light','Тяга к лицу':'light',
   'Ягодичный мост':'heavy','Шраги':'heavy','Отжимания на брусьях':'light','Тяга Т-штанги':'heavy',
@@ -63,7 +63,6 @@ const EXERCISE_IMAGES = {
   'Изолированные сгибания на бицепс':'/images/concentration_curl.png',
   'Сгибания на скамье Скотта':'/images/scott_curl.png',
   'Сгибания на блоке':'/images/cable_curl.png',
-  'Гантели на бицепс':'/images/biceps.png',
   // Трицепс
   'Французский жим':'/images/french_press.png',
   'Разгибания на блоке':'/images/cable_pushdown.png',
@@ -130,7 +129,6 @@ const EXERCISE_MUSCLES = {
   'Молотки':                          ['biceps','forearms'],
   'Молотки лёжа':                     ['biceps','forearms'],
   'Изолированные сгибания на бицепс': ['biceps'],
-  'Гантели на бицепс':                ['biceps','forearms'],
   'Сгибания на скамье Скотта':        ['biceps'],
   'Сгибания на блоке':                ['biceps','forearms'],
   // Трицепс
@@ -244,7 +242,7 @@ const EN_TO_RU = {
   'Dumbbell Flyes':'Разводка гантелей','Flat Dumbbell Flyes':'Разводка лёжа',
   'Lunges':'Выпады','Leg Curl':'Сгибание ног','Leg Extension':'Разгибание ног',
   'Push Ups':'Отжимания','Pull Ups':'Подтягивания','Crunches':'Скручивания',
-  'Hyperextension':'Гиперэкстензия','Biceps':'Гантели на бицепс','Triceps':'Разгибание из-за головы на трицепс',
+  'Hyperextension':'Гиперэкстензия','Biceps':'Подъём гантелей на бицепс','Triceps':'Разгибание из-за головы на трицепс',
   'Plank':'Планка','Arnold Press':'Жим Арнольда','Cable Fly':'Кроссовер',
   'Bulgarian Split Squat':'Болгарские выпады','Hammer Curl':'Молотки',
   'Skull Crushers':'Французский жим','Face Pull':'Тяга к лицу',
@@ -257,7 +255,7 @@ function ruName(name) { return EN_TO_RU[name] || name }
 const LEGACY_NAMES = {
   'Тяга вниз':                      'Тяга вертикального блока',
   'Тяга сидя':                      'Тяга горизонтального блока',
-  'Бицепс':                         'Гантели на бицепс',
+  'Бицепс':                         'Подъём гантелей на бицепс',
   'Трицепс':                        'Разгибание из-за головы на трицепс',
   'Трицепс гантель':                'Разгибание из-за головы на трицепс',
   'Подъём гантелей стоя':           'Подъём гантелей на бицепс',
@@ -496,7 +494,24 @@ input[type=number]::-webkit-inner-spin-button{-webkit-appearance:none}
 .auth-switch button{background:none;border:none;color:#30D158;font-size:14px;font-weight:600;cursor:pointer;padding:0;margin-left:4px}
 .auth-user-bar{display:flex;align-items:center;gap:8px}
 .auth-signout{background:none;border:none;color:rgba(255,255,255,0.35);font-size:12px;cursor:pointer;padding:4px 8px;border-radius:8px}
-.auth-signout:hover{color:rgba(255,255,255,0.7)}`
+.auth-signout:hover{color:rgba(255,255,255,0.7)}
+.settings-card{background:rgba(255,255,255,0.05);border-radius:16px;padding:18px;margin-bottom:12px;border:1px solid rgba(255,255,255,0.08)}
+.settings-section-title{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.8px;opacity:0.4;margin-bottom:14px}
+.settings-inp{width:100%;background:#2c2c2e;border:none;border-radius:12px;padding:12px 14px;color:white;font-size:15px;outline:none;font-weight:500}
+.settings-inp:focus{box-shadow:0 0 0 2px rgba(48,209,88,0.4)}
+.settings-inp::placeholder{color:rgba(255,255,255,0.25)}
+.settings-row{display:flex;align-items:center;justify-content:space-between;padding:2px 0}
+.settings-row-label{font-size:14px;font-weight:500}
+.settings-toggle{display:flex;gap:3px;background:rgba(255,255,255,0.08);border-radius:10px;padding:3px}
+.settings-toggle-btn{padding:5px 14px;border-radius:8px;border:none;cursor:pointer;font-size:13px;font-weight:700;transition:all 0.15s;background:transparent;color:rgba(255,255,255,0.5)}
+.settings-toggle-btn.active{background:#30D158;color:#000}
+.settings-action-btn{width:100%;padding:13px 16px;background:rgba(255,255,255,0.07);border:1px solid rgba(255,255,255,0.08);border-radius:12px;color:rgba(255,255,255,0.8);font-size:14px;font-weight:600;cursor:pointer;text-align:left;transition:all 0.15s;margin-bottom:8px;display:flex;align-items:center;gap:10px}
+.settings-action-btn:active{background:rgba(255,255,255,0.12)}
+.settings-action-btn:last-child{margin-bottom:0}
+.settings-action-btn.danger{color:#FF453A;background:rgba(255,59,48,0.08);border-color:rgba(255,59,48,0.2)}
+.settings-action-btn.danger:active{background:rgba(255,59,48,0.15)}
+.settings-signout-btn{width:100%;padding:14px;background:rgba(255,59,48,0.1);border:1px solid rgba(255,59,48,0.25);border-radius:14px;color:#FF453A;font-size:15px;font-weight:700;cursor:pointer;transition:all 0.15s}
+.settings-signout-btn:active{background:rgba(255,59,48,0.2)}`
 
 function LineChart({ data, period, setPeriod }) {
   const [tooltip, setTooltip] = useState(null)
@@ -939,6 +954,12 @@ export default function App() {
   const [workoutExercises, setWorkoutExercises] = useState([])
   const [kbHeight, setKbHeight] = useState(0)
   const historyLoaded = useRef(false)
+  const [settings, setSettings] = useState(() => {
+    try {
+      const saved = localStorage.getItem('gymBroSettings')
+      return saved ? JSON.parse(saved) : { username: '', weight: '', height: '', units: 'kg', theme: 'dark', language: 'ru' }
+    } catch { return { username: '', weight: '', height: '', units: 'kg', theme: 'dark', language: 'ru' } }
+  })
 
   const handleAuth = async () => {
     setAuthLoading(true); setAuthError('')
@@ -956,6 +977,40 @@ export default function App() {
     await supabase.auth.signOut()
     setFavorites(DEFAULT_FAVORITES)
     setHistory([]); setPrs([]); setStats(null)
+  }
+
+  const saveSettings = (newSettings) => {
+    setSettings(newSettings)
+    localStorage.setItem('gymBroSettings', JSON.stringify(newSettings))
+  }
+
+  const exportWorkouts = async () => {
+    const { data } = await supabase.from('workouts').select('workout_date,exercises(name),sets(set_no,weight,reps,time_sec)').eq('user_id', user.id).order('workout_date', { ascending: false })
+    const blob = new Blob([JSON.stringify(data || [], null, 2)], { type: 'application/json' })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a'); a.href = url; a.download = `gym-bro-export-${new Date().toISOString().split('T')[0]}.json`; a.click()
+    URL.revokeObjectURL(url)
+  }
+
+  const backupData = async () => {
+    const { data: workoutsData } = await supabase.from('workouts').select('workout_date,exercises(name),sets(set_no,weight,reps,time_sec)').eq('user_id', user.id)
+    const { data: favsData } = await supabase.from('user_favorites').select('exercise_name').eq('user_id', user.id)
+    const backup = { exportDate: new Date().toISOString(), settings, workouts: workoutsData || [], favorites: favsData?.map(f => f.exercise_name) || [] }
+    const blob = new Blob([JSON.stringify(backup, null, 2)], { type: 'application/json' })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a'); a.href = url; a.download = `gym-bro-backup-${new Date().toISOString().split('T')[0]}.json`; a.click()
+    URL.revokeObjectURL(url)
+  }
+
+  const clearHistory = async () => {
+    if (!window.confirm('Удалить ВСЮ историю тренировок? Это действие нельзя отменить.')) return
+    const { data: workoutsData } = await supabase.from('workouts').select('id').eq('user_id', user.id)
+    const ids = (workoutsData || []).map(w => w.id)
+    for (const id of ids) {
+      await supabase.from('sets').delete().eq('workout_id', id)
+    }
+    await supabase.from('workouts').delete().eq('user_id', user.id)
+    setHistory([]); setPrs([]); setStats(null); setSaved(p => !p)
   }
 
   useEffect(() => { const s = document.createElement('style'); s.textContent = CSS; document.head.appendChild(s); return () => document.head.removeChild(s) }, [])
@@ -1009,6 +1064,7 @@ export default function App() {
 
   useEffect(() => {
     if (prs.length > 0 && !chartEx) setChartEx(prs[0][0])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [prs])
 
   useEffect(() => {
@@ -1024,14 +1080,14 @@ export default function App() {
   }, [saved, user])
 
   useEffect(() => {
-    if (tab !== 'history') return
+    if (tab !== 'history' || !user) return
     supabase.from('workouts').select('id,workout_date,exercises(name),sets(set_no,weight,reps,time_sec)')
       .eq('user_id', user.id).order('workout_date', { ascending: false }).order('id', { ascending: false }).limit(200)
       .then(({ data }) => setHistory(data || []))
-  }, [tab, saved])
+  }, [tab, saved, user])
 
   useEffect(() => {
-    if (tab !== 'progress') return
+    if (tab !== 'progress' || !user) return
     async function load() {
       const { data: wData } = await supabase.from('workouts').select('id,workout_date').eq('user_id', user.id)
       const totalW = new Set(wData?.map(w => w.workout_date)).size
@@ -1045,7 +1101,6 @@ export default function App() {
       }
       setStats({ totalW, monthW, monthKg })
       const { data: pData } = await supabase.from('workouts').select('workout_date,exercises(name),sets(weight,reps)').eq('user_id', user.id)
-      const ENG_TO_RUS = {'Жим лёжа':'Жим лёжа','Приседания':'Приседания','Становая тяга':'Становая тяга','Румынская тяга':'Румынская тяга','Жим над головой':'Жим над головой','Жим ногами':'Жим ногами','Тяга штанги в наклоне':'Тяга штанги в наклоне','Тяга вертикального блока':'Тяга вертикального блока','Тяга горизонтального блока':'Тяга горизонтального блока','Жим гантелей наклон':'Жим гантелей наклон','Жим гантелей лёжа':'Жим гантелей лёжа','Разводка гантелей':'Разводка гантелей','Разводка лёжа':'Разводка лёжа','Выпады':'Выпады','Сгибание ног':'Сгибание ног','Разгибание ног':'Разгибание ног','Отжимания':'Отжимания','Подтягивания':'Подтягивания','Скручивания':'Скручивания','Гиперэкстензия':'Гиперэкстензия','Гантели на бицепс':'Гантели на бицепс','Разгибание из-за головы на трицепс':'Разгибание из-за головы на трицепс','Планка':'Планка','Жим Арнольда':'Жим Арнольда','Кроссовер':'Кроссовер','Болгарские выпады':'Болгарские выпады','Молотки':'Молотки','Французский жим':'Французский жим','Тяга к лицу':'Тяга к лицу','Ягодичный мост':'Ягодичный мост','Шраги':'Шраги','Отжимания на брусьях':'Отжимания на брусьях','Тяга Т-штанги':'Тяга Т-штанги','Подъём гантелей на бицепс':'Подъём гантелей на бицепс','Изолированные сгибания на бицепс':'Изолированные сгибания на бицепс','Подъём штанги на бицепс':'Подъём штанги на бицепс','Подъём ног в висе на пресс':'Подъём ног в висе на пресс'}
       const map = {}
       pData?.forEach(w => {
         const rawName = w.exercises?.name; if (!rawName) return
@@ -1062,10 +1117,10 @@ export default function App() {
       setPrs(Object.entries(map).sort((a,b) => (b[1].est ?? -Infinity) - (a[1].est ?? -Infinity)))
     }
     load()
-  }, [tab])
+  }, [tab, user])
 
   useEffect(() => {
-    if (tab !== 'progress') return
+    if (tab !== 'progress' || !user) return
     async function load() {
       const start = `${calYear}-${String(calMonth+1).padStart(2,'0')}-01`
       const end = `${calYear}-${String(calMonth+1).padStart(2,'0')}-${new Date(calYear,calMonth+1,0).getDate()}`
@@ -1075,10 +1130,10 @@ export default function App() {
       setCalData(map)
     }
     load()
-  }, [tab, calYear, calMonth])
+  }, [tab, calYear, calMonth, user])
 
   useEffect(() => {
-    if (!chartEx || tab !== 'progress') return
+    if (!chartEx || tab !== 'progress' || !user) return
     async function load() {
       const enName = Object.entries(EN_TO_RU).find(([,v])=>v===chartEx)?.[0] || chartEx
       const matchName = (n) => !n ? false : (normalizeName(n) === chartEx || normalizeName(n).replace(/\s*\([^)]*\)\s*$/, '').trim() === chartEx || n === chartEx || n === enName || ruName(n) === chartEx || n.startsWith(chartEx + ' (') || n.startsWith(enName + ' ('))
@@ -1114,10 +1169,10 @@ export default function App() {
       setChartData(pts)
     }
     load()
-  }, [chartEx, tab, history])
+  }, [chartEx, tab, history, user])
 
   useEffect(() => {
-    if (!selectedEx) return
+    if (!selectedEx || !user) return
     async function load() {
       let { data: ex } = await supabase.from('exercises').select('id').eq('name',selectedEx).single()
       if (!ex) { setLastSession(null); return }
@@ -1125,7 +1180,7 @@ export default function App() {
       setLastSession(data || null)
     }
     load()
-  }, [selectedEx])
+  }, [selectedEx, user])
 
   useEffect(() => {
     if (timerSecs === null || timerPaused) { clearInterval(timerRef.current); return }
@@ -1342,11 +1397,13 @@ export default function App() {
             {'⏱'}
           </button>
           {streak >= 1 && <div className="streak-badge">{streak}🔥</div>}
-          <button onClick={handleSignOut} style={{
-            background:'rgba(255,255,255,0.08)',border:'1px solid rgba(255,255,255,0.1)',
+          <button onClick={() => setTab('settings')} style={{
+            background: tab==='settings' ? 'rgba(48,209,88,0.15)' : 'rgba(255,255,255,0.08)',
+            border: tab==='settings' ? '1px solid rgba(48,209,88,0.3)' : '1px solid rgba(255,255,255,0.1)',
             borderRadius:99,padding:'5px 11px',cursor:'pointer',
-            color:'rgba(255,255,255,0.5)',fontSize:12,fontWeight:600
-          }}>Выйти</button>
+            color: tab==='settings' ? '#30D158' : 'rgba(255,255,255,0.6)',fontSize:18,
+            display:'flex',alignItems:'center',lineHeight:1
+          }}>⚙️</button>
         </div>
       </div>
 
@@ -1734,6 +1791,96 @@ export default function App() {
       )}
 
       {editModal && <EditModal data={editModal} onClose={()=>setEditModal(null)} onSave={saveEdit}/>}
+
+      {tab === 'settings' && (
+        <div className="section">
+          <div style={{fontSize:20,fontWeight:700,marginBottom:20,letterSpacing:'-0.3px'}}>⚙️ Настройки</div>
+
+          {/* Профиль */}
+          <div className="settings-card">
+            <div className="settings-section-title">👤 Профиль</div>
+            <div style={{marginBottom:12}}>
+              <div style={{fontSize:12,opacity:0.45,marginBottom:6,fontWeight:500}}>Имя пользователя</div>
+              <input className="settings-inp" placeholder="Введи имя" value={settings.username}
+                onChange={e=>saveSettings({...settings,username:e.target.value})}/>
+            </div>
+            <div style={{display:'flex',gap:10}}>
+              <div style={{flex:1}}>
+                <div style={{fontSize:12,opacity:0.45,marginBottom:6,fontWeight:500}}>Вес (кг)</div>
+                <input className="settings-inp" type="number" placeholder="70" value={settings.weight}
+                  onChange={e=>saveSettings({...settings,weight:e.target.value})}/>
+              </div>
+              <div style={{flex:1}}>
+                <div style={{fontSize:12,opacity:0.45,marginBottom:6,fontWeight:500}}>Рост (см)</div>
+                <input className="settings-inp" type="number" placeholder="175" value={settings.height}
+                  onChange={e=>saveSettings({...settings,height:e.target.value})}/>
+              </div>
+            </div>
+          </div>
+
+          {/* Тренировки */}
+          <div className="settings-card">
+            <div className="settings-section-title">🏋️ Тренировки</div>
+            <div className="settings-row">
+              <div className="settings-row-label">Единицы веса</div>
+              <div className="settings-toggle">
+                {['kg','lbs'].map(u=>(
+                  <button key={u} className={`settings-toggle-btn${settings.units===u?' active':''}`}
+                    onClick={()=>saveSettings({...settings,units:u})}>{u}</button>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          {/* Внешний вид */}
+          <div className="settings-card">
+            <div className="settings-section-title">🎨 Внешний вид</div>
+            <div className="settings-row" style={{marginBottom:14}}>
+              <div className="settings-row-label">Тема</div>
+              <div className="settings-toggle">
+                {[['dark','🌙 Тёмная'],['light','☀️ Светлая']].map(([val,label])=>(
+                  <button key={val} className={`settings-toggle-btn${settings.theme===val?' active':''}`}
+                    onClick={()=>saveSettings({...settings,theme:val})}>{label}</button>
+                ))}
+              </div>
+            </div>
+            <div className="settings-row">
+              <div className="settings-row-label">Язык</div>
+              <div className="settings-toggle">
+                {[['ru','RU'],['en','EN']].map(([val,label])=>(
+                  <button key={val} className={`settings-toggle-btn${settings.language===val?' active':''}`}
+                    onClick={()=>saveSettings({...settings,language:val})}>{label}</button>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          {/* Данные */}
+          <div className="settings-card">
+            <div className="settings-section-title">💾 Данные</div>
+            <button className="settings-action-btn" onClick={exportWorkouts}>
+              <span>📤</span> Экспорт тренировок
+            </button>
+            <button className="settings-action-btn" onClick={backupData}>
+              <span>🗄</span> Резервная копия
+            </button>
+            <button className="settings-action-btn danger" onClick={clearHistory}>
+              <span>🗑</span> Очистить историю
+            </button>
+          </div>
+
+          {/* Аккаунт */}
+          <div className="settings-card">
+            <div className="settings-section-title">👤 Аккаунт</div>
+            <div style={{fontSize:13,color:'rgba(255,255,255,0.4)',marginBottom:16,padding:'10px 12px',background:'rgba(255,255,255,0.04)',borderRadius:10}}>
+              📧 {user?.email}
+            </div>
+            <button className="settings-signout-btn" onClick={handleSignOut}>
+              Выйти из аккаунта
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* Timer Modal */}
       {showDateModal && (
