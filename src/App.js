@@ -676,7 +676,7 @@ const MUSCLE_FILTERS_ROW2 = [
 const MUSCLE_FILTER_MAP = {
   chest:    ['chest'],
   back:     ['lats','upper_back','lower_back'],
-  legs:     ['quads','hamstrings','calves'],
+  legs:     ['quads','hamstrings'],
   shoulders:['shoulders','traps'],
   biceps:   ['biceps'],
   triceps:  ['triceps'],
