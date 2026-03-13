@@ -893,9 +893,9 @@ input[type=number]::-webkit-inner-spin-button{-webkit-appearance:none}
 .settings-signout-btn:active{background:rgba(255,59,48,0.2)}
 .ex-tab-search{width:100%;background:#2c2c2e;border:none;border-radius:14px;padding:12px 16px 12px 40px;color:white;font-size:15px;outline:none;margin-bottom:14px}
 .ex-tab-search::placeholder{color:rgba(255,255,255,0.3)}
-.muscle-filters{display:flex;flex-direction:column;gap:8px;margin-bottom:14px}
-.muscle-filters-row{display:flex;gap:8px;flex-wrap:nowrap}
-.muscle-chip{flex-shrink:0;padding:6px 14px;border-radius:99px;border:none;cursor:pointer;font-size:13px;font-weight:600;transition:all 0.15s;background:#2c2c2e;color:rgba(255,255,255,0.5)}
+.muscle-filters{display:flex;flex-direction:column;gap:6px;margin-bottom:14px}
+.muscle-filters-row{display:flex;gap:6px;flex-wrap:nowrap}
+.muscle-chip{flex-shrink:0;padding:6px 10px;border-radius:99px;border:none;cursor:pointer;font-size:12px;font-weight:600;transition:all 0.15s;background:#2c2c2e;color:rgba(255,255,255,0.5)}
 .muscle-chip.active{background:#30D158;color:#000}
 .ex-list-item{display:flex;align-items:center;gap:12px;padding:11px 14px;border-radius:14px;cursor:pointer;transition:background 0.12s;margin-bottom:4px}
 .ex-list-item:active{background:rgba(255,255,255,0.08)}
