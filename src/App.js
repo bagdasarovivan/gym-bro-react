@@ -899,6 +899,10 @@ input[type=number]::-webkit-inner-spin-button{-webkit-appearance:none}
 .ex-tab-search{width:100%;background:#2c2c2e;border:none;border-radius:14px;padding:12px 16px 12px 40px;color:white;font-size:15px;outline:none;margin-bottom:14px}
 .ex-tab-search::placeholder{color:rgba(255,255,255,0.3)}
 .muscle-filters{display:flex;flex-direction:column;gap:6px;margin-bottom:14px}
+.muscle-filters-fav-row{display:flex}
+.muscle-chip-fav{padding:7px 16px;border-radius:99px;border:none;cursor:pointer;font-size:13px;font-weight:600;transition:all 0.15s;background:#2c2c2e;color:rgba(255,255,255,0.5)}
+.muscle-chip-fav.active{background:#30D158;color:#000;border:none}
+.muscle-filters-divider{height:1px;background:rgba(255,255,255,0.08);margin:4px 0}
 .muscle-filters-row{display:flex;gap:6px;flex-wrap:nowrap}
 .muscle-chip{flex-shrink:0;padding:6px 10px;border-radius:99px;border:none;cursor:pointer;font-size:12px;font-weight:600;transition:all 0.15s;background:#2c2c2e;color:rgba(255,255,255,0.5)}
 .muscle-chip.active{background:#30D158;color:#000}
@@ -973,6 +977,9 @@ body{background:#f2f2f7}
 .app[data-theme="light"] .ex-tab-search::placeholder{color:rgba(0,0,0,0.3)!important}
 .app[data-theme="light"] .muscle-chip{background:#e5e5ea!important;color:rgba(0,0,0,0.5)!important}
 .app[data-theme="light"] .muscle-chip.active{background:#30D158!important;color:#000!important}
+.app[data-theme="light"] .muscle-chip-fav{background:#e5e5ea!important;color:rgba(0,0,0,0.5)!important}
+.app[data-theme="light"] .muscle-chip-fav.active{background:#30D158!important;color:#000!important}
+.app[data-theme="light"] .muscle-filters-divider{background:rgba(0,0,0,0.08)!important}
 .app[data-theme="light"] .ex-list-item:active{background:rgba(0,0,0,0.04)!important}
 .app[data-theme="light"] .ex-list-img{background:#e5e5ea!important}
 .app[data-theme="light"] .ex-list-ph{background:#e5e5ea!important}
@@ -2500,10 +2507,13 @@ export default function App() {
                 onChange={e=>setExTabSearch(e.target.value)} style={{color:thm.text,background:thm.input}}/>
             </div>
             <div className="muscle-filters">
-              <div className="muscle-filters-row">
-                <button className={`muscle-chip${exTabFilter==='favorites'?' active':''}`}
+              <div className="muscle-filters-fav-row">
+                <button className={`muscle-chip-fav${exTabFilter==='favorites'?' active':''}`}
                   style={exTabFilter!=='favorites'?{background:thm.btnBg,color:thm.text50,border:`1px solid ${thm.border}`}:{border:'none'}}
                   onClick={()=>setExTabFilter('favorites')}>⭐ Избранные</button>
+              </div>
+              <div className="muscle-filters-divider"/>
+              <div className="muscle-filters-row">
                 {MUSCLE_FILTERS_ROW1.map(f => (
                   <button key={f.id} className={`muscle-chip${exTabFilter===f.id?' active':''}`}
                     style={exTabFilter!==f.id?{background:thm.btnBg,color:thm.text50,border:`1px solid ${thm.border}`}:{border:'none'}}
