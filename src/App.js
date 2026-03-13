@@ -829,7 +829,7 @@ input[type=number]::-webkit-inner-spin-button{-webkit-appearance:none}
 .modal-srch::placeholder{color:rgba(255,255,255,0.3)}
 .modal-list{overflow-y:auto;padding:6px 10px 30px;flex:1}
 .modal-sect-lbl{font-size:11px;font-weight:600;opacity:0.35;text-transform:uppercase;letter-spacing:0.8px;padding:12px 10px 4px}
-.modal-item{padding:12px 10px;border-radius:12px;cursor:pointer;font-size:15px;font-weight:500;display:flex;align-items:center;gap:12px;transition:background 0.1s}
+.modal-item{padding:12px 10px;border-radius:12px;cursor:pointer;font-size:15px;font-weight:500;display:flex;align-items:center;gap:20px;transition:background 0.1s}
 .modal-item:active{background:rgba(255,255,255,0.06)}
 .modal-img{width:36px;height:36px;border-radius:8px;object-fit:cover;flex-shrink:0}
 .modal-ph{width:36px;height:36px;border-radius:8px;background:#2c2c2e;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0}
