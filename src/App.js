@@ -22,11 +22,11 @@ const EXERCISE_TYPE = {
   'Жим Арнольда':'light','Кроссовер':'light','Болгарские выпады':'light',
   'Молотки':'light','Французский жим':'light','Тяга к лицу':'light',
   'Ягодичный мост':'heavy','Шраги':'heavy','Отжимания на брусьях':'light','Тяга Т-штанги':'heavy',
-  'Изолированные сгибания на бицепс':'light',
+  'Подъём гантелей на бицепс':'light','Изолированные сгибания на бицепс':'light',
   'Разгибание из-за головы на трицепс':'light','Разводка гантелей стоя':'light',
   'Молотки лёжа':'light','Тяга гантели в наклоне':'light',
-  'Фронтальный присед':'heavy','Жим Соца':'heavy','Вертикальный жим':'machine',
-  'Подъём на икры сидя':'light','Жим в тренажёре на грудь':'machine',
+  'Фронтальный присед':'heavy','Жим Соца':'heavy','Вертикальный жим':'heavy',
+  'Подъём на икры сидя':'light','Жим в тренажёре на грудь':'light',
   'Обратная разводка':'light','Махи гирей':'heavy',
 }
 
@@ -60,6 +60,7 @@ const EXERCISE_IMAGES = {
   'Гиперэкстензия':'/images/hyperextension.png',
   // Бицепс
   'Подъём штанги на бицепс':'/images/barbell_curl.png',
+  'Подъём гантелей на бицепс':'/images/dumbbell_curl.png',
   'Молотки':'/images/hammer_curl.png',
   'Молотки лёжа':'/images/lying_hammer_curl.png',
   'Изолированные сгибания на бицепс':'/images/concentration_curl.png',
@@ -94,13 +95,13 @@ const EXERCISE_IMAGES = {
   // Предплечья
   'Сгибания запястий':'/images/wrist_curl.png',
   // Новые
-  'Фронтальный присед':'/images/front_squat.png',
-  'Жим Соца':'/images/sots_press.png',
-  'Вертикальный жим':'/images/machine_shoulder_press.png',
-  'Подъём на икры сидя':'/images/seated_calf_raise.png',
-  'Жим в тренажёре на грудь':'/images/machine_chest_press.png',
-  'Обратная разводка':'/images/reverse_pec_deck.png',
-  'Махи гирей':'/images/kettlebell_swing.png',
+  'Фронтальный присед':'/images/squat.png',
+  'Жим Соца':'/images/ohp.png',
+  'Вертикальный жим':'/images/ohp.png',
+  'Подъём на икры сидя':'/images/lunges.png',
+  'Жим в тренажёре на грудь':'/images/bench.png',
+  'Обратная разводка':'/images/bent_over_raise.png',
+  'Махи гирей':'/images/romanian_deadlift.png',
 }
 
 
@@ -135,6 +136,7 @@ const EXERCISE_MUSCLES = {
   'Гиперэкстензия':                   ['lower_back','glutes','hamstrings'],
   // Бицепс
   'Подъём штанги на бицепс':          ['biceps','forearms'],
+  'Подъём гантелей на бицепс':        ['biceps','forearms'],
   'Молотки':                          ['biceps','forearms'],
   'Молотки лёжа':                     ['biceps','forearms'],
   'Изолированные сгибания на бицепс': ['biceps'],
@@ -259,7 +261,7 @@ const EN_TO_RU = {
   'Dumbbell Flyes':'Разводка гантелей','Flat Dumbbell Flyes':'Разводка лёжа',
   'Lunges':'Выпады','Leg Curl':'Сгибание ног','Leg Extension':'Разгибание ног',
   'Push Ups':'Отжимания','Pull Ups':'Подтягивания','Crunches':'Скручивания',
-  'Hyperextension':'Гиперэкстензия','Biceps':'Подъём штанги на бицепс','Triceps':'Разгибание из-за головы на трицепс',
+  'Hyperextension':'Гиперэкстензия','Biceps':'Подъём гантелей на бицепс','Triceps':'Разгибание из-за головы на трицепс',
   'Plank':'Планка','Arnold Press':'Жим Арнольда','Cable Fly':'Кроссовер',
   'Bulgarian Split Squat':'Болгарские выпады','Hammer Curl':'Молотки',
   'Skull Crushers':'Французский жим','Face Pull':'Тяга к лицу',
@@ -272,10 +274,11 @@ function ruName(name) { return EN_TO_RU[name] || name }
 const LEGACY_NAMES = {
   'Тяга вниз':                      'Тяга вертикального блока',
   'Тяга сидя':                      'Тяга горизонтального блока',
-  'Бицепс':                         'Подъём штанги на бицепс',
+  'Бицепс':                         'Подъём гантелей на бицепс',
+  'Гантели на бицепс':              'Подъём гантелей на бицепс',
   'Трицепс':                        'Разгибание из-за головы на трицепс',
   'Трицепс гантель':                'Разгибание из-за головы на трицепс',
-  'Подъём гантелей стоя':           'Подъём штанги на бицепс',
+  'Подъём гантелей стоя':           'Подъём гантелей на бицепс',
   'Подъём штанги стоя':             'Подъём штанги на бицепс',
   'Изолированные сгибания':         'Изолированные сгибания на бицепс',
   'Разгибания из-за головы':        'Разгибание из-за головы на трицепс',
@@ -477,6 +480,11 @@ const EXERCISE_INFO = {
     desc: 'Стоя, гриф в руках хватом снизу. Сгибать руки в локтях, поднимая штангу к плечам.',
     benefit: 'Базовое упражнение для бицепса. Позволяет работать с большими весами для максимальной массы.',
     tips: 'Локти прижаты к телу. Не раскачивать корпус. Контролировать опускание.',
+  },
+  'Подъём гантелей на бицепс': {
+    desc: 'Стоя с гантелями. Попеременно или одновременно сгибать руки, разворачивая ладони вверх.',
+    benefit: 'Изолирует каждую руку. Можно работать с супинацией — это сильнее сокращает бицепс.',
+    tips: 'Поворачивать ладонь в верхней части движения. Локти строго по бокам туловища.',
   },
   'Молотки': {
     desc: 'Стоя с гантелями хватом «молоток» (ладони смотрят друг на друга). Сгибать руки попеременно.',
@@ -1040,39 +1048,59 @@ function LineChart({ data, period, setPeriod, unit = 'кг' }) {
           }}>{p.label}</button>
         ))}
       </div>
-      <svg viewBox={`0 0 ${W} ${H}`} style={{width:'100%',height:H,overflow:'visible',display:'block'}}>
-        <defs>
-          <linearGradient id="cg2" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stopColor="#30D158" stopOpacity="0.2"/>
-            <stop offset="100%" stopColor="#30D158" stopOpacity="0"/>
-          </linearGradient>
-        </defs>
-        {gridLines.map((g,i) => (
-          <g key={i}>
-            <line x1={padL} y1={g.y} x2={W-padR} y2={g.y} stroke="rgba(255,255,255,0.06)" strokeWidth="1"/>
-            <text x={padL-4} y={g.y+4} textAnchor="end" fontSize="9" fill="rgba(255,255,255,0.3)">{g.val}</text>
-          </g>
-        ))}
-        <path d={area} fill="url(#cg2)"/>
-        <path d={path} fill="none" stroke="#30D158" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>
-        {pts.map((p,i) => (
-          <g key={i} style={{cursor:'pointer'}} onMouseEnter={()=>setTooltip(p)} onMouseLeave={()=>setTooltip(null)}>
-            <circle cx={p.x} cy={p.y} r="14" fill="transparent"/>
-            <circle cx={p.x} cy={p.y} r={tooltip?.label===p.label?6:4} fill="#30D158" stroke="#000" strokeWidth="2"/>
-          </g>
-        ))}
-        {tooltip && (() => {
-          const tx = Math.min(Math.max(tooltip.x,48), W-48)
-          const ty = tooltip.y - 16
-          return (
-            <g>
-              <rect x={tx-38} y={ty-16} width={76} height={26} rx="7" fill="#1c1c1e" stroke="rgba(48,209,88,0.4)" strokeWidth="1"/>
-              <text x={tx} y={ty+1} textAnchor="middle" fontSize="11" fill="#30D158" fontWeight="700">~{tooltip.val} {unit}</text>
-              <text x={tx} y={ty+14} textAnchor="middle" fontSize="9" fill="rgba(255,255,255,0.4)">{tooltip.label} · 1ПМ</text>
+      <div style={{position:'relative'}}>
+        <svg viewBox={`0 0 ${W} ${H}`} style={{width:'100%',height:H,overflow:'visible',display:'block'}}>
+          <defs>
+            <linearGradient id="cg2" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stopColor="#30D158" stopOpacity="0.2"/>
+              <stop offset="100%" stopColor="#30D158" stopOpacity="0"/>
+            </linearGradient>
+          </defs>
+          {gridLines.map((g,i) => (
+            <g key={i}>
+              <line x1={padL} y1={g.y} x2={W-padR} y2={g.y} stroke="rgba(255,255,255,0.06)" strokeWidth="1"/>
+              <text x={padL-4} y={g.y+4} textAnchor="end" fontSize="9" fill="rgba(255,255,255,0.3)">{g.val}</text>
             </g>
+          ))}
+          <path d={area} fill="url(#cg2)"/>
+          <path d={path} fill="none" stroke="#30D158" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>
+          {pts.map((p,i) => (
+            <g key={i} style={{cursor:'pointer'}}
+              onMouseEnter={()=>setTooltip(p)} onMouseLeave={()=>setTooltip(null)}
+              onTouchStart={e=>{e.preventDefault();setTooltip(p)}} onTouchEnd={()=>setTimeout(()=>setTooltip(null),1200)}>
+              <circle cx={p.x} cy={p.y} r="16" fill="transparent"/>
+              <circle cx={p.x} cy={p.y} r={tooltip?.label===p.label?6:4} fill="#30D158" stroke="#000" strokeWidth="2"/>
+            </g>
+          ))}
+        </svg>
+        {tooltip && (() => {
+          const leftPct = Math.min(Math.max((tooltip.x / W) * 100, 10), 90)
+          const topPx = Math.max(tooltip.y - 8, 0)
+          const fullDate = tooltip.date
+            ? new Date(tooltip.date+'T12:00:00').toLocaleDateString('ru',{day:'numeric',month:'long',year:'numeric'})
+            : tooltip.label
+          return (
+            <div style={{
+              position:'absolute',
+              left:`${leftPct}%`,
+              top:topPx,
+              transform:'translate(-50%, -110%)',
+              background:'#2c2c2e',
+              border:'1px solid rgba(48,209,88,0.4)',
+              borderRadius:10,
+              padding:'10px 14px',
+              boxShadow:'0 4px 12px rgba(0,0,0,0.4)',
+              pointerEvents:'none',
+              zIndex:10,
+              textAlign:'center',
+              whiteSpace:'nowrap',
+            }}>
+              <div style={{fontSize:18,fontWeight:700,color:'#30D158',lineHeight:1.2}}>~{tooltip.val} {unit}</div>
+              <div style={{fontSize:12,color:'rgba(255,255,255,0.45)',marginTop:4}}>{fullDate}</div>
+            </div>
           )
         })()}
-      </svg>
+      </div>
       <div style={{display:'flex',justifyContent:'space-between',marginTop:14,background:'rgba(255,255,255,0.04)',borderRadius:12,padding:'10px 14px'}}>
         {[['Старт', first+' '+unit], ['Прирост', (diff>=0?'+':'')+diff+' '+unit], ['Рост', (Number(pct)>=0?'+':'')+pct+'%'], ['Сейчас', last+' '+unit]].map(([lbl,val],i) => (
           <div key={i} style={{textAlign:'center'}}>
