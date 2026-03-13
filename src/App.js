@@ -98,7 +98,7 @@ const EXERCISE_IMAGES = {
   'Фронтальный присед':'/images/front_squat.png',
   'Жим Соца':'/images/sots_press.png',
   'Вертикальный жим':'/images/machine_shoulder_press.png',
-  'Подъём на икры сидя':'/images/seated_calf_rais.png',
+  'Подъём на икры сидя':'/images/seated_calf_raise.png',
   'Жим в тренажёре на грудь':'/images/machine_chest_press.png',
   'Обратная разводка':'/images/reverse_pec_deck.png',
   'Махи гирей':'/images/kettlebell_swing.png',
