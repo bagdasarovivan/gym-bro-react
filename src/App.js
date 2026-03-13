@@ -1332,7 +1332,7 @@ function ModalItem({ ex, onSelect, isFav, onToggleFav }) {
   const img = getExImage(ex.name)
   return (
     <div className="modal-item" onClick={onSelect} style={{display:'flex',alignItems:'center',justifyContent:'space-between'}}>
-      <div style={{display:'flex',alignItems:'center',gap:0,flex:1,minWidth:0}}>
+      <div style={{display:'flex',alignItems:'center',gap:12,flex:1,minWidth:0}}>
         {img ? <img src={img} alt={ex.name} className="modal-img" onError={e => e.target.style.display='none'}/> : <div className="modal-ph">🏋️</div>}
         <span style={{overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{ex.name}</span>
       </div>
