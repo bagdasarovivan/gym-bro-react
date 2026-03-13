@@ -16,14 +16,14 @@ const EXERCISE_TYPE = {
   'Жим лёжа':'heavy','Приседания':'heavy','Становая тяга':'heavy','Румынская тяга':'heavy',
   'Жим над головой':'heavy','Жим ногами':'heavy','Тяга штанги в наклоне':'heavy','Тяга вертикального блока':'heavy',
   'Тяга горизонтального блока':'heavy','Жим гантелей наклон':'light','Жим гантелей лёжа':'light',
-  'Разводка гантелей':'light','Разводка лёжа':'light','Выпады':'light','Сгибание ног':'machine',
+  'Разводка гантелей':'light','Выпады':'light','Сгибание ног':'machine',
   'Разгибание ног':'machine','Отжимания':'light','Подтягивания':'light','Скручивания':'light',
   'Гиперэкстензия':'light','Планка':'timed',
   'Жим Арнольда':'light','Кроссовер':'light','Болгарские выпады':'light',
   'Молотки':'light','Французский жим':'light','Тяга к лицу':'light',
   'Ягодичный мост':'heavy','Шраги':'heavy','Отжимания на брусьях':'light','Тяга Т-штанги':'heavy',
   'Подъём гантелей на бицепс':'light','Изолированные сгибания на бицепс':'light',
-  'Разгибание из-за головы на трицепс':'light','Разводка гантелей стоя':'light',
+  'Разгибание из-за головы на трицепс':'light','Разводка гантелей стоя':'light','Разведение гантелей стоя':'light',
   'Молотки лёжа':'light','Тяга гантели в наклоне':'light',
   'Фронтальный присед':'heavy','Жим Соца':'heavy','Вертикальный жим':'heavy',
   'Подъём на икры сидя':'light','Жим в тренажёре на грудь':'light',
@@ -37,7 +37,6 @@ const EXERCISE_IMAGES = {
   'Жим гантелей наклон':'/images/incline_dumbbell_press.png',
   'Жим штанги в наклоне':'/images/incline_bench_press.png',
   'Разводка гантелей':'/images/dumbbell_flyes.png',
-  'Разводка лёжа':'/images/flat_dumbbell_flyes.png',
   'Кроссовер':'/images/cable_fly.png',
   'Отжимания':'/images/push_ups.png',
   'Пуловер':'/images/pullover.png',
@@ -47,6 +46,7 @@ const EXERCISE_IMAGES = {
   'Тяга к лицу':'/images/face_pull.png',
   'Разводка в наклоне':'/images/bent_over_raise.png',
   'Разводка гантелей стоя':'/images/bent_over_raise.png',
+  'Разведение гантелей стоя':'/images/dumbbell_lateral_raise.png',
   'Тяга к подбородку':'/images/upright_row.png',
   // Трапеции / Верх спины
   'Шраги':'/images/shrugs.png',
@@ -95,13 +95,13 @@ const EXERCISE_IMAGES = {
   // Предплечья
   'Сгибания запястий':'/images/wrist_curl.png',
   // Новые
-  'Фронтальный присед':'/images/squat.png',
-  'Жим Соца':'/images/ohp.png',
-  'Вертикальный жим':'/images/ohp.png',
-  'Подъём на икры сидя':'/images/lunges.png',
-  'Жим в тренажёре на грудь':'/images/bench.png',
-  'Обратная разводка':'/images/bent_over_raise.png',
-  'Махи гирей':'/images/romanian_deadlift.png',
+  'Фронтальный присед':'/images/front_squat.png',
+  'Жим Соца':'/images/sots_press.png',
+  'Вертикальный жим':'/images/machine_shoulder_press.png',
+  'Подъём на икры сидя':'/images/seated_calf_raise.png',
+  'Жим в тренажёре на грудь':'/images/machine_chest_press.png',
+  'Обратная разводка':'/images/reverse_pec_deck.png',
+  'Махи гирей':'/images/kettlebell_swing.png',
 }
 
 
@@ -113,7 +113,6 @@ const EXERCISE_MUSCLES = {
   'Жим гантелей наклон':              ['chest','shoulders','triceps'],
   'Жим штанги в наклоне':             ['chest','shoulders','triceps'],
   'Разводка гантелей':                ['chest','shoulders'],
-  'Разводка лёжа':                    ['chest','shoulders'],
   'Кроссовер':                        ['chest','shoulders'],
   'Отжимания':                        ['chest','triceps','shoulders'],
   'Пуловер':                          ['chest','lats'],
@@ -121,6 +120,7 @@ const EXERCISE_MUSCLES = {
   'Жим над головой':                  ['shoulders','triceps','traps'],
   'Жим Арнольда':                     ['shoulders','triceps'],
   'Разводка гантелей стоя':           ['shoulders'],
+  'Разведение гантелей стоя':         ['shoulders'],
   'Тяга к лицу':                      ['shoulders','upper_back','traps'],
   'Разводка в наклоне':               ['shoulders','upper_back'],
   'Тяга к подбородку':                ['shoulders','traps','biceps'],
@@ -258,7 +258,7 @@ const EN_TO_RU = {
   'Leg Press':'Жим ногами','Barbell Row':'Тяга штанги в наклоне',
   'Lat Pulldown':'Тяга вертикального блока','Seated Cable Row':'Тяга горизонтального блока',
   'Incline Dumbbell Press':'Жим гантелей наклон','Dumbbell Bench Press':'Жим гантелей лёжа',
-  'Dumbbell Flyes':'Разводка гантелей','Flat Dumbbell Flyes':'Разводка лёжа',
+  'Dumbbell Flyes':'Разводка гантелей','Flat Dumbbell Flyes':'Разводка гантелей',
   'Lunges':'Выпады','Leg Curl':'Сгибание ног','Leg Extension':'Разгибание ног',
   'Push Ups':'Отжимания','Pull Ups':'Подтягивания','Crunches':'Скручивания',
   'Hyperextension':'Гиперэкстензия','Biceps':'Подъём гантелей на бицепс','Triceps':'Разгибание из-за головы на трицепс',
@@ -386,11 +386,6 @@ const EXERCISE_INFO = {
     benefit: 'Изолирует грудные мышцы, растягивает их по всей длине. Улучшает форму и объём груди.',
     tips: 'Движение похоже на «объятие дерева». Не разгибать локти полностью. Контролировать опускание.',
   },
-  'Разводка лёжа': {
-    desc: 'Лёжа горизонтально. Руки с гантелями разводятся широко в стороны и сводятся над грудью.',
-    benefit: 'Акцент на среднюю и нижнюю часть груди. Максимальное растяжение грудных в нижней точке.',
-    tips: 'Слегка согнутые локти на протяжении всего движения. Не опускать гантели ниже уровня плеч.',
-  },
   'Кроссовер': {
     desc: 'Стоя между блоками кроссовера. Руки сводятся перед собой снизу вверх или по горизонтали.',
     benefit: 'Изолирует и «добивает» грудь. Позволяет менять угол нагрузки, задействуя разные зоны груди.',
@@ -425,6 +420,11 @@ const EXERCISE_INFO = {
     desc: 'Стоя, лёгкий наклон вперёд. Поднять гантели через стороны до уровня плеч.',
     benefit: 'Изолирует средние дельты, формируя ширину плеч. Улучшает визуальное соотношение плечи/талия.',
     tips: 'Мизинец чуть выше большого пальца в верхней точке. Не поднимать выше плеч. Исключить раскачку.',
+  },
+  'Разведение гантелей стоя': {
+    desc: 'Стоя, поднимать гантели в стороны до уровня плеч с небольшим сгибом в локтях.',
+    benefit: 'Лучшее изолирующее упражнение для средней дельты. Придаёт плечам ширину и округлость, визуально сужает талию.',
+    tips: 'Работать с небольшим весом — важна техника. Не раскачиваться и не помогать корпусом. Мизинец чуть выше большого пальца в верхней точке.',
   },
   'Разводка в наклоне': {
     desc: 'Наклон вперёд под 45–90°. Поднять гантели через стороны, имитируя движение «крыльев».',
@@ -1382,6 +1382,8 @@ function EditModal({ data, onClose, onSave }) {
   )
 }
 
+const DEFAULT_SETTINGS = { username: '', weight: '', height: '', units: 'kg', theme: 'dark', language: 'ru' }
+
 export default function App() {
   const [user, setUser] = useState(undefined) // undefined = loading, null = not logged in
   const [authMode, setAuthMode] = useState('login') // 'login' | 'register'
@@ -1438,12 +1440,7 @@ export default function App() {
   const [workoutExercises, setWorkoutExercises] = useState([])
   const [kbHeight, setKbHeight] = useState(0)
   const historyLoaded = useRef(false)
-  const [settings, setSettings] = useState(() => {
-    try {
-      const saved = localStorage.getItem('gymBroSettings')
-      return saved ? JSON.parse(saved) : { username: '', weight: '', height: '', units: 'kg', theme: 'dark', language: 'ru' }
-    } catch { return { username: '', weight: '', height: '', units: 'kg', theme: 'dark', language: 'ru' } }
-  })
+  const [settings, setSettings] = useState(DEFAULT_SETTINGS)
   const [showExportModal, setShowExportModal] = useState(false)
   const [exportPeriod, setExportPeriod] = useState('all')
   const [showClearConfirm, setShowClearConfirm] = useState(false)
@@ -1471,11 +1468,12 @@ export default function App() {
     await supabase.auth.signOut()
     setFavorites(DEFAULT_FAVORITES)
     setHistory([]); setPrs([]); setStats(null)
+    setSettings(DEFAULT_SETTINGS)
   }
 
   const saveSettings = (newSettings) => {
     setSettings(newSettings)
-    localStorage.setItem('gymBroSettings', JSON.stringify(newSettings))
+    if (user) localStorage.setItem('gymBroSettings_' + user.id, JSON.stringify(newSettings))
   }
 
   const exportWorkouts = async (period) => {
@@ -1616,6 +1614,12 @@ export default function App() {
     // Show onboard only once per user
     const key = 'gbOnboarded_' + user.id
     if (!localStorage.getItem(key)) setShowOnboard(true)
+
+    // Load user-scoped settings
+    try {
+      const saved = localStorage.getItem('gymBroSettings_' + user.id)
+      setSettings(saved ? JSON.parse(saved) : DEFAULT_SETTINGS)
+    } catch { setSettings(DEFAULT_SETTINGS) }
   }, [user])
 
   useEffect(() => {
