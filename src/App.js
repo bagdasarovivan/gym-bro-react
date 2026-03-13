@@ -16,14 +16,14 @@ const EXERCISE_TYPE = {
   'Жим лёжа':'heavy','Приседания':'heavy','Становая тяга':'heavy','Румынская тяга':'heavy',
   'Жим над головой':'heavy','Жим ногами':'heavy','Тяга штанги в наклоне':'heavy','Тяга вертикального блока':'heavy',
   'Тяга горизонтального блока':'heavy','Жим гантелей наклон':'light','Жим гантелей лёжа':'light',
-  'Разводка гантелей':'light','Разводка лёжа':'light','Выпады':'light','Сгибание ног':'machine',
+  'Разводка гантелей':'light','Выпады':'light','Сгибание ног':'machine',
   'Разгибание ног':'machine','Отжимания':'light','Подтягивания':'light','Скручивания':'light',
   'Гиперэкстензия':'light','Планка':'timed',
   'Жим Арнольда':'light','Кроссовер':'light','Болгарские выпады':'light',
   'Молотки':'light','Французский жим':'light','Тяга к лицу':'light',
   'Ягодичный мост':'heavy','Шраги':'heavy','Отжимания на брусьях':'light','Тяга Т-штанги':'heavy',
   'Подъём гантелей на бицепс':'light','Изолированные сгибания на бицепс':'light',
-  'Разгибание из-за головы на трицепс':'light','Разводка гантелей стоя':'light',
+  'Разгибание из-за головы на трицепс':'light','Разводка гантелей стоя':'light','Разведение гантелей стоя':'light',
   'Молотки лёжа':'light','Тяга гантели в наклоне':'light',
   'Фронтальный присед':'heavy','Жим Соца':'heavy','Вертикальный жим':'heavy',
   'Подъём на икры сидя':'light','Жим в тренажёре на грудь':'light',
@@ -37,7 +37,6 @@ const EXERCISE_IMAGES = {
   'Жим гантелей наклон':'/images/incline_dumbbell_press.png',
   'Жим штанги в наклоне':'/images/incline_bench_press.png',
   'Разводка гантелей':'/images/dumbbell_flyes.png',
-  'Разводка лёжа':'/images/flat_dumbbell_flyes.png',
   'Кроссовер':'/images/cable_fly.png',
   'Отжимания':'/images/push_ups.png',
   'Пуловер':'/images/pullover.png',
@@ -47,6 +46,7 @@ const EXERCISE_IMAGES = {
   'Тяга к лицу':'/images/face_pull.png',
   'Разводка в наклоне':'/images/bent_over_raise.png',
   'Разводка гантелей стоя':'/images/bent_over_raise.png',
+  'Разведение гантелей стоя':'/images/dumbbell_lateral_raise.png',
   'Тяга к подбородку':'/images/upright_row.png',
   // Трапеции / Верх спины
   'Шраги':'/images/shrugs.png',
@@ -95,13 +95,13 @@ const EXERCISE_IMAGES = {
   // Предплечья
   'Сгибания запястий':'/images/wrist_curl.png',
   // Новые
-  'Фронтальный присед':'/images/squat.png',
-  'Жим Соца':'/images/ohp.png',
-  'Вертикальный жим':'/images/ohp.png',
-  'Подъём на икры сидя':'/images/lunges.png',
-  'Жим в тренажёре на грудь':'/images/bench.png',
-  'Обратная разводка':'/images/bent_over_raise.png',
-  'Махи гирей':'/images/romanian_deadlift.png',
+  'Фронтальный присед':'/images/front_squat.png',
+  'Жим Соца':'/images/sots_press.png',
+  'Вертикальный жим':'/images/machine_shoulder_press.png',
+  'Подъём на икры сидя':'/images/seated_calf_raise.png',
+  'Жим в тренажёре на грудь':'/images/machine_chest_press.png',
+  'Обратная разводка':'/images/reverse_pec_deck.png',
+  'Махи гирей':'/images/kettlebell_swing.png',
 }
 
 
@@ -113,7 +113,6 @@ const EXERCISE_MUSCLES = {
   'Жим гантелей наклон':              ['chest','shoulders','triceps'],
   'Жим штанги в наклоне':             ['chest','shoulders','triceps'],
   'Разводка гантелей':                ['chest','shoulders'],
-  'Разводка лёжа':                    ['chest','shoulders'],
   'Кроссовер':                        ['chest','shoulders'],
   'Отжимания':                        ['chest','triceps','shoulders'],
   'Пуловер':                          ['chest','lats'],
@@ -121,6 +120,7 @@ const EXERCISE_MUSCLES = {
   'Жим над головой':                  ['shoulders','triceps','traps'],
   'Жим Арнольда':                     ['shoulders','triceps'],
   'Разводка гантелей стоя':           ['shoulders'],
+  'Разведение гантелей стоя':         ['shoulders'],
   'Тяга к лицу':                      ['shoulders','upper_back','traps'],
   'Разводка в наклоне':               ['shoulders','upper_back'],
   'Тяга к подбородку':                ['shoulders','traps','biceps'],
@@ -258,7 +258,7 @@ const EN_TO_RU = {
   'Leg Press':'Жим ногами','Barbell Row':'Тяга штанги в наклоне',
   'Lat Pulldown':'Тяга вертикального блока','Seated Cable Row':'Тяга горизонтального блока',
   'Incline Dumbbell Press':'Жим гантелей наклон','Dumbbell Bench Press':'Жим гантелей лёжа',
-  'Dumbbell Flyes':'Разводка гантелей','Flat Dumbbell Flyes':'Разводка лёжа',
+  'Dumbbell Flyes':'Разводка гантелей','Flat Dumbbell Flyes':'Разводка гантелей',
   'Lunges':'Выпады','Leg Curl':'Сгибание ног','Leg Extension':'Разгибание ног',
   'Push Ups':'Отжимания','Pull Ups':'Подтягивания','Crunches':'Скручивания',
   'Hyperextension':'Гиперэкстензия','Biceps':'Подъём гантелей на бицепс','Triceps':'Разгибание из-за головы на трицепс',
@@ -381,15 +381,15 @@ const EXERCISE_INFO = {
     benefit: 'Акцент на верхнюю часть грудных мышц. Формирует чёткий контур груди в верхней зоне.',
     tips: 'Угол скамьи не более 45° — иначе нагрузка уходит на плечи. Локти чуть ниже уровня плеч в нижней точке.',
   },
+  'Жим штанги в наклоне': {
+    desc: 'Скамья под углом 30–45°. Опустить штангу к верхней части груди и выжать вверх до полного выпрямления рук.',
+    benefit: 'Акцентирует нагрузку на верхнюю часть груди. Позволяет работать с большим весом и хорошо развивает силовые показатели.',
+    tips: 'Угол скамьи не больше 45° — иначе нагрузка уходит на плечи. Лопатки сведены и прижаты к скамье.',
+  },
   'Разводка гантелей': {
     desc: 'Лёжа на наклонной скамье. Руки слегка согнуты в локтях, гантели разводятся в стороны по дуге.',
     benefit: 'Изолирует грудные мышцы, растягивает их по всей длине. Улучшает форму и объём груди.',
     tips: 'Движение похоже на «объятие дерева». Не разгибать локти полностью. Контролировать опускание.',
-  },
-  'Разводка лёжа': {
-    desc: 'Лёжа горизонтально. Руки с гантелями разводятся широко в стороны и сводятся над грудью.',
-    benefit: 'Акцент на среднюю и нижнюю часть груди. Максимальное растяжение грудных в нижней точке.',
-    tips: 'Слегка согнутые локти на протяжении всего движения. Не опускать гантели ниже уровня плеч.',
   },
   'Кроссовер': {
     desc: 'Стоя между блоками кроссовера. Руки сводятся перед собой снизу вверх или по горизонтали.',
@@ -425,6 +425,11 @@ const EXERCISE_INFO = {
     desc: 'Стоя, лёгкий наклон вперёд. Поднять гантели через стороны до уровня плеч.',
     benefit: 'Изолирует средние дельты, формируя ширину плеч. Улучшает визуальное соотношение плечи/талия.',
     tips: 'Мизинец чуть выше большого пальца в верхней точке. Не поднимать выше плеч. Исключить раскачку.',
+  },
+  'Разведение гантелей стоя': {
+    desc: 'Стоя, поднимать гантели в стороны до уровня плеч с небольшим сгибом в локтях.',
+    benefit: 'Лучшее изолирующее упражнение для средней дельты. Придаёт плечам ширину и округлость, визуально сужает талию.',
+    tips: 'Работать с небольшим весом — важна техника. Не раскачиваться и не помогать корпусом. Мизинец чуть выше большого пальца в верхней точке.',
   },
   'Разводка в наклоне': {
     desc: 'Наклон вперёд под 45–90°. Поднять гантели через стороны, имитируя движение «крыльев».',
@@ -512,9 +517,9 @@ const EXERCISE_INFO = {
     tips: 'Использовать прямую или изогнутую рукоять. Локти строго у тела. Медленное опускание.',
   },
   'Французский жим': {
-    desc: 'Лёжа на скамье, штанга над головой на прямых руках. Опускать гриф к голове, сгибая только локти.',
-    benefit: 'Изолирует длинную головку трицепса. Эффективен для объёма задней части руки.',
-    tips: 'Локти не разводить. Гриф опускать к лбу или чуть за голову. Медленная фаза опускания.',
+    desc: 'Стоя, штанга над головой на прямых руках. Опускать гриф за голову сгибая только локти, затем выжимать обратно.',
+    benefit: 'Изолирует длинную головку трицепса в максимальной растяжке. Эффективен для объёма задней части руки.',
+    tips: 'Локти не разводить в стороны — держать направленными вверх. Движение только в локтевых суставах, плечи неподвижны.',
   },
   'Разгибания на блоке': {
     desc: 'Стоя у верхнего блока. Разгибать руки вниз, прижав локти к телу и держа их неподвижными.',
@@ -671,7 +676,7 @@ const MUSCLE_FILTERS_ROW2 = [
 const MUSCLE_FILTER_MAP = {
   chest:    ['chest'],
   back:     ['lats','upper_back','lower_back'],
-  legs:     ['quads','hamstrings','calves'],
+  legs:     ['quads','hamstrings'],
   shoulders:['shoulders','traps'],
   biceps:   ['biceps'],
   triceps:  ['triceps'],
@@ -824,7 +829,7 @@ input[type=number]::-webkit-inner-spin-button{-webkit-appearance:none}
 .modal-srch::placeholder{color:rgba(255,255,255,0.3)}
 .modal-list{overflow-y:auto;padding:6px 10px 30px;flex:1}
 .modal-sect-lbl{font-size:11px;font-weight:600;opacity:0.35;text-transform:uppercase;letter-spacing:0.8px;padding:12px 10px 4px}
-.modal-item{padding:12px 10px;border-radius:12px;cursor:pointer;font-size:15px;font-weight:500;display:flex;align-items:center;gap:12px;transition:background 0.1s}
+.modal-item{padding:12px 10px;border-radius:12px;cursor:pointer;font-size:15px;font-weight:500;display:flex;align-items:center;gap:20px;transition:background 0.1s}
 .modal-item:active{background:rgba(255,255,255,0.06)}
 .modal-img{width:36px;height:36px;border-radius:8px;object-fit:cover;flex-shrink:0}
 .modal-ph{width:36px;height:36px;border-radius:8px;background:#2c2c2e;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0}
@@ -893,11 +898,11 @@ input[type=number]::-webkit-inner-spin-button{-webkit-appearance:none}
 .settings-signout-btn:active{background:rgba(255,59,48,0.2)}
 .ex-tab-search{width:100%;background:#2c2c2e;border:none;border-radius:14px;padding:12px 16px 12px 40px;color:white;font-size:15px;outline:none;margin-bottom:14px}
 .ex-tab-search::placeholder{color:rgba(255,255,255,0.3)}
-.muscle-filters{display:flex;flex-direction:column;gap:8px;margin-bottom:14px}
-.muscle-filters-row{display:flex;gap:8px;flex-wrap:nowrap}
-.muscle-chip{flex-shrink:0;padding:6px 14px;border-radius:99px;border:none;cursor:pointer;font-size:13px;font-weight:600;transition:all 0.15s;background:#2c2c2e;color:rgba(255,255,255,0.5)}
+.muscle-filters{display:flex;flex-direction:column;gap:6px;margin-bottom:14px}
+.muscle-filters-row{display:flex;gap:6px;flex-wrap:nowrap}
+.muscle-chip{flex-shrink:0;padding:6px 10px;border-radius:99px;border:none;cursor:pointer;font-size:12px;font-weight:600;transition:all 0.15s;background:#2c2c2e;color:rgba(255,255,255,0.5)}
 .muscle-chip.active{background:#30D158;color:#000}
-.ex-list-item{display:flex;align-items:center;gap:12px;padding:11px 14px;border-radius:14px;cursor:pointer;transition:background 0.12s;margin-bottom:4px}
+.ex-list-item{display:flex;align-items:center;gap:20px;padding:11px 14px;border-radius:14px;cursor:pointer;transition:background 0.12s;margin-bottom:4px}
 .ex-list-item:active{background:rgba(255,255,255,0.08)}
 .ex-list-img{width:44px;height:44px;border-radius:10px;object-fit:cover;flex-shrink:0;background:#2c2c2e}
 .ex-list-ph{width:44px;height:44px;border-radius:10px;background:#2c2c2e;display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0}
@@ -1323,12 +1328,17 @@ function DropdownPicker({ options, value, onChange, unit = '', label = '', label
     </div>
   )
 }
-function ModalItem({ ex, onSelect }) {
+function ModalItem({ ex, onSelect, isFav, onToggleFav }) {
   const img = getExImage(ex.name)
   return (
-    <div className="modal-item" onClick={onSelect}>
-      {img ? <img src={img} alt={ex.name} className="modal-img" onError={e => e.target.style.display='none'}/> : <div className="modal-ph">🏋️</div>}
-      {ex.name}
+    <div className="modal-item" onClick={onSelect} style={{display:'flex',alignItems:'center',justifyContent:'space-between'}}>
+      <div style={{display:'flex',alignItems:'center',gap:12,flex:1,minWidth:0}}>
+        {img ? <img src={img} alt={ex.name} className="modal-img" onError={e => e.target.style.display='none'}/> : <div className="modal-ph">🏋️</div>}
+        <span style={{overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{ex.name}</span>
+      </div>
+      {onToggleFav && (
+        <button onClick={e=>{e.stopPropagation();onToggleFav(ex.name)}} style={{background:'none',border:'none',cursor:'pointer',fontSize:18,padding:'4px 6px',flexShrink:0,lineHeight:1}}>{isFav ? '⭐' : '☆'}</button>
+      )}
     </div>
   )
 }
@@ -1381,6 +1391,8 @@ function EditModal({ data, onClose, onSave }) {
     </div>
   )
 }
+
+const DEFAULT_SETTINGS = { username: '', weight: '', height: '', units: 'kg', theme: 'dark', language: 'ru' }
 
 export default function App() {
   const [user, setUser] = useState(undefined) // undefined = loading, null = not logged in
@@ -1438,12 +1450,7 @@ export default function App() {
   const [workoutExercises, setWorkoutExercises] = useState([])
   const [kbHeight, setKbHeight] = useState(0)
   const historyLoaded = useRef(false)
-  const [settings, setSettings] = useState(() => {
-    try {
-      const saved = localStorage.getItem('gymBroSettings')
-      return saved ? JSON.parse(saved) : { username: '', weight: '', height: '', units: 'kg', theme: 'dark', language: 'ru' }
-    } catch { return { username: '', weight: '', height: '', units: 'kg', theme: 'dark', language: 'ru' } }
-  })
+  const [settings, setSettings] = useState(DEFAULT_SETTINGS)
   const [showExportModal, setShowExportModal] = useState(false)
   const [exportPeriod, setExportPeriod] = useState('all')
   const [showClearConfirm, setShowClearConfirm] = useState(false)
@@ -1471,11 +1478,12 @@ export default function App() {
     await supabase.auth.signOut()
     setFavorites(DEFAULT_FAVORITES)
     setHistory([]); setPrs([]); setStats(null)
+    setSettings(DEFAULT_SETTINGS)
   }
 
   const saveSettings = (newSettings) => {
     setSettings(newSettings)
-    localStorage.setItem('gymBroSettings', JSON.stringify(newSettings))
+    if (user) localStorage.setItem('gymBroSettings_' + user.id, JSON.stringify(newSettings))
   }
 
   const exportWorkouts = async (period) => {
@@ -1596,7 +1604,7 @@ export default function App() {
   useEffect(() => {
     if (!user) return
     const initKey = 'gbFavsInit_' + user.id
-    supabase.from('user_favorites').select('exercise_name').eq('user_id', user.id)
+    supabase.from('favorites').select('exercise_name').eq('user_id', user.id)
       .then(async ({ data }) => {
         const initialized = localStorage.getItem(initKey)
         if (data && data.length > 0) {
@@ -1605,7 +1613,7 @@ export default function App() {
         } else if (!initialized) {
           // Truly first time — insert defaults
           const inserts = DEFAULT_FAVORITES.map(name => ({ user_id: user.id, exercise_name: name }))
-          await supabase.from('user_favorites').insert(inserts)
+          await supabase.from('favorites').insert(inserts)
           setFavorites(DEFAULT_FAVORITES)
           localStorage.setItem(initKey, '1')
         } else {
@@ -1616,6 +1624,12 @@ export default function App() {
     // Show onboard only once per user
     const key = 'gbOnboarded_' + user.id
     if (!localStorage.getItem(key)) setShowOnboard(true)
+
+    // Load user-scoped settings
+    try {
+      const saved = localStorage.getItem('gymBroSettings_' + user.id)
+      setSettings(saved ? JSON.parse(saved) : DEFAULT_SETTINGS)
+    } catch { setSettings(DEFAULT_SETTINGS) }
   }, [user])
 
   useEffect(() => {
@@ -1766,9 +1780,9 @@ export default function App() {
     setFavorites(newFavs)
     if (user) {
       if (isFavNow) {
-        await supabase.from('user_favorites').delete().eq('user_id', user.id).eq('exercise_name', name)
+        await supabase.from('favorites').delete().eq('user_id', user.id).eq('exercise_name', name)
       } else {
-        await supabase.from('user_favorites').insert({ user_id: user.id, exercise_name: name })
+        await supabase.from('favorites').insert({ user_id: user.id, exercise_name: name })
       }
     }
   }
@@ -1973,7 +1987,7 @@ export default function App() {
           <h1>Gym BRO</h1>
         </div>
         <div style={{display:'flex',alignItems:'center',gap:8}}>
-          <button onClick={() => { setTimerSecs(timerSecs===null?timerDuration:null); setTimerPaused(true) }} style={{
+          <button onClick={() => { const isOpen=timerSecs!==null||stopwatchRunning||timerMode==='stopwatch'; if(isOpen){setTimerSecs(null);setTimerPaused(false);setStopwatchRunning(false);setStopwatchSecs(0);setTimerMode('countdown')}else{setTimerSecs(timerDuration);setTimerPaused(true)} }} style={{
             background:thm.btnBg,border:`1px solid ${thm.btnBorder}`,
             borderRadius:10,padding:'0',width:36,height:36,cursor:'pointer',
             color:thm.text70,fontSize:18,display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0
@@ -2355,8 +2369,8 @@ export default function App() {
               <div className="modal-srch-wrap"><span className="modal-srch-icon">🔍</span><input className="modal-srch" placeholder="Поиск..." value={modalSearch} onChange={e=>setModalSearch(e.target.value)}/></div>
             </div>
             <div className="modal-list">
-              {!modalSearch&&favFiltered.length>0&&<><div className="modal-sect-lbl">⭐ Избранные</div>{favFiltered.map(ex=><ModalItem key={ex.id} ex={ex} onSelect={()=>addExToWorkout(ex.name)}/>)}<div className="modal-sect-lbl">Все упражнения</div></>}
-              {(modalSearch?filtered:restFiltered).map(ex=><ModalItem key={ex.id} ex={ex} onSelect={()=>addExToWorkout(ex.name)}/>)}
+              {!modalSearch&&favFiltered.length>0&&<><div className="modal-sect-lbl">⭐ Избранные</div>{favFiltered.map(ex=><ModalItem key={ex.id} ex={ex} onSelect={()=>addExToWorkout(ex.name)} isFav={true} onToggleFav={toggleFav}/>)}<div className="modal-sect-lbl">Все упражнения</div></>}
+              {(modalSearch?filtered:restFiltered).map(ex=><ModalItem key={ex.id} ex={ex} onSelect={()=>addExToWorkout(ex.name)} isFav={favorites.includes(ex.name)} onToggleFav={toggleFav}/>)}
             </div>
           </div>
         </div>
@@ -2473,6 +2487,7 @@ export default function App() {
         const allExNames = Object.keys(EXERCISE_IMAGES)
         const filtered = allExNames.filter(name => {
           const muscles = EXERCISE_MUSCLES[name] || []
+          if (exTabFilter === 'favorites') return favorites.includes(name) && name.toLowerCase().includes(exTabSearch.toLowerCase())
           const matchesFilter = exTabFilter === 'all' || (MUSCLE_FILTER_MAP[exTabFilter] || []).some(m => muscles.includes(m))
           const matchesSearch = name.toLowerCase().includes(exTabSearch.toLowerCase())
           return matchesFilter && matchesSearch
@@ -2486,6 +2501,9 @@ export default function App() {
             </div>
             <div className="muscle-filters">
               <div className="muscle-filters-row">
+                <button className={`muscle-chip${exTabFilter==='favorites'?' active':''}`}
+                  style={exTabFilter!=='favorites'?{background:thm.btnBg,color:thm.text50,border:`1px solid ${thm.border}`}:{border:'none'}}
+                  onClick={()=>setExTabFilter('favorites')}>⭐ Избранные</button>
                 {MUSCLE_FILTERS_ROW1.map(f => (
                   <button key={f.id} className={`muscle-chip${exTabFilter===f.id?' active':''}`}
                     style={exTabFilter!==f.id?{background:thm.btnBg,color:thm.text50,border:`1px solid ${thm.border}`}:{border:'none'}}
@@ -2501,11 +2519,12 @@ export default function App() {
               </div>
             </div>
             {filtered.length === 0 && (
-              <div style={{textAlign:'center',color:thm.text40,fontSize:14,padding:'40px 0'}}>Ничего не найдено</div>
+              <div style={{textAlign:'center',color:thm.text40,fontSize:14,padding:'40px 0'}}>{exTabFilter==='favorites'?'Нет избранных упражнений':'Ничего не найдено'}</div>
             )}
             {filtered.map(name => {
               const img = EXERCISE_IMAGES[name]
               const muscles = EXERCISE_MUSCLES[name] || []
+              const isFav = favorites.includes(name)
               return (
                 <div key={name} className="ex-list-item" style={{background:isDark?'rgba(255,255,255,0.04)':'rgba(0,0,0,0.03)',border:`1px solid ${thm.border}`}}
                   onClick={()=>setExDetailModal(name)}>
@@ -2517,7 +2536,7 @@ export default function App() {
                     <div className="ex-list-name" style={{color:thm.text}}>{name}</div>
                     <div style={{fontSize:12,color:thm.text40,marginTop:2}}>{muscles.slice(0,2).map(m=>MUSCLE_LABELS[m]||m).join(' · ')}</div>
                   </div>
-                  <span style={{color:thm.text30,fontSize:16}}>›</span>
+                  <button onClick={e=>{e.stopPropagation();toggleFav(name)}} style={{background:'none',border:'none',cursor:'pointer',fontSize:20,padding:'4px 6px',flexShrink:0,lineHeight:1,color:'inherit'}}>{isFav?'⭐':'☆'}</button>
                 </div>
               )
             })}
