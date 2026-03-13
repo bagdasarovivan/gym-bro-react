@@ -345,6 +345,287 @@ const GREAT_QUOTES = [
   { text:'Каждая тренировка — инвестиция в себя', author:'Unknown' },
 ]
 
+const EXERCISE_INFO = {
+  'Жим лёжа': {
+    desc: 'Лечь на горизонтальную скамью. Взять штангу широким хватом, опустить к нижней части груди и выжать вверх до полного выпрямления рук.',
+    benefit: 'Одно из лучших упражнений для набора массы и силы груди. Активно вовлекает трицепсы и передние дельты.',
+    tips: 'Не отрывать ягодицы от скамьи. Лопатки сведены и прижаты. Гриф вести к нижней части груди, а не к шее.',
+  },
+  'Жим гантелей лёжа': {
+    desc: 'Лечь на горизонтальную скамью с гантелями. Опустить гантели по бокам груди и выжать вверх, сводя руки.',
+    benefit: 'Больший диапазон движения по сравнению со штангой. Развивает симметрию и изолирует каждую сторону груди.',
+    tips: 'В нижней точке локти немного ниже плеч. Не бросать гантели — контролировать опускание.',
+  },
+  'Жим гантелей наклон': {
+    desc: 'Выполняется на наклонной скамье (30–45°). Гантели опускаются к верхней части груди и выжимаются вверх.',
+    benefit: 'Акцент на верхнюю часть грудных мышц. Формирует чёткий контур груди в верхней зоне.',
+    tips: 'Угол скамьи не более 45° — иначе нагрузка уходит на плечи. Локти чуть ниже уровня плеч в нижней точке.',
+  },
+  'Разводка гантелей': {
+    desc: 'Лёжа на наклонной скамье. Руки слегка согнуты в локтях, гантели разводятся в стороны по дуге.',
+    benefit: 'Изолирует грудные мышцы, растягивает их по всей длине. Улучшает форму и объём груди.',
+    tips: 'Движение похоже на «объятие дерева». Не разгибать локти полностью. Контролировать опускание.',
+  },
+  'Разводка лёжа': {
+    desc: 'Лёжа горизонтально. Руки с гантелями разводятся широко в стороны и сводятся над грудью.',
+    benefit: 'Акцент на среднюю и нижнюю часть груди. Максимальное растяжение грудных в нижней точке.',
+    tips: 'Слегка согнутые локти на протяжении всего движения. Не опускать гантели ниже уровня плеч.',
+  },
+  'Кроссовер': {
+    desc: 'Стоя между блоками кроссовера. Руки сводятся перед собой снизу вверх или по горизонтали.',
+    benefit: 'Изолирует и «добивает» грудь. Позволяет менять угол нагрузки, задействуя разные зоны груди.',
+    tips: 'Небольшой наклон вперёд. Чуть согнутые локти. Делать паузу в точке пикового сокращения.',
+  },
+  'Отжимания': {
+    desc: 'Упор лёжа, руки на ширине плеч. Опустить тело до касания грудью пола и выжать вверх.',
+    benefit: 'Базовое упражнение для груди, трицепсов и плеч без оборудования. Укрепляет всё тело.',
+    tips: 'Держать тело прямым как доска. Не провисать в пояснице. Локти немного прижаты к телу.',
+  },
+  'Пуловер': {
+    desc: 'Лёжа поперёк скамьи, держать гантель над грудью. Опустить за голову на прямых руках и вернуть.',
+    benefit: 'Растягивает грудную клетку, развивает зубчатые мышцы и широчайшие спины.',
+    tips: 'Небольшой изгиб в локтях. Опускать медленно, ощущая растяжку. Не использовать слишком большой вес.',
+  },
+  'Жим над головой': {
+    desc: 'Стоя или сидя со штангой/гантелями. Выжать снаряд строго вверх до полного выпрямления рук.',
+    benefit: 'Базовое упражнение для дельт и трицепсов. Развивает силу верхней части тела и стабильность корпуса.',
+    tips: 'Не прогибаться в пояснице. Взгляд вперёд. Гриф вести перед лицом, а не за голову.',
+  },
+  'Жим Арнольда': {
+    desc: 'Сидя с гантелями у плеч ладонями к себе. В ходе жима поворачивать ладони наружу в верхней точке.',
+    benefit: 'Задействует все три пучка дельт, особенно передние и средние. Даёт больше объёма, чем обычный жим.',
+    tips: 'Разворот ладоней делать плавно. Не использовать рывок. Контролировать опускание.',
+  },
+  'Тяга к лицу': {
+    desc: 'На блоке с канатной рукоятью. Тянуть к лицу, разводя локти в стороны и разворачивая плечи.',
+    benefit: 'Укрепляет задние дельты и мышцы вращательной манжеты. Исправляет осанку, балансирует жимы.',
+    tips: 'Локти на уровне плеч или выше. Тянуть к переносице или лбу. Полностью контролировать движение.',
+  },
+  'Разводка гантелей стоя': {
+    desc: 'Стоя, лёгкий наклон вперёд. Поднять гантели через стороны до уровня плеч.',
+    benefit: 'Изолирует средние дельты, формируя ширину плеч. Улучшает визуальное соотношение плечи/талия.',
+    tips: 'Мизинец чуть выше большого пальца в верхней точке. Не поднимать выше плеч. Исключить раскачку.',
+  },
+  'Разводка в наклоне': {
+    desc: 'Наклон вперёд под 45–90°. Поднять гантели через стороны, имитируя движение «крыльев».',
+    benefit: 'Изолирует задние дельты и верхнюю спину. Улучшает осанку и форму плечевого пояса.',
+    tips: 'Небольшой изгиб в локтях. Не использовать инерцию. Фиксировать спину параллельно полу.',
+  },
+  'Тяга к подбородку': {
+    desc: 'Тянуть штангу или гантели узким хватом вдоль тела к подбородку, широко разводя локти.',
+    benefit: 'Развивает трапеции и средние дельты. Хороший вариант для верхней части плечевого пояса.',
+    tips: 'Локти всегда выше кистей. Не задирать штангу выше подбородка. Вести снаряд близко к телу.',
+  },
+  'Шраги': {
+    desc: 'Стоя со штангой или гантелями. Поднимать плечи максимально вверх, как будто говоришь «не знаю».',
+    benefit: 'Изолирует трапециевидные мышцы. Формирует мощный верх спины и визуально расширяет силуэт.',
+    tips: 'Не вращать плечами. Держать гриф прямым хватом. Задержаться в верхней точке на 1 секунду.',
+  },
+  'Тяга штанги в наклоне': {
+    desc: 'Наклон вперёд, спина прямая. Тянуть штангу к животу, сводя лопатки в верхней точке.',
+    benefit: 'Основное упражнение для массы спины. Активно вовлекает широчайшие, ромбовидные и трапеции.',
+    tips: 'Угол наклона около 45°. Не округлять спину. Тянуть локти назад, а не вверх.',
+  },
+  'Тяга гантели в наклоне': {
+    desc: 'Одна рука и колено на скамье. Тянуть гантель к бедру, отводя локоть назад и вверх.',
+    benefit: 'Изолирует широчайшую с каждой стороны. Позволяет проработать мышцы спины без нагрузки на позвоночник.',
+    tips: 'Плечи параллельны полу. Тянуть до касания ребра гантелью. Не разворачивать корпус.',
+  },
+  'Тяга горизонтального блока': {
+    desc: 'Сидя перед блоком. Тянуть рукоять к животу, сводя лопатки и держа спину прямой.',
+    benefit: 'Развивает толщину спины — ромбовидные, трапеции и широчайшие. Улучшает осанку.',
+    tips: 'Не откидываться назад. Локти вести вдоль тела. Полностью вытягивать руки в исходной точке.',
+  },
+  'Тяга вертикального блока': {
+    desc: 'Сидя под блоком, взяться за рукоять широким хватом. Тянуть к верхней части груди.',
+    benefit: 'Аналог подтягиваний, но с регулируемой нагрузкой. Отличное упражнение для развития ширины спины.',
+    tips: 'Небольшой наклон назад. Тянуть к груди, не к животу. Не использовать вес тела как инерцию.',
+  },
+  'Тяга Т-штанги': {
+    desc: 'Один конец штанги зафиксирован. Тянуть рукоять к груди в наклоне, как тягу штанги.',
+    benefit: 'Отличная альтернатива тяге штанги. Хороший акцент на центр спины и нижнюю часть трапеций.',
+    tips: 'Держать нейтральное положение позвоночника. Локти вести близко к телу. Не использовать рывок.',
+  },
+  'Подтягивания': {
+    desc: 'Вис на турнике. Подтянуться до уровня подбородка выше перекладины, опустить контролируемо.',
+    benefit: 'Одно из лучших упражнений для спины и бицепса. Развивает ширину и силу всего торса.',
+    tips: 'Не использовать раскачку. Скрестить ноги для стабильности. Полное выпрямление рук внизу.',
+  },
+  'Гиперэкстензия': {
+    desc: 'Зафиксировать ноги на тренажёре. Опустить туловище вниз и поднять в одну линию с ногами.',
+    benefit: 'Укрепляет мышцы-разгибатели спины, ягодицы и бицепс бедра. Профилактика болей в пояснице.',
+    tips: 'Не разгибаться выше горизонтали. Руки скрещены на груди или за головой. Движение плавное.',
+  },
+  'Подъём штанги на бицепс': {
+    desc: 'Стоя, гриф в руках хватом снизу. Сгибать руки в локтях, поднимая штангу к плечам.',
+    benefit: 'Базовое упражнение для бицепса. Позволяет работать с большими весами для максимальной массы.',
+    tips: 'Локти прижаты к телу. Не раскачивать корпус. Контролировать опускание.',
+  },
+  'Подъём гантелей на бицепс': {
+    desc: 'Стоя с гантелями. Попеременно или одновременно сгибать руки, разворачивая ладони вверх.',
+    benefit: 'Изолирует каждую руку. Можно работать с супинацией — это сильнее сокращает бицепс.',
+    tips: 'Поворачивать ладонь в верхней части движения. Локти строго по бокам туловища.',
+  },
+  'Молотки': {
+    desc: 'Стоя с гантелями хватом «молоток» (ладони смотрят друг на друга). Сгибать руки попеременно.',
+    benefit: 'Развивает плечелучевую мышцу и длинную головку бицепса. Добавляет объём и толщину рукам.',
+    tips: 'Нейтральный хват до конца движения. Не раскачиваться. Локти зафиксированы.',
+  },
+  'Молотки лёжа': {
+    desc: 'Лёжа на скамье лицом вниз. Поднимать гантели к плечам нейтральным хватом.',
+    benefit: 'Изолирует бицепс лучше, чем стоя — исключает читинг. Даёт чистую нагрузку на плечелучевую.',
+    tips: 'Плечи прижаты к скамье. Только предплечья двигаются. Медленное опускание.',
+  },
+  'Изолированные сгибания на бицепс': {
+    desc: 'Сидя, локоть упирается во внутреннюю поверхность бедра. Поднимать гантель к плечу.',
+    benefit: 'Максимальная изоляция бицепса. Исключает любое читинг-движение для чистой нагрузки.',
+    tips: 'Не отрывать локоть от бедра. Полное разгибание внизу. Пиковое сокращение в верхней точке.',
+  },
+  'Сгибания на скамье Скотта': {
+    desc: 'Руки лежат на наклонной поверхности скамьи Скотта. Поднимать штангу или гантели к плечам.',
+    benefit: 'Изолирует нижнюю часть бицепса. Исключает подключение плечевого пояса.',
+    tips: 'Плотно прижать руки к подставке. Не бросать вес вниз. Контролировать всю амплитуду.',
+  },
+  'Сгибания на блоке': {
+    desc: 'Стоя у нижнего блока. Сгибать руки с рукоятью или канатом, держа локти у тела.',
+    benefit: 'Постоянное натяжение на протяжении всего движения — лучше стимулирует рост бицепса.',
+    tips: 'Использовать прямую или изогнутую рукоять. Локти строго у тела. Медленное опускание.',
+  },
+  'Французский жим': {
+    desc: 'Лёжа на скамье, штанга над головой на прямых руках. Опускать гриф к голове, сгибая только локти.',
+    benefit: 'Изолирует длинную головку трицепса. Эффективен для объёма задней части руки.',
+    tips: 'Локти не разводить. Гриф опускать к лбу или чуть за голову. Медленная фаза опускания.',
+  },
+  'Разгибания на блоке': {
+    desc: 'Стоя у верхнего блока. Разгибать руки вниз, прижав локти к телу и держа их неподвижными.',
+    benefit: 'Изолирует трицепс с постоянным натяжением. Хорош для финишной прокачки и пампинга.',
+    tips: 'Локти строго у боков. Полностью выпрямлять руки в нижней точке. Без рывков.',
+  },
+  'Разгибание из-за головы на трицепс': {
+    desc: 'Сидя или стоя с гантелью за головой. Поднимать гантель вверх, разгибая руки в локтях.',
+    benefit: 'Растягивает длинную головку трицепса, давая глубокую нагрузку. Добавляет объём плечам сзади.',
+    tips: 'Локти направлены вертикально вверх. Не разводить локти в стороны. Движение только в локтевом суставе.',
+  },
+  'Отжимания на брусьях': {
+    desc: 'Вис на брусьях, опуститься вниз сгибая локти и снова выжать до прямых рук.',
+    benefit: 'Тяжёлое базовое упражнение для трицепса и груди. При отклонении корпуса акцент на грудь.',
+    tips: 'Прямое тело — больше нагрузки на трицепс. Наклон вперёд — акцент на грудь. Не опускаться слишком низко.',
+  },
+  'Приседания': {
+    desc: 'Штанга на плечах. Опуститься, сгибая колени и отводя таз назад, до параллели бёдер с полом.',
+    benefit: 'Король упражнений. Вовлекает весь нижний пояс тела. Стимулирует выработку тестостерона.',
+    tips: 'Колени в направлении носков. Пятки на полу. Спина прямая, взгляд вперёд. Не округлять поясницу.',
+  },
+  'Жим ногами': {
+    desc: 'Сидя в тренажёре. Жать платформу ногами вверх, разгибая в коленях, не до полного выпрямления.',
+    benefit: 'Базовое упражнение для квадрицепсов с меньшей нагрузкой на позвоночник, чем при приседаниях.',
+    tips: 'Не блокировать колени в верхней точке. Поясница прижата к спинке. Стопы параллельны.',
+  },
+  'Разгибание ног': {
+    desc: 'Сидя в тренажёре. Разгибать ноги в коленях до горизонтального положения и медленно опускать.',
+    benefit: 'Изолирует квадрицепсы. Хорошо работает как добивочное упражнение после базы.',
+    tips: 'Полная амплитуда. Удерживать сокращение в верхней точке 1 секунду. Не использовать инерцию.',
+  },
+  'Болгарские выпады': {
+    desc: 'Задняя нога на скамье, передняя вынесена вперёд. Опустить колено почти до пола и встать.',
+    benefit: 'Тяжелее обычных выпадов, требует баланс. Отлично прокачивает квадрицепс и ягодицы.',
+    tips: 'Колено передней ноги не выходит за носок. Туловище прямое. Опускаться медленно.',
+  },
+  'Выпады': {
+    desc: 'Шагнуть вперёд, опустить заднее колено почти до пола. Вернуться в исходное положение.',
+    benefit: 'Развивает квадрицепсы, ягодицы и бицепс бедра. Улучшает баланс и координацию.',
+    tips: 'Переднее колено строго над носком. Туловище прямое. Шаг достаточно широкий.',
+  },
+  'Приседания с гантелью (гоблет)': {
+    desc: 'Держать гантель вертикально у груди двумя руками. Приседать с прямой спиной.',
+    benefit: 'Идеально для новичков. Учит правильной механике приседания, задействует всё тело.',
+    tips: 'Гантель у груди, локти внутри колен в нижней точке. Пятки не отрывать. Спина прямая.',
+  },
+  'Гакк-приседания': {
+    desc: 'В тренажёре или со штангой за спиной. Приседать с прямым торсом, акцент на квадрицепс.',
+    benefit: 'Сильный акцент на квадрицепсы при минимальной нагрузке на поясницу.',
+    tips: 'Стопы немного впереди корпуса. Спина прижата к спинке тренажёра. Колени над носками.',
+  },
+  'Становая тяга': {
+    desc: 'Штанга на полу. Взяться за гриф, выпрямить спину и поднять штангу до вертикального положения.',
+    benefit: 'Самое массонаборное упражнение. Задействует спину, ноги, ягодицы, трапеции и предплечья.',
+    tips: 'Спина прямая на протяжении всего движения. Штанга вдоль ног. Первое движение — разгибание ног, потом спины.',
+  },
+  'Румынская тяга': {
+    desc: 'Штанга в руках. Медленно наклониться, опуская гриф вдоль ног до натяжения в бицепсе бедра.',
+    benefit: 'Изолирует бицепс бедра и ягодицы. Улучшает гибкость задней поверхности бедра.',
+    tips: 'Спина прямая всё время. Колени слегка согнуты. Опускаться до натяжения, не до пола.',
+  },
+  'Сгибание ног': {
+    desc: 'Лёжа в тренажёре. Сгибать ноги в коленях, поднимая подушку до ягодиц.',
+    benefit: 'Изолирует бицепс бедра. Формирует заднюю часть бедра и улучшает баланс с квадрицепсами.',
+    tips: 'Таз прижат к скамье. Полная амплитуда. Медленное возвращение в исходное положение.',
+  },
+  'Ягодичный мост': {
+    desc: 'Лёжа на спине, штанга на бёдрах. Поднимать таз вверх до прямой линии тело-бёдра-плечи.',
+    benefit: 'Лучшее упражнение для активации ягодиц. Также задействует бицепс бедра и нижнюю спину.',
+    tips: 'Подбородок прижат к груди. Упираться в пол через пятки. Максимально сжать ягодицы вверху.',
+  },
+  'Отведение ноги в блоке': {
+    desc: 'Крепление на лодыжке к нижнему блоку. Отводить ногу назад или в сторону через полную амплитуду.',
+    benefit: 'Изолирует ягодицы и отводящие мышцы бедра. Формирует округлость и упругость.',
+    tips: 'Держаться за опору для баланса. Движение контролированное. Не использовать инерцию.',
+  },
+  'Скручивания': {
+    desc: 'Лёжа на спине, ноги согнуты. Поднимать верхнюю часть туловища к коленям.',
+    benefit: 'Изолирует прямую мышцу живота. Хорошо для проработки пресса с умеренной нагрузкой.',
+    tips: 'Руки за головой без рывка за шею. Поясница прижата к полу. Поднимать только лопатки.',
+  },
+  'Планка': {
+    desc: 'Упор на предплечьях и носках. Держать тело прямым как доска заданное время.',
+    benefit: 'Укрепляет кор, поясницу и стабилизаторы. Улучшает осанку, не нагружая позвоночник.',
+    tips: 'Таз не поднимать и не опускать. Дышать равномерно. Взгляд в пол. Тело — одна прямая линия.',
+  },
+  'Русские скручивания': {
+    desc: 'Сидя с поднятыми ногами, поворачивать корпус вправо-влево, касаясь пола по бокам.',
+    benefit: 'Прорабатывает косые мышцы живота и прямую мышцу. Развивает ротационную силу корпуса.',
+    tips: 'Спина прямая. Ноги можно держать на весу. Скручивание из корпуса, не только руками.',
+  },
+  'Подъём ног в висе на пресс': {
+    desc: 'Вис на турнике. Поднимать прямые или согнутые ноги до горизонтали или выше.',
+    benefit: 'Тяжёлое упражнение для нижнего пресса и сгибателей бедра. Отличная нагрузка на весь кор.',
+    tips: 'Не раскачиваться. Поднимать ноги силой пресса, не инерцией. Медленное опускание.',
+  },
+  'Сгибания запястий': {
+    desc: 'Сидя, предплечья на коленях хватом снизу. Сгибать и разгибать запястья с гантелями или штангой.',
+    benefit: 'Развивает мышцы предплечья и силу хвата. Важно для прогресса в базовых упражнениях.',
+    tips: 'Предплечья зафиксированы. Движение только в запястье. Полная амплитуда без боли.',
+  },
+}
+
+const MUSCLE_FILTERS = [
+  { id:'all',      label:'Все' },
+  { id:'chest',    label:'Грудь' },
+  { id:'back',     label:'Спина' },
+  { id:'legs',     label:'Ноги' },
+  { id:'shoulders',label:'Плечи' },
+  { id:'biceps',   label:'Бицепс' },
+  { id:'triceps',  label:'Трицепс' },
+  { id:'abs',      label:'Пресс' },
+  { id:'glutes',   label:'Ягодицы' },
+]
+const MUSCLE_FILTER_MAP = {
+  chest:    ['chest'],
+  back:     ['lats','upper_back','lower_back'],
+  legs:     ['quads','hamstrings'],
+  shoulders:['shoulders'],
+  biceps:   ['biceps'],
+  triceps:  ['triceps'],
+  abs:      ['abs'],
+  glutes:   ['glutes'],
+}
+const MUSCLE_LABELS = {
+  chest:'Грудь', triceps:'Трицепс', shoulders:'Плечи', lats:'Широчайшие',
+  upper_back:'Верх спины', lower_back:'Поясница', biceps:'Бицепс',
+  quads:'Квадрицепс', hamstrings:'Бицепс бедра', glutes:'Ягодицы',
+  abs:'Пресс', traps:'Трапеции', forearms:'Предплечья',
+}
+
 function buildCopyText(date, workouts) {
   const lines = [`📅 ${date} · ${workouts.length} упр.`]
   const reversed = [...workouts].reverse()
@@ -549,7 +830,25 @@ input[type=number]::-webkit-inner-spin-button{-webkit-appearance:none}
 .settings-action-btn.danger{color:#FF453A;background:rgba(255,59,48,0.08);border-color:rgba(255,59,48,0.2)}
 .settings-action-btn.danger:active{background:rgba(255,59,48,0.15)}
 .settings-signout-btn{width:100%;padding:14px;background:rgba(255,59,48,0.1);border:1px solid rgba(255,59,48,0.25);border-radius:14px;color:#FF453A;font-size:15px;font-weight:700;cursor:pointer;transition:all 0.15s}
-.settings-signout-btn:active{background:rgba(255,59,48,0.2)}`
+.settings-signout-btn:active{background:rgba(255,59,48,0.2)}
+.ex-tab-search{width:100%;background:#2c2c2e;border:none;border-radius:14px;padding:12px 16px 12px 40px;color:white;font-size:15px;outline:none;margin-bottom:14px}
+.ex-tab-search::placeholder{color:rgba(255,255,255,0.3)}
+.muscle-filters{display:flex;gap:8px;overflow-x:auto;padding-bottom:10px;margin-bottom:14px;scrollbar-width:none}
+.muscle-filters::-webkit-scrollbar{display:none}
+.muscle-chip{flex-shrink:0;padding:6px 14px;border-radius:99px;border:none;cursor:pointer;font-size:13px;font-weight:600;transition:all 0.15s;background:#2c2c2e;color:rgba(255,255,255,0.5)}
+.muscle-chip.active{background:#30D158;color:#000}
+.ex-list-item{display:flex;align-items:center;gap:12px;padding:11px 14px;border-radius:14px;cursor:pointer;transition:background 0.12s;margin-bottom:4px}
+.ex-list-item:active{background:rgba(255,255,255,0.08)}
+.ex-list-img{width:44px;height:44px;border-radius:10px;object-fit:cover;flex-shrink:0;background:#2c2c2e}
+.ex-list-ph{width:44px;height:44px;border-radius:10px;background:#2c2c2e;display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0}
+.ex-list-name{font-size:15px;font-weight:600;flex:1}
+.ex-detail-img{width:120px;height:120px;border-radius:20px;object-fit:cover;display:block;margin:0 auto 16px}
+.ex-detail-ph{width:120px;height:120px;border-radius:20px;background:#2c2c2e;display:flex;align-items:center;justify-content:center;font-size:48px;margin:0 auto 16px}
+.ex-detail-muscles{display:flex;flex-wrap:wrap;gap:6px;margin:10px 0 18px}
+.ex-detail-muscle-tag{padding:4px 12px;border-radius:99px;background:rgba(48,209,88,0.12);color:#30D158;font-size:12px;font-weight:700}
+.ex-detail-section{margin-bottom:16px}
+.ex-detail-section-lbl{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.8px;opacity:0.4;margin-bottom:6px}
+.ex-detail-text{font-size:14px;line-height:1.65;opacity:0.75}`
 
 const LIGHT_CSS = `
 body{background:#f2f2f7}
@@ -605,6 +904,15 @@ body{background:#f2f2f7}
 .app[data-theme="light"] .settings-action-btn{background:rgba(0,0,0,0.04)!important;border-color:rgba(0,0,0,0.08)!important;color:rgba(0,0,0,0.8)!important}
 .app[data-theme="light"] .settings-action-btn.danger{color:#FF453A!important;background:rgba(255,59,48,0.06)!important;border-color:rgba(255,59,48,0.15)!important}
 .app[data-theme="light"] .settings-signout-btn{background:rgba(255,59,48,0.08)!important;border-color:rgba(255,59,48,0.2)!important}
+.app[data-theme="light"] .ex-tab-search{background:#f2f2f7!important;color:#1c1c1e!important}
+.app[data-theme="light"] .ex-tab-search::placeholder{color:rgba(0,0,0,0.3)!important}
+.app[data-theme="light"] .muscle-chip{background:#e5e5ea!important;color:rgba(0,0,0,0.5)!important}
+.app[data-theme="light"] .muscle-chip.active{background:#30D158!important;color:#000!important}
+.app[data-theme="light"] .ex-list-item:active{background:rgba(0,0,0,0.04)!important}
+.app[data-theme="light"] .ex-list-img{background:#e5e5ea!important}
+.app[data-theme="light"] .ex-list-ph{background:#e5e5ea!important}
+.app[data-theme="light"] .ex-list-name{color:#1c1c1e!important}
+.app[data-theme="light"] .ex-detail-ph{background:#e5e5ea!important}
 `
 
 const CSS_ALL = CSS + LIGHT_CSS
@@ -1061,7 +1369,11 @@ export default function App() {
   const [showClearConfirm, setShowClearConfirm] = useState(false)
   const [showStreakModal, setShowStreakModal] = useState(false)
   const [streakModalData, setStreakModalData] = useState(null)
-  const [streakQuote] = useState(() => Math.floor(Math.random() * GREAT_QUOTES.length))
+  const [streakQuote, setStreakQuote] = useState(0)
+  const [streakMotivQuote, setStreakMotivQuote] = useState('')
+  const [exTabSearch, setExTabSearch] = useState('')
+  const [exTabFilter, setExTabFilter] = useState('all')
+  const [exDetailModal, setExDetailModal] = useState(null)
 
   const handleAuth = async () => {
     setAuthLoading(true); setAuthError('')
@@ -1115,6 +1427,10 @@ export default function App() {
   const openStreakModal = async () => {
     setShowStreakModal(true)
     setStreakModalData(null)
+    setStreakQuote(Math.floor(Math.random() * GREAT_QUOTES.length))
+    const rankNow = getRank(streak)
+    const quotesArr = RANK_QUOTES[rankNow.name] || RANK_QUOTES['Новичок']
+    setStreakMotivQuote(quotesArr[Math.floor(Math.random() * quotesArr.length)])
     if (!user) return
     const thisM = new Date().toISOString().slice(0,7)
     const { data: wData } = await supabase.from('workouts').select('id,workout_date').eq('user_id', user.id)
@@ -2071,6 +2387,102 @@ export default function App() {
         </div>
       )}
 
+      {/* Exercises Tab */}
+      {tab === 'exercises' && (() => {
+        const allExNames = Object.keys(EXERCISE_IMAGES)
+        const filtered = allExNames.filter(name => {
+          const muscles = EXERCISE_MUSCLES[name] || []
+          const matchesFilter = exTabFilter === 'all' || (MUSCLE_FILTER_MAP[exTabFilter] || []).some(m => muscles.includes(m))
+          const matchesSearch = name.toLowerCase().includes(exTabSearch.toLowerCase())
+          return matchesFilter && matchesSearch
+        }).sort((a,b) => a.localeCompare(b,'ru'))
+        return (
+          <div className="section" style={{paddingTop:16}}>
+            <div style={{position:'relative',marginBottom:0}}>
+              <span style={{position:'absolute',left:14,top:'50%',transform:'translateY(-50%)',fontSize:16,opacity:0.35,pointerEvents:'none'}}>🔍</span>
+              <input className="ex-tab-search" placeholder="Поиск упражнения..." value={exTabSearch}
+                onChange={e=>setExTabSearch(e.target.value)} style={{color:thm.text,background:thm.input}}/>
+            </div>
+            <div className="muscle-filters">
+              {MUSCLE_FILTERS.map(f => (
+                <button key={f.id} className={`muscle-chip${exTabFilter===f.id?' active':''}`}
+                  style={exTabFilter!==f.id?{background:thm.btnBg,color:thm.text50,border:`1px solid ${thm.border}`}:{border:'none'}}
+                  onClick={()=>setExTabFilter(f.id)}>{f.label}</button>
+              ))}
+            </div>
+            {filtered.length === 0 && (
+              <div style={{textAlign:'center',color:thm.text40,fontSize:14,padding:'40px 0'}}>Ничего не найдено</div>
+            )}
+            {filtered.map(name => {
+              const img = EXERCISE_IMAGES[name]
+              const muscles = EXERCISE_MUSCLES[name] || []
+              return (
+                <div key={name} className="ex-list-item" style={{background:isDark?'rgba(255,255,255,0.04)':'rgba(0,0,0,0.03)',border:`1px solid ${thm.border}`}}
+                  onClick={()=>setExDetailModal(name)}>
+                  {img
+                    ? <img src={img} alt={name} className="ex-list-img" onError={e=>{e.target.style.display='none';e.target.nextSibling.style.display='flex'}}/>
+                    : null}
+                  <div className="ex-list-ph" style={{display: img ? 'none' : 'flex'}}>💪</div>
+                  <div style={{flex:1}}>
+                    <div className="ex-list-name" style={{color:thm.text}}>{name}</div>
+                    <div style={{fontSize:12,color:thm.text40,marginTop:2}}>{muscles.slice(0,2).map(m=>MUSCLE_LABELS[m]||m).join(' · ')}</div>
+                  </div>
+                  <span style={{color:thm.text30,fontSize:16}}>›</span>
+                </div>
+              )
+            })}
+          </div>
+        )
+      })()}
+
+      {/* Exercise Detail Modal */}
+      {exDetailModal && (() => {
+        const name = exDetailModal
+        const img = EXERCISE_IMAGES[name]
+        const muscles = EXERCISE_MUSCLES[name] || []
+        const info = EXERCISE_INFO[name]
+        return (
+          <div className="modal-overlay" onClick={e=>{if(e.target===e.currentTarget)setExDetailModal(null)}}>
+            <div className="modal" style={{background:thm.modalBg}}>
+              <div className="modal-handle" style={{background:isDark?'rgba(255,255,255,0.15)':'rgba(0,0,0,0.12)'}}/>
+              <div style={{padding:'14px 18px 0',display:'flex',justifyContent:'space-between',alignItems:'center',flexShrink:0}}>
+                <span style={{fontSize:17,fontWeight:700,color:thm.text}}>{name}</span>
+                <button onClick={()=>setExDetailModal(null)} style={{background:'none',border:'none',fontSize:22,cursor:'pointer',color:thm.text50,lineHeight:1}}>×</button>
+              </div>
+              <div className="modal-body">
+                {img
+                  ? <img src={img} alt={name} className="ex-detail-img" onError={e=>{e.target.style.display='none';e.target.nextSibling.style.display='flex'}}/>
+                  : null}
+                <div className="ex-detail-ph" style={{display: img ? 'none' : 'flex'}}>💪</div>
+                <div className="ex-detail-muscles">
+                  {muscles.map(m => (
+                    <span key={m} className="ex-detail-muscle-tag">{MUSCLE_LABELS[m]||m}</span>
+                  ))}
+                </div>
+                {info ? (
+                  <>
+                    <div className="ex-detail-section">
+                      <div className="ex-detail-section-lbl">Описание</div>
+                      <div className="ex-detail-text" style={{color:thm.text70}}>{info.desc}</div>
+                    </div>
+                    <div className="ex-detail-section">
+                      <div className="ex-detail-section-lbl">Польза</div>
+                      <div className="ex-detail-text" style={{color:thm.text70}}>{info.benefit}</div>
+                    </div>
+                    <div className="ex-detail-section">
+                      <div className="ex-detail-section-lbl" style={{color:'#30D158',opacity:1}}>💡 Советы</div>
+                      <div className="ex-detail-text" style={{color:thm.text70}}>{info.tips}</div>
+                    </div>
+                  </>
+                ) : (
+                  <div style={{textAlign:'center',color:thm.text40,fontSize:14,padding:'20px 0'}}>Описание скоро появится</div>
+                )}
+              </div>
+            </div>
+          </div>
+        )
+      })()}
+
       {/* Timer Modal */}
       {showDateModal && (
         <div style={{position:'fixed',inset:0,background:'rgba(0,0,0,0.7)',zIndex:200,display:'flex',alignItems:'center',justifyContent:'center',backdropFilter:'blur(8px)'}}
@@ -2163,10 +2575,7 @@ export default function App() {
       {/* Streak / Rank Modal */}
       {showStreakModal && (() => {
         const rank = getRank(streak)
-        const quotes = RANK_QUOTES[rank.name] || RANK_QUOTES['Новичок']
-        const motivQuote = quotes[Math.floor(Math.random() * quotes.length)]
         const greatQ = GREAT_QUOTES[streakQuote]
-        const thisM = new Date().toISOString().slice(0,7)
         function fMonth(m) {
           const [y,mo] = m.split('-')
           const s = new Date(parseInt(y), parseInt(mo)-1).toLocaleDateString('ru',{month:'long',year:'numeric'})
@@ -2196,7 +2605,7 @@ export default function App() {
                     </div>
                   )}
                   {rank.isMax && <div style={{fontSize:12,color:'#30D158',marginBottom:16,fontWeight:700}}>Максимальный ранг достигнут! 🎉</div>}
-                  <div style={{fontSize:14,color:thm.text70,fontStyle:'italic',lineHeight:1.5,marginBottom:10}}>«{motivQuote}»</div>
+                  <div style={{fontSize:14,color:thm.text70,fontStyle:'italic',lineHeight:1.5,marginBottom:10}}>«{streakMotivQuote}»</div>
                   <div style={{fontSize:13,color:thm.text50,fontStyle:'italic',lineHeight:1.5,borderTop:`1px solid ${thm.border}`,paddingTop:12,marginTop:4}}>
                     «{greatQ.text}»
                     <div style={{fontSize:11,color:thm.text35,marginTop:4}}>— {greatQ.author}</div>
@@ -2272,7 +2681,7 @@ export default function App() {
       })()}
 
       <div className="nav-bar">
-        {[{id:'add',icon:'➕',label:'Тренировка'},{id:'history',icon:'📜',label:'История'},{id:'progress',icon:'📈',label:'Прогресс'}].map(t=>(
+        {[{id:'add',icon:'➕',label:'Тренировка'},{id:'history',icon:'📜',label:'История'},{id:'progress',icon:'📈',label:'Прогресс'},{id:'exercises',icon:'📋',label:'Упражнения'}].map(t=>(
           <div key={t.id} className="nav-item" style={{opacity:tab===t.id?1:0.38}} onClick={()=>{setTab(t.id);if(t.id!=='add'){setWorkoutStarted(false);setSelectedEx(null)}}}>
             <span className="nav-icon">{t.icon}</span>
             <span className="nav-lbl" style={{color:tab===t.id?'#00C853':'white'}}>{t.label}</span>
