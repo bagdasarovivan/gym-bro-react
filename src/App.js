@@ -1982,7 +1982,7 @@ export default function App() {
           <h1>Gym BRO</h1>
         </div>
         <div style={{display:'flex',alignItems:'center',gap:8}}>
-          <button onClick={() => { setTimerSecs(timerSecs===null?timerDuration:null); setTimerPaused(true) }} style={{
+          <button onClick={() => { const isOpen=timerSecs!==null||stopwatchRunning||timerMode==='stopwatch'; if(isOpen){setTimerSecs(null);setTimerPaused(false);setStopwatchRunning(false);setStopwatchSecs(0);setTimerMode('countdown')}else{setTimerSecs(timerDuration);setTimerPaused(true)} }} style={{
             background:thm.btnBg,border:`1px solid ${thm.btnBorder}`,
             borderRadius:10,padding:'0',width:36,height:36,cursor:'pointer',
             color:thm.text70,fontSize:18,display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0
