@@ -902,7 +902,7 @@ input[type=number]::-webkit-inner-spin-button{-webkit-appearance:none}
 .muscle-filters-row{display:flex;gap:6px;flex-wrap:nowrap}
 .muscle-chip{flex-shrink:0;padding:6px 10px;border-radius:99px;border:none;cursor:pointer;font-size:12px;font-weight:600;transition:all 0.15s;background:#2c2c2e;color:rgba(255,255,255,0.5)}
 .muscle-chip.active{background:#30D158;color:#000}
-.ex-list-item{display:flex;align-items:center;gap:12px;padding:11px 14px;border-radius:14px;cursor:pointer;transition:background 0.12s;margin-bottom:4px}
+.ex-list-item{display:flex;align-items:center;gap:20px;padding:11px 14px;border-radius:14px;cursor:pointer;transition:background 0.12s;margin-bottom:4px}
 .ex-list-item:active{background:rgba(255,255,255,0.08)}
 .ex-list-img{width:44px;height:44px;border-radius:10px;object-fit:cover;flex-shrink:0;background:#2c2c2e}
 .ex-list-ph{width:44px;height:44px;border-radius:10px;background:#2c2c2e;display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0}
