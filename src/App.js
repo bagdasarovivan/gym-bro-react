@@ -1328,12 +1328,17 @@ function DropdownPicker({ options, value, onChange, unit = '', label = '', label
     </div>
   )
 }
-function ModalItem({ ex, onSelect }) {
+function ModalItem({ ex, onSelect, isFav, onToggleFav }) {
   const img = getExImage(ex.name)
   return (
-    <div className="modal-item" onClick={onSelect}>
-      {img ? <img src={img} alt={ex.name} className="modal-img" onError={e => e.target.style.display='none'}/> : <div className="modal-ph">🏋️</div>}
-      {ex.name}
+    <div className="modal-item" onClick={onSelect} style={{display:'flex',alignItems:'center',justifyContent:'space-between'}}>
+      <div style={{display:'flex',alignItems:'center',gap:0,flex:1,minWidth:0}}>
+        {img ? <img src={img} alt={ex.name} className="modal-img" onError={e => e.target.style.display='none'}/> : <div className="modal-ph">🏋️</div>}
+        <span style={{overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{ex.name}</span>
+      </div>
+      {onToggleFav && (
+        <button onClick={e=>{e.stopPropagation();onToggleFav(ex.name)}} style={{background:'none',border:'none',cursor:'pointer',fontSize:18,padding:'4px 6px',flexShrink:0,lineHeight:1}}>{isFav ? '⭐' : '☆'}</button>
+      )}
     </div>
   )
 }
@@ -1599,7 +1604,7 @@ export default function App() {
   useEffect(() => {
     if (!user) return
     const initKey = 'gbFavsInit_' + user.id
-    supabase.from('user_favorites').select('exercise_name').eq('user_id', user.id)
+    supabase.from('favorites').select('exercise_name').eq('user_id', user.id)
       .then(async ({ data }) => {
         const initialized = localStorage.getItem(initKey)
         if (data && data.length > 0) {
@@ -1608,7 +1613,7 @@ export default function App() {
         } else if (!initialized) {
           // Truly first time — insert defaults
           const inserts = DEFAULT_FAVORITES.map(name => ({ user_id: user.id, exercise_name: name }))
-          await supabase.from('user_favorites').insert(inserts)
+          await supabase.from('favorites').insert(inserts)
           setFavorites(DEFAULT_FAVORITES)
           localStorage.setItem(initKey, '1')
         } else {
@@ -1775,9 +1780,9 @@ export default function App() {
     setFavorites(newFavs)
     if (user) {
       if (isFavNow) {
-        await supabase.from('user_favorites').delete().eq('user_id', user.id).eq('exercise_name', name)
+        await supabase.from('favorites').delete().eq('user_id', user.id).eq('exercise_name', name)
       } else {
-        await supabase.from('user_favorites').insert({ user_id: user.id, exercise_name: name })
+        await supabase.from('favorites').insert({ user_id: user.id, exercise_name: name })
       }
     }
   }
@@ -2364,8 +2369,8 @@ export default function App() {
               <div className="modal-srch-wrap"><span className="modal-srch-icon">🔍</span><input className="modal-srch" placeholder="Поиск..." value={modalSearch} onChange={e=>setModalSearch(e.target.value)}/></div>
             </div>
             <div className="modal-list">
-              {!modalSearch&&favFiltered.length>0&&<><div className="modal-sect-lbl">⭐ Избранные</div>{favFiltered.map(ex=><ModalItem key={ex.id} ex={ex} onSelect={()=>addExToWorkout(ex.name)}/>)}<div className="modal-sect-lbl">Все упражнения</div></>}
-              {(modalSearch?filtered:restFiltered).map(ex=><ModalItem key={ex.id} ex={ex} onSelect={()=>addExToWorkout(ex.name)}/>)}
+              {!modalSearch&&favFiltered.length>0&&<><div className="modal-sect-lbl">⭐ Избранные</div>{favFiltered.map(ex=><ModalItem key={ex.id} ex={ex} onSelect={()=>addExToWorkout(ex.name)} isFav={true} onToggleFav={toggleFav}/>)}<div className="modal-sect-lbl">Все упражнения</div></>}
+              {(modalSearch?filtered:restFiltered).map(ex=><ModalItem key={ex.id} ex={ex} onSelect={()=>addExToWorkout(ex.name)} isFav={favorites.includes(ex.name)} onToggleFav={toggleFav}/>)}
             </div>
           </div>
         </div>
@@ -2482,6 +2487,7 @@ export default function App() {
         const allExNames = Object.keys(EXERCISE_IMAGES)
         const filtered = allExNames.filter(name => {
           const muscles = EXERCISE_MUSCLES[name] || []
+          if (exTabFilter === 'favorites') return favorites.includes(name) && name.toLowerCase().includes(exTabSearch.toLowerCase())
           const matchesFilter = exTabFilter === 'all' || (MUSCLE_FILTER_MAP[exTabFilter] || []).some(m => muscles.includes(m))
           const matchesSearch = name.toLowerCase().includes(exTabSearch.toLowerCase())
           return matchesFilter && matchesSearch
@@ -2495,6 +2501,9 @@ export default function App() {
             </div>
             <div className="muscle-filters">
               <div className="muscle-filters-row">
+                <button className={`muscle-chip${exTabFilter==='favorites'?' active':''}`}
+                  style={exTabFilter!=='favorites'?{background:thm.btnBg,color:thm.text50,border:`1px solid ${thm.border}`}:{border:'none'}}
+                  onClick={()=>setExTabFilter('favorites')}>⭐ Избранные</button>
                 {MUSCLE_FILTERS_ROW1.map(f => (
                   <button key={f.id} className={`muscle-chip${exTabFilter===f.id?' active':''}`}
                     style={exTabFilter!==f.id?{background:thm.btnBg,color:thm.text50,border:`1px solid ${thm.border}`}:{border:'none'}}
@@ -2510,11 +2519,12 @@ export default function App() {
               </div>
             </div>
             {filtered.length === 0 && (
-              <div style={{textAlign:'center',color:thm.text40,fontSize:14,padding:'40px 0'}}>Ничего не найдено</div>
+              <div style={{textAlign:'center',color:thm.text40,fontSize:14,padding:'40px 0'}}>{exTabFilter==='favorites'?'Нет избранных упражнений':'Ничего не найдено'}</div>
             )}
             {filtered.map(name => {
               const img = EXERCISE_IMAGES[name]
               const muscles = EXERCISE_MUSCLES[name] || []
+              const isFav = favorites.includes(name)
               return (
                 <div key={name} className="ex-list-item" style={{background:isDark?'rgba(255,255,255,0.04)':'rgba(0,0,0,0.03)',border:`1px solid ${thm.border}`}}
                   onClick={()=>setExDetailModal(name)}>
@@ -2526,7 +2536,7 @@ export default function App() {
                     <div className="ex-list-name" style={{color:thm.text}}>{name}</div>
                     <div style={{fontSize:12,color:thm.text40,marginTop:2}}>{muscles.slice(0,2).map(m=>MUSCLE_LABELS[m]||m).join(' · ')}</div>
                   </div>
-                  <span style={{color:thm.text30,fontSize:16}}>›</span>
+                  <button onClick={e=>{e.stopPropagation();toggleFav(name)}} style={{background:'none',border:'none',cursor:'pointer',fontSize:20,padding:'4px 6px',flexShrink:0,lineHeight:1,color:'inherit'}}>{isFav?'⭐':'☆'}</button>
                 </div>
               )
             })}
