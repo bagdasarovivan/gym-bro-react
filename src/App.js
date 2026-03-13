@@ -16,15 +16,18 @@ const EXERCISE_TYPE = {
   'Жим лёжа':'heavy','Приседания':'heavy','Становая тяга':'heavy','Румынская тяга':'heavy',
   'Жим над головой':'heavy','Жим ногами':'heavy','Тяга штанги в наклоне':'heavy','Тяга вертикального блока':'heavy',
   'Тяга горизонтального блока':'heavy','Жим гантелей наклон':'light','Жим гантелей лёжа':'light',
-  'Разводка гантелей':'light','Разводка лёжа':'light','Выпады':'light','Сгибание ног':'light',
-  'Разгибание ног':'light','Отжимания':'light','Подтягивания':'light','Скручивания':'light',
+  'Разводка гантелей':'light','Разводка лёжа':'light','Выпады':'light','Сгибание ног':'machine',
+  'Разгибание ног':'machine','Отжимания':'light','Подтягивания':'light','Скручивания':'light',
   'Гиперэкстензия':'light','Планка':'timed',
   'Жим Арнольда':'light','Кроссовер':'light','Болгарские выпады':'light',
   'Молотки':'light','Французский жим':'light','Тяга к лицу':'light',
   'Ягодичный мост':'heavy','Шраги':'heavy','Отжимания на брусьях':'light','Тяга Т-штанги':'heavy',
-  'Подъём гантелей на бицепс':'light','Изолированные сгибания на бицепс':'light',
+  'Изолированные сгибания на бицепс':'light',
   'Разгибание из-за головы на трицепс':'light','Разводка гантелей стоя':'light',
   'Молотки лёжа':'light','Тяга гантели в наклоне':'light',
+  'Фронтальный присед':'heavy','Жим Соца':'heavy','Вертикальный жим':'machine',
+  'Подъём на икры сидя':'light','Жим в тренажёре на грудь':'machine',
+  'Обратная разводка':'light','Махи гирей':'heavy',
 }
 
 const EXERCISE_IMAGES = {
@@ -57,7 +60,6 @@ const EXERCISE_IMAGES = {
   'Гиперэкстензия':'/images/hyperextension.png',
   // Бицепс
   'Подъём штанги на бицепс':'/images/barbell_curl.png',
-  'Подъём гантелей на бицепс':'/images/dumbbell_curl.png',
   'Молотки':'/images/hammer_curl.png',
   'Молотки лёжа':'/images/lying_hammer_curl.png',
   'Изолированные сгибания на бицепс':'/images/concentration_curl.png',
@@ -91,6 +93,14 @@ const EXERCISE_IMAGES = {
 
   // Предплечья
   'Сгибания запястий':'/images/wrist_curl.png',
+  // Новые
+  'Фронтальный присед':'/images/front_squat.png',
+  'Жим Соца':'/images/sots_press.png',
+  'Вертикальный жим':'/images/machine_shoulder_press.png',
+  'Подъём на икры сидя':'/images/seated_calf_raise.png',
+  'Жим в тренажёре на грудь':'/images/machine_chest_press.png',
+  'Обратная разводка':'/images/reverse_pec_deck.png',
+  'Махи гирей':'/images/kettlebell_swing.png',
 }
 
 
@@ -125,7 +135,6 @@ const EXERCISE_MUSCLES = {
   'Гиперэкстензия':                   ['lower_back','glutes','hamstrings'],
   // Бицепс
   'Подъём штанги на бицепс':          ['biceps','forearms'],
-  'Подъём гантелей на бицепс':        ['biceps','forearms'],
   'Молотки':                          ['biceps','forearms'],
   'Молотки лёжа':                     ['biceps','forearms'],
   'Изолированные сгибания на бицепс': ['biceps'],
@@ -158,6 +167,14 @@ const EXERCISE_MUSCLES = {
   'Подъём ног в висе на пресс':       ['abs'],
   // Предплечья
   'Сгибания запястий':                ['forearms'],
+  // Новые
+  'Фронтальный присед':               ['quads','glutes','core','shoulders'],
+  'Жим Соца':                         ['shoulders','triceps','quads','core'],
+  'Вертикальный жим':                 ['shoulders','triceps','traps'],
+  'Подъём на икры сидя':              ['calves'],
+  'Жим в тренажёре на грудь':         ['chest','triceps','shoulders'],
+  'Обратная разводка':                ['shoulders','upper_back'],
+  'Махи гирей':                       ['glutes','hamstrings','lower_back','core','shoulders'],
 }
 
 
@@ -242,7 +259,7 @@ const EN_TO_RU = {
   'Dumbbell Flyes':'Разводка гантелей','Flat Dumbbell Flyes':'Разводка лёжа',
   'Lunges':'Выпады','Leg Curl':'Сгибание ног','Leg Extension':'Разгибание ног',
   'Push Ups':'Отжимания','Pull Ups':'Подтягивания','Crunches':'Скручивания',
-  'Hyperextension':'Гиперэкстензия','Biceps':'Подъём гантелей на бицепс','Triceps':'Разгибание из-за головы на трицепс',
+  'Hyperextension':'Гиперэкстензия','Biceps':'Подъём штанги на бицепс','Triceps':'Разгибание из-за головы на трицепс',
   'Plank':'Планка','Arnold Press':'Жим Арнольда','Cable Fly':'Кроссовер',
   'Bulgarian Split Squat':'Болгарские выпады','Hammer Curl':'Молотки',
   'Skull Crushers':'Французский жим','Face Pull':'Тяга к лицу',
@@ -255,10 +272,10 @@ function ruName(name) { return EN_TO_RU[name] || name }
 const LEGACY_NAMES = {
   'Тяга вниз':                      'Тяга вертикального блока',
   'Тяга сидя':                      'Тяга горизонтального блока',
-  'Бицепс':                         'Подъём гантелей на бицепс',
+  'Бицепс':                         'Подъём штанги на бицепс',
   'Трицепс':                        'Разгибание из-за головы на трицепс',
   'Трицепс гантель':                'Разгибание из-за головы на трицепс',
-  'Подъём гантелей стоя':           'Подъём гантелей на бицепс',
+  'Подъём гантелей стоя':           'Подъём штанги на бицепс',
   'Подъём штанги стоя':             'Подъём штанги на бицепс',
   'Изолированные сгибания':         'Изолированные сгибания на бицепс',
   'Разгибания из-за головы':        'Разгибание из-за головы на трицепс',
@@ -461,11 +478,6 @@ const EXERCISE_INFO = {
     benefit: 'Базовое упражнение для бицепса. Позволяет работать с большими весами для максимальной массы.',
     tips: 'Локти прижаты к телу. Не раскачивать корпус. Контролировать опускание.',
   },
-  'Подъём гантелей на бицепс': {
-    desc: 'Стоя с гантелями. Попеременно или одновременно сгибать руки, разворачивая ладони вверх.',
-    benefit: 'Изолирует каждую руку. Можно работать с супинацией — это сильнее сокращает бицепс.',
-    tips: 'Поворачивать ладонь в верхней части движения. Локти строго по бокам туловища.',
-  },
   'Молотки': {
     desc: 'Стоя с гантелями хватом «молоток» (ладони смотрят друг на друга). Сгибать руки попеременно.',
     benefit: 'Развивает плечелучевую мышцу и длинную головку бицепса. Добавляет объём и толщину рукам.',
@@ -596,34 +608,74 @@ const EXERCISE_INFO = {
     benefit: 'Развивает мышцы предплечья и силу хвата. Важно для прогресса в базовых упражнениях.',
     tips: 'Предплечья зафиксированы. Движение только в запястье. Полная амплитуда без боли.',
   },
+  'Фронтальный присед': {
+    desc: 'Штанга лежит на передней части плеч. Приседать вниз, сохраняя корпус максимально вертикальным.',
+    benefit: 'Больше нагружает квадрицепс и кор по сравнению с классическими приседаниями. Требует хорошей гибкости.',
+    tips: 'Локти держать высоко — это не даёт штанге скатиться. Корпус вертикален, не наклоняться вперёд.',
+  },
+  'Жим Соца': {
+    desc: 'Выполнять жим штанги над головой находясь в нижней точке приседания.',
+    benefit: 'Развивает подвижность, силу плеч и стабильность корпуса одновременно. Сложное техническое упражнение.',
+    tips: 'Начинать с очень лёгкого веса — упражнение технически сложное. Локти направлены вперёд.',
+  },
+  'Вертикальный жим': {
+    desc: 'Жим в тренажёре вертикально вверх сидя. Спина прижата к спинке.',
+    benefit: 'Безопасная альтернатива жиму над головой. Подходит при проблемах с балансом или нижней частью спины.',
+    tips: 'Не блокировать локти в верхней точке полностью. Спина плотно прижата к спинке тренажёра.',
+  },
+  'Подъём на икры сидя': {
+    desc: 'Сидя в тренажёре поднимать пятки вверх, сокращая икроножные мышцы.',
+    benefit: 'Изолированно прорабатывает камбаловидную мышцу голени. Важно для полного развития икр.',
+    tips: 'Полная амплитуда — максимально опускать пятки вниз и поднимать вверх. Пауза в верхней точке.',
+  },
+  'Жим в тренажёре на грудь': {
+    desc: 'Жим в тренажёре горизонтально вперёд сидя. Спина прижата к спинке.',
+    benefit: 'Безопасная альтернатива жиму лёжа. Подходит для новичков и для добивки после базовых упражнений.',
+    tips: 'Не блокировать локти в крайней точке. Спина прижата к спинке, не отрывать.',
+  },
+  'Обратная разводка': {
+    desc: 'В тренажёре Pec Deck разводить руки назад, прорабатывая задние дельты и верхнюю спину.',
+    benefit: 'Отлично изолирует задние дельты. Улучшает осанку и балансирует нагрузку после жимовых упражнений.',
+    tips: 'Работать с умеренным весом. Не использовать инерцию — движение плавное и контролируемое.',
+  },
+  'Махи гирей': {
+    desc: 'Стоя, раскачивать гирю между ног и вперёд до уровня плеч за счёт взрывного движения бёдрами.',
+    benefit: 'Мощное функциональное упражнение. Развивает взрывную силу, кардио-выносливость и заднюю цепь мышц.',
+    tips: 'Движение от бёдер, а не от рук и спины. Спина прямая. В верхней точке напрягать ягодицы и пресс.',
+  },
 }
 
-const MUSCLE_FILTERS = [
+// Row 1: Все Грудь Спина Ноги Плечи  |  Row 2: Бицепс Трицепс Пресс Ягодицы Икры
+const MUSCLE_FILTERS_ROW1 = [
   { id:'all',      label:'Все' },
   { id:'chest',    label:'Грудь' },
   { id:'back',     label:'Спина' },
   { id:'legs',     label:'Ноги' },
   { id:'shoulders',label:'Плечи' },
+]
+const MUSCLE_FILTERS_ROW2 = [
   { id:'biceps',   label:'Бицепс' },
   { id:'triceps',  label:'Трицепс' },
   { id:'abs',      label:'Пресс' },
   { id:'glutes',   label:'Ягодицы' },
+  { id:'calves',   label:'Икры' },
 ]
 const MUSCLE_FILTER_MAP = {
   chest:    ['chest'],
   back:     ['lats','upper_back','lower_back'],
-  legs:     ['quads','hamstrings'],
-  shoulders:['shoulders'],
+  legs:     ['quads','hamstrings','calves'],
+  shoulders:['shoulders','traps'],
   biceps:   ['biceps'],
   triceps:  ['triceps'],
-  abs:      ['abs'],
+  abs:      ['abs','core'],
   glutes:   ['glutes'],
+  calves:   ['calves'],
 }
 const MUSCLE_LABELS = {
   chest:'Грудь', triceps:'Трицепс', shoulders:'Плечи', lats:'Широчайшие',
   upper_back:'Верх спины', lower_back:'Поясница', biceps:'Бицепс',
   quads:'Квадрицепс', hamstrings:'Бицепс бедра', glutes:'Ягодицы',
-  abs:'Пресс', traps:'Трапеции', forearms:'Предплечья',
+  abs:'Пресс', core:'Кор', traps:'Трапеции', forearms:'Предплечья', calves:'Икры',
 }
 
 function buildCopyText(date, workouts) {
@@ -833,8 +885,8 @@ input[type=number]::-webkit-inner-spin-button{-webkit-appearance:none}
 .settings-signout-btn:active{background:rgba(255,59,48,0.2)}
 .ex-tab-search{width:100%;background:#2c2c2e;border:none;border-radius:14px;padding:12px 16px 12px 40px;color:white;font-size:15px;outline:none;margin-bottom:14px}
 .ex-tab-search::placeholder{color:rgba(255,255,255,0.3)}
-.muscle-filters{display:flex;gap:8px;overflow-x:auto;padding-bottom:10px;margin-bottom:14px;scrollbar-width:none}
-.muscle-filters::-webkit-scrollbar{display:none}
+.muscle-filters{display:flex;flex-direction:column;gap:8px;margin-bottom:14px}
+.muscle-filters-row{display:flex;gap:8px;flex-wrap:nowrap}
 .muscle-chip{flex-shrink:0;padding:6px 14px;border-radius:99px;border:none;cursor:pointer;font-size:13px;font-weight:600;transition:all 0.15s;background:#2c2c2e;color:rgba(255,255,255,0.5)}
 .muscle-chip.active{background:#30D158;color:#000}
 .ex-list-item{display:flex;align-items:center;gap:12px;padding:11px 14px;border-radius:14px;cursor:pointer;transition:background 0.12s;margin-bottom:4px}
@@ -1895,19 +1947,20 @@ export default function App() {
         <div style={{display:'flex',alignItems:'center',gap:8}}>
           <button onClick={() => { setTimerSecs(timerSecs===null?timerDuration:null); setTimerPaused(true) }} style={{
             background:thm.btnBg,border:`1px solid ${thm.btnBorder}`,
-            borderRadius:99,padding:'6px 12px',cursor:'pointer',
-            color:thm.text70,fontSize:18,
-            fontWeight:700,display:'flex',alignItems:'center'
-          }}>
-            {'⏱'}
-          </button>
-          {streak >= 1 && <button onClick={openStreakModal} className="streak-badge" style={{cursor:'pointer',border:'none'}}>{streak}🔥</button>}
+            borderRadius:10,padding:'0',width:36,height:36,cursor:'pointer',
+            color:thm.text70,fontSize:18,display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0
+          }}>⏱</button>
+          {streak >= 1 && <button onClick={openStreakModal} style={{
+            background:'rgba(255,100,0,0.12)',border:'1px solid rgba(255,100,0,0.25)',
+            borderRadius:10,padding:'0 10px',height:36,cursor:'pointer',
+            fontSize:13,fontWeight:700,color:'#FF6400',display:'flex',alignItems:'center',flexShrink:0,whiteSpace:'nowrap'
+          }}>{streak}🔥</button>}
           <button onClick={() => setTab(t => t === 'settings' ? 'add' : 'settings')} style={{
             background: tab==='settings' ? 'rgba(48,209,88,0.15)' : thm.btnBg,
             border: tab==='settings' ? '1px solid rgba(48,209,88,0.3)' : `1px solid ${thm.btnBorder}`,
-            borderRadius:99,padding:'5px 11px',cursor:'pointer',
+            borderRadius:10,padding:'0',width:36,height:36,cursor:'pointer',
             color: tab==='settings' ? '#30D158' : thm.text50,fontSize:18,
-            display:'flex',alignItems:'center',lineHeight:1
+            display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0
           }}>⚙️</button>
         </div>
       </div>
@@ -2404,11 +2457,20 @@ export default function App() {
                 onChange={e=>setExTabSearch(e.target.value)} style={{color:thm.text,background:thm.input}}/>
             </div>
             <div className="muscle-filters">
-              {MUSCLE_FILTERS.map(f => (
-                <button key={f.id} className={`muscle-chip${exTabFilter===f.id?' active':''}`}
-                  style={exTabFilter!==f.id?{background:thm.btnBg,color:thm.text50,border:`1px solid ${thm.border}`}:{border:'none'}}
-                  onClick={()=>setExTabFilter(f.id)}>{f.label}</button>
-              ))}
+              <div className="muscle-filters-row">
+                {MUSCLE_FILTERS_ROW1.map(f => (
+                  <button key={f.id} className={`muscle-chip${exTabFilter===f.id?' active':''}`}
+                    style={exTabFilter!==f.id?{background:thm.btnBg,color:thm.text50,border:`1px solid ${thm.border}`}:{border:'none'}}
+                    onClick={()=>setExTabFilter(f.id)}>{f.label}</button>
+                ))}
+              </div>
+              <div className="muscle-filters-row">
+                {MUSCLE_FILTERS_ROW2.map(f => (
+                  <button key={f.id} className={`muscle-chip${exTabFilter===f.id?' active':''}`}
+                    style={exTabFilter!==f.id?{background:thm.btnBg,color:thm.text50,border:`1px solid ${thm.border}`}:{border:'none'}}
+                    onClick={()=>setExTabFilter(f.id)}>{f.label}</button>
+                ))}
+              </div>
             </div>
             {filtered.length === 0 && (
               <div style={{textAlign:'center',color:thm.text40,fontSize:14,padding:'40px 0'}}>Ничего не найдено</div>
