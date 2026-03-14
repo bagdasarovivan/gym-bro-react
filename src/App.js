@@ -2433,10 +2433,10 @@ export default function App() {
         </div>
         <div style={{display:'flex',alignItems:'center',gap:8}}>
           <button onClick={() => { const isOpen=timerSecs!==null||stopwatchRunning||timerMode==='stopwatch'; if(isOpen){setTimerSecs(null);setTimerPaused(false);setStopwatchRunning(false);setStopwatchSecs(0);setTimerMode('countdown')}else{setTimerSecs(timerDuration);setTimerPaused(true)} }} style={{
-            background: (timerSecs!==null||stopwatchRunning||timerMode==='stopwatch') ? 'rgba(48,209,88,0.15)' : thm.btnBg,
-            border: (timerSecs!==null||stopwatchRunning||timerMode==='stopwatch') ? '1px solid rgba(48,209,88,0.3)' : `1px solid ${thm.btnBorder}`,
+            background: (timerSecs!==null||stopwatchRunning||timerMode==='stopwatch') ? 'rgba(48,209,88,0.08)' : thm.btnBg,
+            border: (timerSecs!==null||stopwatchRunning||timerMode==='stopwatch') ? '1.5px solid #30D158' : `1px solid ${thm.btnBorder}`,
             borderRadius:10,padding:'0',width:36,height:36,cursor:'pointer',
-            color: (timerSecs!==null||stopwatchRunning||timerMode==='stopwatch') ? '#30D158' : thm.text70,
+            color: (timerSecs!==null||stopwatchRunning||timerMode==='stopwatch') ? 'rgba(255,255,255,0.8)' : thm.text70,
             fontSize:18,display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0
           }}>⏱</button>
           {streak >= 1 && <button onClick={openStreakModal} style={{
@@ -2445,10 +2445,10 @@ export default function App() {
             fontSize:13,fontWeight:700,color:'#FF6400',display:'flex',alignItems:'center',flexShrink:0,whiteSpace:'nowrap'
           }}>{streak}🔥</button>}
           <button onClick={() => setTab(t => t === 'settings' ? 'add' : 'settings')} style={{
-            background: tab==='settings' ? 'rgba(48,209,88,0.15)' : thm.btnBg,
-            border: tab==='settings' ? '1px solid rgba(48,209,88,0.3)' : `1px solid ${thm.btnBorder}`,
+            background: tab==='settings' ? 'rgba(48,209,88,0.08)' : thm.btnBg,
+            border: tab==='settings' ? '1.5px solid #30D158' : `1px solid ${thm.btnBorder}`,
             borderRadius:10,padding:'0',width:36,height:36,cursor:'pointer',
-            color: tab==='settings' ? '#30D158' : thm.text50,fontSize:18,
+            color: tab==='settings' ? 'rgba(255,255,255,0.8)' : thm.text50,fontSize:18,
             display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0
           }}>⚙️</button>
         </div>
