@@ -1,6 +1,7 @@
 /* eslint-disable no-unused-vars */
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { supabase } from './supabase'
+import { jsPDF } from 'jspdf'
 
 const HEAVY_WEIGHTS = Array.from({ length: 61 }, (_, i) => i * 5)
 const LIGHT_WEIGHTS = [...new Set([
@@ -1128,31 +1129,23 @@ function LineChart({ data, period, setPeriod, unit = 'кг' }) {
 function MuscleMap({ muscleScores, period = 7 }) {
   const [hovered, setHovered] = useState(null)
 
-  // Per-muscle recommended sessions per week (×4 for 30-day period)
-  const RECOMMENDED_WEEKLY = {
-    chest: 2, shoulders: 3, biceps: 3, triceps: 3, forearms: 3,
-    abs: 3, quads: 2, calves: 3,
-    traps: 2, upper_back: 2, lats: 2, lower_back: 2,
-    glutes: 2, hamstrings: 2,
-  }
-  const getRecommended = (muscle) => {
-    const weekly = RECOMMENDED_WEEKLY[muscle] ?? 2
-    return period === 7 ? weekly : weekly * 4
-  }
-  const getPct = (count, muscle) => {
-    if (!count) return 0
-    return Math.round((count / getRecommended(muscle)) * 100)
-  }
-  const getLevel = (count, muscle) => {
-    const pct = getPct(count, muscle)
-    if (pct === 0)   return 'none'
-    if (pct < 50)    return 'low'
-    if (pct < 90)    return 'normal'
-    if (pct <= 110)  return 'excellent'
-    return 'overload'
+  const getLevel = (count) => {
+    if (!count) return 'none'
+    if (period === 7) {
+      if (count <= 1)  return 'low'
+      if (count <= 3)  return 'normal'
+      if (count <= 5)  return 'excellent'
+      return 'overload'
+    } else {
+      // 30 days
+      if (count <= 3)  return 'low'
+      if (count <= 8)  return 'normal'
+      if (count <= 14) return 'excellent'
+      return 'overload'
+    }
   }
   const getColor = (muscle) => {
-    const level = getLevel(muscleScores[muscle] || 0, muscle)
+    const level = getLevel(muscleScores[muscle] || 0)
     if (level === 'none')      return 'rgba(255,255,255,0)'
     if (level === 'low')       return 'rgba(255,214,10,0.45)'
     if (level === 'normal')    return 'rgba(48,200,94,0.5)'
@@ -1160,7 +1153,7 @@ function MuscleMap({ muscleScores, period = 7 }) {
     return 'rgba(255,69,58,0.6)' // overload
   }
   const getStroke = (muscle) => {
-    const level = getLevel(muscleScores[muscle] || 0, muscle)
+    const level = getLevel(muscleScores[muscle] || 0)
     if (level === 'none')      return hovered === muscle ? 'rgba(255,255,255,0.4)' : 'rgba(255,255,255,0)'
     if (level === 'low')       return 'rgba(255,214,10,0.9)'
     if (level === 'normal')    return 'rgba(48,200,94,1)'
@@ -1213,8 +1206,8 @@ function MuscleMap({ muscleScores, period = 7 }) {
   }
 
   const hoveredCount = muscleScores[hovered] || 0
-  const hoveredLevel = getLevel(hoveredCount, hovered)
-  const hoveredPct = getPct(hoveredCount, hovered)
+  const hoveredLevel = getLevel(hoveredCount)
+  const hoveredLevelLabel = { none: 'не тренируется', low: 'мало', normal: 'норма', excellent: 'отлично', overload: 'перегрузка' }[hoveredLevel] || ''
   const scoreColor = hoveredLevel === 'overload' ? '#FF453A' : hoveredLevel === 'excellent' ? '#30D158' : hoveredLevel === 'normal' ? '#30C85E' : hoveredLevel === 'low' ? '#FFD60A' : 'rgba(255,255,255,0.3)'
 
   const handleZone = (muscle) => ({
@@ -1240,7 +1233,7 @@ function MuscleMap({ muscleScores, period = 7 }) {
               {muscleNames[hovered] || muscleNames[hovered.replace('_back','')]}
             </span>
             <span style={{fontSize:12,opacity:0.5}}>
-              {hoveredCount > 0 ? `${hoveredPct}%` : 'не тренируется'}
+              {hoveredCount > 0 ? `${hoveredCount} трен. · ${hoveredLevelLabel}` : hoveredLevelLabel}
             </span>
           </div>
         ) : (
@@ -1314,8 +1307,15 @@ function DropdownPicker({ options, value, onChange, unit = '', label = '', label
     return () => { document.removeEventListener('mousedown', close); document.removeEventListener('touchstart', close) }
   }, [])
 
+  useEffect(() => {
+    if (!open) return
+    const handleScroll = () => setOpen(false)
+    window.addEventListener('scroll', handleScroll, true)
+    return () => window.removeEventListener('scroll', handleScroll, true)
+  }, [open])
+
   return (
-    <div className="dpicker-wrap" ref={ref}>
+    <div className="dpicker-wrap" ref={ref} style={{position:'relative', zIndex: open ? 1000 : undefined}}>
       {label && <div className="dpicker-label">{label}</div>}
       <button className={`dpicker-btn${open?' open':''}`} onClick={() => setOpen(o => !o)}>
         <span className="dpicker-val">{labelFn ? (value ? labelFn(value) : '') : value}{!labelFn && unit && <span className="dpicker-unit"> {unit}</span>}</span>
@@ -1502,10 +1502,167 @@ export default function App() {
       query = query.gte('workout_date', from)
     }
     const { data } = await query
-    const blob = new Blob([JSON.stringify(data || [], null, 2)], { type: 'application/json' })
-    const url = URL.createObjectURL(blob)
-    const a = document.createElement('a'); a.href = url; a.download = `gym-bro-export-${period}-${new Date().toISOString().split('T')[0]}.json`; a.click()
-    URL.revokeObjectURL(url)
+    const rows = data || []
+
+    // Group by date
+    const byDate = {}
+    rows.forEach(w => {
+      if (!byDate[w.workout_date]) byDate[w.workout_date] = []
+      byDate[w.workout_date].push(w)
+    })
+    const sortedDates = Object.keys(byDate).sort((a,b) => b.localeCompare(a))
+
+    const now = new Date()
+    const periodLabel = period === 'all' ? 'Все время'
+      : period === '7d' ? 'Последние 7 дней'
+      : period === '30d' ? 'Последние 30 дней'
+      : period === '3m' ? 'Последние 3 месяца'
+      : period === '6m' ? 'Последние 6 месяцев'
+      : 'Последний год'
+    const monthName = now.toLocaleDateString('ru', { month: 'long', year: 'numeric' })
+    const genDate = now.toLocaleDateString('ru', { day: 'numeric', month: 'long', year: 'numeric' })
+
+    // Stats
+    const thisM = now.toISOString().slice(0,7)
+    const workoutDatesAll = [...new Set(rows.map(r => r.workout_date))]
+    const workoutDatesMonth = workoutDatesAll.filter(d => d.startsWith(thisM))
+    const totalKg = rows.reduce((sum, w) => sum + (w.sets||[]).reduce((s2, s) => s2 + (s.weight||0)*(s.reps||1), 0), 0)
+    const totalKgK = totalKg >= 1000 ? `${(totalKg/1000).toFixed(1)}K` : String(Math.round(totalKg))
+
+    const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' })
+    const W = 210, H = 297
+    const MARGIN = 18
+    const GREEN = [48, 209, 88]
+    const BG = [26, 26, 26]
+    const TEXT = [230, 230, 230]
+    const MUTED = [120, 120, 120]
+    const LINE = [55, 55, 55]
+
+    // Background
+    doc.setFillColor(...BG)
+    doc.rect(0, 0, W, H, 'F')
+
+    let y = MARGIN + 8
+
+    // Header
+    doc.setFont('helvetica', 'bold')
+    doc.setFontSize(22)
+    doc.setTextColor(...GREEN)
+    doc.text('GYM BRO', MARGIN, y)
+    y += 7
+    doc.setFontSize(13)
+    doc.setTextColor(...TEXT)
+    doc.text(`Отчёт за ${periodLabel}`, MARGIN, y)
+    y += 5
+    doc.setFontSize(9)
+    doc.setTextColor(...MUTED)
+    doc.text(`Сгенерировано: ${genDate}`, MARGIN, y)
+    y += 8
+
+    // Divider
+    doc.setDrawColor(...LINE)
+    doc.setLineWidth(0.3)
+    doc.line(MARGIN, y, W - MARGIN, y)
+    y += 8
+
+    // Stats block
+    doc.setFont('helvetica', 'bold')
+    doc.setFontSize(10)
+    doc.setTextColor(...GREEN)
+    doc.text('ОБЩАЯ СТАТИСТИКА', MARGIN, y)
+    y += 6
+    doc.setFont('helvetica', 'normal')
+    doc.setFontSize(10)
+    doc.setTextColor(...TEXT)
+    doc.text(`Тренировок за месяц: ${workoutDatesMonth.length}`, MARGIN, y); y += 5
+    doc.text(`Всего тренировок: ${workoutDatesAll.length}`, MARGIN, y); y += 5
+    doc.text(`Поднято за период: ${totalKgK} кг`, MARGIN, y); y += 8
+
+    // Divider
+    doc.setDrawColor(...LINE)
+    doc.line(MARGIN, y, W - MARGIN, y)
+    y += 8
+
+    // Workouts
+    doc.setFont('helvetica', 'bold')
+    doc.setFontSize(10)
+    doc.setTextColor(...GREEN)
+    doc.text('ТРЕНИРОВКИ', MARGIN, y)
+    y += 7
+
+    const pageH = H - 18 // bottom margin
+    const addPage = () => {
+      doc.addPage()
+      doc.setFillColor(...BG)
+      doc.rect(0, 0, W, H, 'F')
+      y = MARGIN
+    }
+
+    for (const date of sortedDates) {
+      if (y > pageH - 20) addPage()
+
+      // Date header
+      doc.setFont('helvetica', 'bold')
+      doc.setFontSize(11)
+      doc.setTextColor(...GREEN)
+      const dateStr = new Date(date + 'T12:00:00').toLocaleDateString('ru', { day: 'numeric', month: 'long', year: 'numeric' })
+      doc.text(dateStr, MARGIN, y)
+      y += 5
+
+      // Divider under date
+      doc.setDrawColor(...LINE)
+      doc.line(MARGIN, y, W - MARGIN, y)
+      y += 4
+
+      const exGroups = {}
+      byDate[date].forEach(w => {
+        const name = w.exercises?.name || ''
+        if (!exGroups[name]) exGroups[name] = []
+        exGroups[name].push(...(w.sets || []))
+      })
+
+      for (const [exName, sets] of Object.entries(exGroups)) {
+        if (y > pageH - 10) addPage()
+        const validSets = sets.filter(s => s.weight > 0 || s.reps > 0 || s.time_sec > 0)
+        if (!validSets.length) continue
+
+        doc.setFont('helvetica', 'normal')
+        doc.setFontSize(10)
+        doc.setTextColor(...TEXT)
+
+        const setsCount = validSets.length
+        const weights = [...new Set(validSets.map(s => s.weight).filter(Boolean))]
+        const reps = [...new Set(validSets.map(s => s.reps).filter(Boolean))]
+        const weightStr = weights.length ? weights.join('/') + ' кг' : ''
+        const repsStr = reps.length ? `${setsCount} × ${reps.join('/')}` : `${setsCount} подх.`
+        const setLine = weightStr ? `${repsStr}   ${weightStr}` : repsStr
+
+        const maxNameW = 100
+        const nameClipped = doc.getTextWidth(exName) > maxNameW
+          ? exName.substring(0, Math.floor(exName.length * maxNameW / doc.getTextWidth(exName))) + '…'
+          : exName
+
+        doc.text(`  ${nameClipped}`, MARGIN, y)
+        doc.setTextColor(...MUTED)
+        doc.text(setLine, MARGIN + 105, y, { align: 'left' })
+        doc.setTextColor(...TEXT)
+        y += 5.5
+      }
+      y += 3
+    }
+
+    // Footer
+    if (y > pageH - 12) addPage()
+    doc.setDrawColor(...LINE)
+    doc.line(MARGIN, pageH - 10, W - MARGIN, pageH - 10)
+    doc.setFont('helvetica', 'italic')
+    doc.setFontSize(8)
+    doc.setTextColor(...MUTED)
+    doc.text('Gym BRO — Твой личный тренировочный журнал', W / 2, pageH - 5, { align: 'center' })
+
+    const fileMonth = now.toLocaleDateString('ru', { month: 'long' }).replace(' ', '_')
+    const fileYear = now.getFullYear()
+    doc.save(`gymBRO_${fileMonth}_${fileYear}.pdf`)
   }
 
   const clearHistory = async () => {
@@ -2104,7 +2261,7 @@ export default function App() {
                 const exType2 = EXERCISE_TYPE[ex.name] || 'light'
                 const wOpts = getWeightOptions(ex.name)
                 return (
-                  <div key={exIdx} style={{background:thm.card2,borderRadius:16,border:`1px solid ${thm.border}`,marginBottom:10,overflow:'hidden'}}>
+                  <div key={exIdx} style={{background:thm.card2,borderRadius:16,border:`1px solid ${thm.border}`,marginBottom:10}}>
                     <button onClick={()=>setWorkoutExercises(prev=>prev.map((e,i)=>i===exIdx?{...e,open:!e.open}:e))}
                       style={{width:'100%',background:'none',border:'none',padding:'12px 14px',display:'flex',alignItems:'center',gap:10,cursor:'pointer',textAlign:'left'}}>
                       {getExImage(ex.name)
@@ -2167,7 +2324,6 @@ export default function App() {
               })}
               <button className="ex-selector-btn" onClick={()=>setShowExModal(true)} style={{marginBottom:16}}>
                 <span style={{opacity:0.55}}>➕ Добавить упражнение...</span>
-                <span style={{opacity:0.4,fontSize:20}}>⏄</span>
               </button>
               {workoutExercises.length > 0 && (
                 <button className={`save-btn${saved?' done':''}`} onClick={saveWorkout} disabled={saved}>
@@ -2256,6 +2412,8 @@ export default function App() {
         const daysAgoDate = new Date(Date.now() - musclePeriod*24*60*60*1000).toISOString().split('T')[0]
         const recentHistory = history.filter(w => w.workout_date >= daysAgoDate)
         // Count unique training days per muscle (not exercise occurrences)
+        // abs/lower_back/core are secondary muscles — only count when they are the PRIMARY target
+        const SECONDARY_ONLY = new Set(['abs', 'lower_back', 'core'])
         const muscleDates = {}
         recentHistory.forEach(w => {
           const wName = normalizeName(w.exercises?.name)
@@ -2267,7 +2425,9 @@ export default function App() {
           } else {
             muscles = EXERCISE_MUSCLES[wName] || []
           }
-          muscles.forEach(m => {
+          muscles.forEach((m, idx) => {
+            // For abs/lower_back/core only count if they are the primary muscle (first in list)
+            if (SECONDARY_ONLY.has(m) && idx > 0) return
             if (!muscleDates[m]) muscleDates[m] = new Set()
             muscleDates[m].add(w.workout_date)
           })
