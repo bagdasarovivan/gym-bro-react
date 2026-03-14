@@ -2658,8 +2658,6 @@ export default function App() {
                         {(() => {
                           const workingWeight = ex.sets[0]?.weight || 0
                           const warmups = exType2 === 'timed' ? [] : getWarmupSets(ex.name, workingWeight)
-                          const doneCount = ex.sets.filter(s => s.done).length
-                          const totalSets = ex.sets.length
                           return (
                             <>
                               {warmups.length > 0 && (
@@ -2670,36 +2668,22 @@ export default function App() {
                                   ))}
                                 </div>
                               )}
-                              <div style={{marginBottom:8}}>
-                                <div style={{fontSize:11,color:'rgba(255,255,255,0.35)',textTransform:'uppercase',letterSpacing:'0.5px',marginBottom:6}}>Рабочие подходы</div>
-                                {totalSets > 0 && (
-                                  <div style={{height:4,borderRadius:99,background:'rgba(255,255,255,0.1)',marginBottom:10,overflow:'hidden'}}>
-                                    <div style={{height:'100%',borderRadius:99,background:'#30D158',width:`${(doneCount/totalSets)*100}%`,transition:'width 0.3s'}}/>
-                                  </div>
-                                )}
-                                {ex.sets.map((s,si) => (
-                                  <div key={si} style={{display:'flex',alignItems:'center',gap:10,marginBottom:8,padding:'8px 10px',borderRadius:12,background:s.done?'rgba(48,209,88,0.1)':'rgba(255,255,255,0.04)',transition:'background 0.2s'}}>
-                                    <span style={{fontSize:13,color:'rgba(255,255,255,0.4)',minWidth:18,fontWeight:600}}>{si+1}</span>
-                                    {exType2 === 'timed' ? (
-                                      <span style={{flex:1,fontSize:15,fontWeight:600,color:s.done?'#30D158':'rgba(255,255,255,0.85)'}}>
-                                        {s.weight > 0 ? `${s.weight} сек` : '— сек'}
-                                      </span>
-                                    ) : (
-                                      <span style={{flex:1,fontSize:15,fontWeight:600,color:s.done?'#30D158':'rgba(255,255,255,0.85)'}}>
-                                        {s.weight > 0 ? `${kgToDisplay(s.weight)} ${settings.units==='lbs'?'lbs':wUnit}` : '— кг'} × {s.reps > 0 ? s.reps : '—'}
-                                      </span>
-                                    )}
-                                    <button onClick={()=>setEditSetModal({exIdx,setIdx:si,weight:s.weight,reps:s.reps,isTimed:exType2==='timed'})}
-                                      style={{background:'none',border:'none',fontSize:16,cursor:'pointer',padding:'2px 6px',opacity:0.55}}>✏️</button>
-                                    <button onClick={()=>setWorkoutExercises(prev=>prev.map((e,i)=>i!==exIdx?e:{...e,sets:e.sets.map((ss,j)=>j!==si?ss:{...ss,done:!ss.done})}))}
-                                      style={{width:28,height:28,borderRadius:99,border:`2px solid ${s.done?'#30D158':'rgba(255,255,255,0.25)'}`,background:s.done?'#30D158':'transparent',display:'flex',alignItems:'center',justifyContent:'center',cursor:'pointer',flexShrink:0,transition:'all 0.2s'}}>
-                                      {s.done && <span style={{color:'#fff',fontSize:14,fontWeight:700}}>✓</span>}
-                                    </button>
-                                  </div>
-                                ))}
-                              </div>
+                              {ex.sets.map((s,si) => (
+                                <div key={si} className="set-row">
+                                  <span className="set-num">{si+1}</span>
+                                  {exType2 === 'timed' ? (
+                                    <DropdownPicker options={TIME_OPTIONS} value={s.weight} onChange={v=>setWorkoutExercises(prev=>prev.map((e,i)=>i!==exIdx?e:{...e,sets:e.sets.map((ss,j)=>j!==si?ss:{...ss,weight:v})}))} unit="s" label={`Подход ${si+1}`}/>
+                                  ) : (
+                                    <>
+                                      <DropdownPicker options={wOpts} value={s.weight} onChange={v=>setWorkoutExercises(prev=>prev.map((e,i)=>i!==exIdx?e:{...e,sets:e.sets.map((ss,j)=>j!==si?ss:{...ss,weight:v})}))} unit={settings.units==='lbs'?'':wUnit} labelFn={settings.units==='lbs'?(v=>`${kgToDisplay(v)} lbs`):null} label={`Подход ${si+1} — Вес`}/>
+                                      <span className="set-sep">×</span>
+                                      <DropdownPicker options={REPS_OPTIONS} value={s.reps} onChange={v=>setWorkoutExercises(prev=>prev.map((e,i)=>i!==exIdx?e:{...e,sets:e.sets.map((ss,j)=>j!==si?ss:{...ss,reps:v})}))} unit="повт" label={`Подход ${si+1} — Повт`}/>
+                                    </>
+                                  )}
+                                </div>
+                              ))}
                               <div className="set-btns" style={{marginTop:4}}>
-                                <button className="set-btn" onClick={()=>setWorkoutExercises(prev=>prev.map((e,i)=>i!==exIdx?e:{...e,sets:[...e.sets,{weight:e.sets[e.sets.length-1]?.weight||0,reps:e.sets[e.sets.length-1]?.reps||0,done:false}]}))}>➕ Подход</button>
+                                <button className="set-btn" onClick={()=>setWorkoutExercises(prev=>prev.map((e,i)=>i!==exIdx?e:{...e,sets:[...e.sets,{weight:e.sets[e.sets.length-1]?.weight||0,reps:e.sets[e.sets.length-1]?.reps||0}]}))}>➕ Подход</button>
                                 <button className="set-btn" onClick={()=>setWorkoutExercises(prev=>prev.map((e,i)=>i!==exIdx?e:{...e,sets:e.sets.length>1?e.sets.slice(0,-1):e.sets}))} style={{opacity:ex.sets.length<=1?0.35:1}}>➖ Убрать</button>
                               </div>
                             </>
@@ -2712,7 +2696,7 @@ export default function App() {
               })}
               {/* Plan cards */}
               {activePlans.length === 0 ? (
-                <button onClick={()=>setShowPlanModal(true)} style={{width:'100%',marginBottom:12,padding:'12px 16px',borderRadius:14,border:'1px dashed rgba(255,255,255,0.2)',background:'rgba(255,255,255,0.04)',color:'rgba(255,255,255,0.55)',fontSize:14,fontWeight:600,cursor:'pointer',display:'flex',alignItems:'center',gap:8}}>
+                <button onClick={()=>setShowPlanModal(true)} style={{width:'100%',marginBottom:12,padding:'12px 16px',borderRadius:14,border:'1px solid rgba(255,255,255,0.08)',background:'rgba(255,255,255,0.04)',color:'rgba(255,255,255,0.55)',fontSize:14,fontWeight:600,cursor:'pointer',display:'flex',alignItems:'center',gap:8}}>
                   📋 Выбрать план тренировок
                 </button>
               ) : (
@@ -2732,11 +2716,6 @@ export default function App() {
                       </div>
                     )
                   })}
-                  {activePlans.length < 2 && (
-                    <button onClick={()=>setShowPlanModal(true)} style={{width:'100%',padding:'8px 14px',borderRadius:12,border:'1px dashed rgba(255,255,255,0.15)',background:'transparent',color:'rgba(255,255,255,0.4)',fontSize:13,fontWeight:600,cursor:'pointer'}}>
-                      + Добавить второй план
-                    </button>
-                  )}
                   <button onClick={()=>setShowPlanModal(true)} style={{width:'100%',marginTop:6,padding:'8px 14px',borderRadius:12,border:'none',background:'transparent',color:'rgba(255,255,255,0.35)',fontSize:12,cursor:'pointer'}}>
                     🔄 Изменить планы
                   </button>
@@ -3416,8 +3395,8 @@ export default function App() {
 
               {/* Plan selection modal */}
               {showPlanModal && (
-                <div style={{position:'fixed',inset:0,background:'rgba(0,0,0,0.8)',zIndex:1000,display:'flex',alignItems:'flex-end',justifyContent:'center'}} onClick={()=>setShowPlanModal(false)}>
-                  <div style={{background:'#1C1C1E',borderRadius:'20px 20px 0 0',padding:24,width:'100%',maxWidth:480,paddingBottom:40}} onClick={e=>e.stopPropagation()}>
+                <div style={{position:'fixed',inset:0,background:'rgba(0,0,0,0.8)',zIndex:1000,display:'flex',alignItems:'center',justifyContent:'center',padding:20}} onClick={()=>setShowPlanModal(false)}>
+                  <div style={{background:'#1C1C1E',borderRadius:24,padding:24,width:'100%',maxWidth:400}} onClick={e=>e.stopPropagation()}>
                     <div style={{fontSize:19,fontWeight:700,color:'rgba(255,255,255,0.9)',marginBottom:6}}>Выбери план тренировок</div>
                     <div style={{fontSize:13,color:'rgba(255,255,255,0.4)',marginBottom:20}}>Gym BRO будет подбирать упражнения и веса автоматически</div>
                     <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:12,marginBottom:16}}>
@@ -3436,8 +3415,7 @@ export default function App() {
                           }
                         }} style={{padding:'18px 12px',borderRadius:16,border:'1px solid rgba(255,255,255,0.1)',background:'rgba(255,255,255,0.05)',cursor:'pointer',textAlign:'left'}}>
                           <div style={{fontSize:28,marginBottom:8}}>{PLAN_ICONS[type]}</div>
-                          <div style={{fontSize:15,fontWeight:700,color:'rgba(255,255,255,0.9)',marginBottom:4}}>{PLAN_NAMES[type]}</div>
-                          <div style={{fontSize:12,color:'rgba(255,255,255,0.4)'}}>{PLAN_DESC[type]}</div>
+                          <div style={{fontSize:15,fontWeight:700,color:'rgba(255,255,255,0.9)'}}>{PLAN_NAMES[type]}</div>
                         </button>
                       ))}
                     </div>
