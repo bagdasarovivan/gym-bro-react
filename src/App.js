@@ -1207,7 +1207,9 @@ function MuscleMap({ muscleScores, period = 7 }) {
 
   const hoveredCount = muscleScores[hovered] || 0
   const hoveredLevel = getLevel(hoveredCount)
-  const hoveredLevelLabel = { none: 'не тренируется', low: 'мало', normal: 'норма', excellent: 'отлично', overload: 'перегрузка' }[hoveredLevel] || ''
+  const OVERLOAD_THRESHOLD = period === 7 ? 6 : 15
+  const hoveredPct = hoveredCount === 0 ? 0 : Math.min(100, Math.round(hoveredCount / OVERLOAD_THRESHOLD * 100))
+  const LEVEL_LABELS = { none: 'Нет', low: 'Мало', normal: 'Норма', excellent: 'Отлично', overload: 'Перегрузка' }
   const scoreColor = hoveredLevel === 'overload' ? '#FF453A' : hoveredLevel === 'excellent' ? '#30D158' : hoveredLevel === 'normal' ? '#30C85E' : hoveredLevel === 'low' ? '#FFD60A' : 'rgba(255,255,255,0.3)'
 
   const handleZone = (muscle) => ({
@@ -1233,7 +1235,7 @@ function MuscleMap({ muscleScores, period = 7 }) {
               {muscleNames[hovered] || muscleNames[hovered.replace('_back','')]}
             </span>
             <span style={{fontSize:12,opacity:0.5}}>
-              {hoveredCount > 0 ? `${hoveredCount} трен. · ${hoveredLevelLabel}` : hoveredLevelLabel}
+              {`${LEVEL_LABELS[hoveredLevel]} · ${hoveredPct}%`}
             </span>
           </div>
         ) : (
@@ -1416,6 +1418,7 @@ export default function App() {
   const [selectedEx, setSelectedEx] = useState(null)
   const [sets, setSets] = useState([{ weight: 0, reps: 0 }])
   const [saved, setSaved] = useState(false)
+  const [saving, setSaving] = useState(false)
   const [streak, setStreak] = useState(0)
   const [history, setHistory] = useState([])
   const [openDays, setOpenDays] = useState({})
@@ -1805,9 +1808,8 @@ export default function App() {
     async function load() {
       if (!user) return
       const thisM = new Date().toISOString().slice(0,7)
-      const { data } = await supabase.from('workouts').select('workout_date').eq('user_id', user.id)
-      if (!data) return
-      const monthCount = new Set(data.filter(r => r.workout_date.startsWith(thisM)).map(r => r.workout_date)).size
+      const { count: monthCount } = await supabase.from('workouts').select('workout_date', { count: 'exact', head: false }).eq('user_id', user.id).gte('workout_date', thisM + '-01')
+      if (monthCount === null) return
       setStreak(monthCount)
     }
     load()
@@ -1970,6 +1972,7 @@ export default function App() {
     if (!workoutExercises.length) return
     if (saveWorkout._saving) return
     saveWorkout._saving = true
+    setSaving(true)
     for (const exItem of workoutExercises) {
       const exIsTimed = (EXERCISE_TYPE[exItem.name] || 'light') === 'timed'
       const filled = exItem.sets.filter(s => exIsTimed ? s.weight > 0 : (s.weight > 0 && s.reps > 0))
@@ -2003,14 +2006,15 @@ export default function App() {
       }
     }
     const thisM2 = new Date().toISOString().slice(0,7)
-    const { data: mData } = await supabase.from('workouts').select('workout_date').eq('user_id', user.id)
-    const monthCount = new Set((mData||[]).filter(r => r.workout_date.startsWith(thisM2)).map(r => r.workout_date)).size
+    const { count: totalCount } = await supabase.from('workouts').select('workout_date', { count: 'exact', head: false }).eq('user_id', user.id).gte('workout_date', thisM2 + '-01')
+    const monthCount = totalCount || 0
     setStreak(monthCount)
     setStreakAlert({ type: 'month', count: monthCount, msg: getMotivation(monthCount) })
     setTimeout(() => setStreakAlert(null), 4500)
     saveWorkout._saving = false
+    setSaving(false)
     setSaved(true)
-    setTimeout(() => { setSaved(false); setWorkoutStarted(false); setWorkoutExercises([]) }, 2000)
+    setTimeout(() => { setSaved(false); setWorkoutStarted(false); setWorkoutExercises([]) }, 1000)
   }
 
   const deleteWorkout = async (workoutId) => {
@@ -2326,8 +2330,8 @@ export default function App() {
                 <span style={{opacity:0.55}}>➕ Добавить упражнение...</span>
               </button>
               {workoutExercises.length > 0 && (
-                <button className={`save-btn${saved?' done':''}`} onClick={saveWorkout} disabled={saved}>
-                  {saved ? '✅ Тренировка сохранена!' : `💾 Сохранить тренировку (${workoutExercises.length} упр.)`}
+                <button className={`save-btn${saved?' done':''}`} onClick={saveWorkout} disabled={saving || saved}>
+                  {saved ? '✅ Сохранено!' : saving ? '⏳ Сохранение...' : `💾 Сохранить тренировку (${workoutExercises.length} упр.)`}
                 </button>
               )}
             </>
