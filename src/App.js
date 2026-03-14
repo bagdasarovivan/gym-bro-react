@@ -3495,8 +3495,8 @@ export default function App() {
               )}
 
       {showComingSoon && (
-        <div className="modal-overlay" onClick={()=>setShowComingSoon(false)}>
-          <div className="modal" onClick={e=>e.stopPropagation()} style={{textAlign:'center',padding:'32px 24px'}}>
+        <div onClick={()=>setShowComingSoon(false)} style={{position:'fixed',inset:0,background:'rgba(0,0,0,0.7)',backdropFilter:'blur(6px)',WebkitBackdropFilter:'blur(6px)',zIndex:1000,display:'flex',alignItems:'center',justifyContent:'center',padding:'20px'}}>
+          <div onClick={e=>e.stopPropagation()} style={{textAlign:'center',padding:'32px 24px',background:'rgba(28,28,30,0.98)',borderRadius:16,width:'100%',maxWidth:320,boxShadow:'0 20px 60px rgba(0,0,0,0.5)'}}>
             <div style={{fontSize:48,marginBottom:16}}>🚧</div>
             <div style={{fontSize:20,fontWeight:700,color:'rgba(255,255,255,0.9)',marginBottom:12}}>В разработке</div>
             <div style={{fontSize:15,color:'rgba(255,255,255,0.5)',lineHeight:1.6,marginBottom:28}}>Эта функция совсем скоро появится в Gym BRO. Следи за обновлениями! 💪</div>
