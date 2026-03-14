@@ -2007,8 +2007,8 @@ export default function App() {
       }
     }
     const thisM2 = new Date().toISOString().slice(0,7)
-    const { count: totalCount } = await supabase.from('workouts').select('workout_date', { count: 'exact', head: false }).eq('user_id', user.id).gte('workout_date', thisM2 + '-01')
-    const monthCount = totalCount || 0
+    const { data: sessData } = await supabase.from('workouts').select('workout_date').eq('user_id', user.id).gte('workout_date', thisM2 + '-01')
+    const monthCount = new Set((sessData || []).map(w => w.workout_date)).size
     setStreak(monthCount)
     setStreakAlert({ type: 'month', count: monthCount, msg: getMotivation(monthCount) })
     setTimeout(() => setStreakAlert(null), 4500)
@@ -2256,7 +2256,7 @@ export default function App() {
           ) : (
             <>
               <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:16}}>
-                <button onClick={()=>{if(workoutExercises.length>0&&!window.confirm('Выйти? Все упражнения будут потеряны.'))return;setWorkoutStarted(false);setWorkoutExercises([]);setSaved(false)}} style={{background:'none',border:'none',color:thm.text45,fontSize:14,cursor:'pointer',padding:'4px 0',fontWeight:600}}>← Назад</button>
+                <button onClick={()=>{if(workoutExercises.length>0&&!window.confirm('Выйти? Все упражнения будут потеряны.'))return;setWorkoutStarted(false);setWorkoutExercises([]);setSaved(false)}} style={{background:'none',border:'none',color:thm.text45,fontSize:15,cursor:'pointer',padding:'4px 0',fontWeight:600}}>← Назад</button>
                 <div style={{fontSize:13,color:thm.text50,fontWeight:600}}>
                   📅 {new Date(workoutDate+'T12:00:00').toLocaleDateString('ru',{day:'numeric',month:'long'})}
                 </div>
