@@ -1728,6 +1728,7 @@ export default function App() {
   const [activePlans, setActivePlans] = useState([])
   const [planWeights, setPlanWeights] = useState({})
   const [showPlanModal, setShowPlanModal] = useState(false)
+  const [showComingSoon, setShowComingSoon] = useState(false)
   const [showDayPreview, setShowDayPreview] = useState(null) // {plan, dayIdx, dayDef}
   const [showRatingModal, setShowRatingModal] = useState(false)
   const [pendingRatingPlan, setPendingRatingPlan] = useState(null)
@@ -2652,11 +2653,27 @@ export default function App() {
                   </button>
                 </div>
               )}
-              <button onClick={()=>setShowExModal(true)} style={{width:'100%',marginBottom:16,padding:'16px 20px',borderRadius:16,border:'1px solid rgba(255,255,255,0.09)',background:'rgba(255,255,255,0.06)',cursor:'pointer',display:'flex',alignItems:'center',gap:14,textAlign:'left'}}>
+              <button onClick={()=>setShowExModal(true)} style={{width:'100%',marginBottom:10,padding:'16px 20px',borderRadius:16,border:'1px solid rgba(255,255,255,0.09)',background:'rgba(255,255,255,0.06)',cursor:'pointer',display:'flex',alignItems:'center',gap:14,textAlign:'left'}}>
                 <div style={{width:44,height:44,borderRadius:12,background:'rgba(255,255,255,0.08)',display:'flex',alignItems:'center',justifyContent:'center',fontSize:20,flexShrink:0}}>＋</div>
                 <div style={{flex:1}}>
                   <div style={{fontSize:15,fontWeight:600,color:'#fff'}}>Добавить упражнение</div>
                   <div style={{fontSize:12,color:'rgba(255,255,255,0.4)',marginTop:2}}>Выбрать вручную</div>
+                </div>
+                <span style={{color:'rgba(255,255,255,0.2)',fontSize:18}}>›</span>
+              </button>
+              <button onClick={()=>setShowComingSoon(true)} style={{width:'100%',marginBottom:10,padding:'16px 20px',borderRadius:16,border:'1px solid rgba(255,255,255,0.08)',background:'rgba(255,255,255,0.05)',cursor:'pointer',display:'flex',alignItems:'center',gap:14,textAlign:'left'}}>
+                <div style={{width:44,height:44,borderRadius:12,background:'rgba(255,200,0,0.12)',display:'flex',alignItems:'center',justifyContent:'center',fontSize:20,flexShrink:0}}>🤸</div>
+                <div style={{flex:1}}>
+                  <div style={{fontSize:15,fontWeight:600,color:'rgba(255,255,255,0.5)'}}>Разминка</div>
+                  <div style={{fontSize:12,color:'rgba(255,255,255,0.3)',marginTop:2}}>Подготовь тело к тренировке</div>
+                </div>
+                <span style={{color:'rgba(255,255,255,0.2)',fontSize:18}}>›</span>
+              </button>
+              <button onClick={()=>setShowComingSoon(true)} style={{width:'100%',marginBottom:16,padding:'16px 20px',borderRadius:16,border:'1px solid rgba(255,255,255,0.08)',background:'rgba(255,255,255,0.05)',cursor:'pointer',display:'flex',alignItems:'center',gap:14,textAlign:'left'}}>
+                <div style={{width:44,height:44,borderRadius:12,background:'rgba(100,180,255,0.1)',display:'flex',alignItems:'center',justifyContent:'center',fontSize:20,flexShrink:0}}>🧘</div>
+                <div style={{flex:1}}>
+                  <div style={{fontSize:15,fontWeight:600,color:'rgba(255,255,255,0.5)'}}>Растяжка</div>
+                  <div style={{fontSize:12,color:'rgba(255,255,255,0.3)',marginTop:2}}>Восстановление после нагрузки</div>
                 </div>
                 <span style={{color:'rgba(255,255,255,0.2)',fontSize:18}}>›</span>
               </button>
@@ -3476,6 +3493,17 @@ export default function App() {
                   </div>
                 </div>
               )}
+
+      {showComingSoon && (
+        <div className="modal-overlay" onClick={()=>setShowComingSoon(false)}>
+          <div className="modal" onClick={e=>e.stopPropagation()} style={{textAlign:'center',padding:'32px 24px'}}>
+            <div style={{fontSize:48,marginBottom:16}}>🚧</div>
+            <div style={{fontSize:20,fontWeight:700,color:'rgba(255,255,255,0.9)',marginBottom:12}}>В разработке</div>
+            <div style={{fontSize:15,color:'rgba(255,255,255,0.5)',lineHeight:1.6,marginBottom:28}}>Эта функция совсем скоро появится в Gym BRO. Следи за обновлениями! 💪</div>
+            <button onClick={()=>setShowComingSoon(false)} style={{width:'100%',padding:'14px',borderRadius:14,background:'#30D158',color:'#fff',fontSize:16,fontWeight:700,border:'none',cursor:'pointer'}}>Понятно</button>
+          </div>
+        </div>
+      )}
 
       <div className="nav-bar">
         {[{id:'add',icon:'➕',label:'Тренировка'},{id:'history',icon:'📜',label:'История'},{id:'progress',icon:'📈',label:'Прогресс'},{id:'exercises',icon:'📋',label:'Упражнения'}].map(t=>(
