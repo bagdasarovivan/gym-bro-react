@@ -1783,13 +1783,10 @@ export default function App() {
       : period === '3m' ? 'Последние 3 месяца'
       : period === '6m' ? 'Последние 6 месяцев'
       : 'Последний год'
-    const monthName = now.toLocaleDateString('ru', { month: 'long', year: 'numeric' })
     const genDate = now.toLocaleDateString('ru', { day: 'numeric', month: 'long', year: 'numeric' })
 
     // Stats
-    const thisM = now.toISOString().slice(0,7)
     const workoutDatesAll = [...new Set(rows.map(r => r.workout_date))]
-    const workoutDatesMonth = workoutDatesAll.filter(d => d.startsWith(thisM))
     const totalKg = rows.reduce((sum, w) => sum + (w.sets||[]).reduce((s2, s) => s2 + (s.weight||0)*(s.reps||1), 0), 0)
     const totalKgK = totalKg >= 1000 ? `${(totalKg/1000).toFixed(1)}K` : String(Math.round(totalKg))
 
@@ -1801,43 +1798,46 @@ export default function App() {
         if (!exGroups[name]) exGroups[name] = []
         exGroups[name].push(...(w.sets || []))
       })
+      const dayKg = byDate[date].reduce((sum, w) => sum + (w.sets||[]).reduce((s2, s) => s2 + (s.weight||0)*(s.reps||1), 0), 0)
+      const dayKgStr = dayKg >= 1000 ? `${(dayKg/1000).toFixed(1)}K кг` : `${Math.round(dayKg)} кг`
       const exRows = Object.entries(exGroups).map(([exName, sets]) => {
         const validSets = sets.filter(s => s.weight > 0 || s.reps > 0 || s.time_sec > 0)
         if (!validSets.length) return ''
-        const setsCount = validSets.length
-        const weights = [...new Set(validSets.map(s => s.weight).filter(Boolean))]
-        const reps = [...new Set(validSets.map(s => s.reps).filter(Boolean))]
-        const weightStr = weights.length ? weights.join('/') + ' кг' : ''
-        const repsStr = reps.length ? `${setsCount} × ${reps.join('/')}` : `${setsCount} подх.`
-        const setLine = weightStr ? `${repsStr} &nbsp;&nbsp; ${weightStr}` : repsStr
-        return `<tr><td style="padding:4px 8px;color:#e6e6e6;font-size:13px;">${exName}</td><td style="padding:4px 8px;color:#888;font-size:13px;text-align:right;">${setLine}</td></tr>`
+        const ruExName = normalizeName(exName)
+        const setLines = validSets.map((s, i) => {
+          if (s.time_sec > 0) return `<div style="padding:1px 0 1px 12px;color:#555;font-size:12px;">Подход ${i+1}: ${s.time_sec} сек</div>`
+          return `<div style="padding:1px 0 1px 12px;color:#555;font-size:12px;">Подход ${i+1}: ${s.weight} кг × ${s.reps}</div>`
+        }).join('')
+        return `<div style="margin-bottom:8px;"><div style="font-size:13px;font-weight:600;color:#111111;">${ruExName}</div>${setLines}</div>`
       }).join('')
       return `
-        <div style="margin-bottom:18px;">
-          <div style="color:#30D158;font-size:14px;font-weight:700;padding:6px 0 4px;">${dateStr}</div>
-          <div style="border-bottom:1px solid #373737;margin-bottom:6px;"></div>
-          <table style="width:100%;border-collapse:collapse;">${exRows}</table>
+        <div style="margin-bottom:20px;">
+          <div style="display:flex;justify-content:space-between;align-items:baseline;padding:6px 0 4px;">
+            <div style="color:#30D158;font-size:14px;font-weight:700;">${dateStr}</div>
+            <div style="color:#555;font-size:12px;">Итого: ${dayKgStr}</div>
+          </div>
+          <div style="border-bottom:1px solid #ddd;margin-bottom:8px;"></div>
+          ${exRows}
         </div>`
     }).join('')
 
     const html = `
-      <div style="font-family:'Helvetica Neue',Arial,sans-serif;background:#1a1a1a;color:#e6e6e6;padding:28px 28px 20px;min-height:100%;">
+      <div style="font-family:'Helvetica Neue',Arial,sans-serif;background:#ffffff;color:#111111;padding:28px 28px 20px;min-height:100%;">
         <div style="margin-bottom:16px;">
           <div style="color:#30D158;font-size:26px;font-weight:800;letter-spacing:-0.5px;">GYM BRO</div>
-          <div style="color:#e6e6e6;font-size:15px;font-weight:600;margin-top:2px;">Отчёт за ${periodLabel}</div>
-          <div style="color:#888;font-size:11px;margin-top:2px;">Сгенерировано: ${genDate}</div>
+          <div style="color:#111111;font-size:15px;font-weight:600;margin-top:2px;">Отчёт за ${periodLabel}</div>
+          <div style="color:#555;font-size:11px;margin-top:2px;">Отчёт за ${genDate}</div>
         </div>
-        <div style="border-bottom:1px solid #373737;margin-bottom:16px;"></div>
+        <div style="border-bottom:1px solid #ddd;margin-bottom:16px;"></div>
         <div style="margin-bottom:16px;">
           <div style="color:#30D158;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px;">Статистика</div>
-          <div style="font-size:13px;margin-bottom:4px;">Тренировок за месяц: <b>${workoutDatesMonth.length}</b></div>
           <div style="font-size:13px;margin-bottom:4px;">Всего тренировок: <b>${workoutDatesAll.length}</b></div>
           <div style="font-size:13px;">Поднято за период: <b>${totalKgK} кг</b></div>
         </div>
-        <div style="border-bottom:1px solid #373737;margin-bottom:16px;"></div>
+        <div style="border-bottom:1px solid #ddd;margin-bottom:16px;"></div>
         <div style="color:#30D158;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:12px;">Тренировки</div>
         ${workoutRows}
-        <div style="border-top:1px solid #373737;margin-top:20px;padding-top:8px;text-align:center;color:#555;font-size:10px;">
+        <div style="border-top:1px solid #ddd;margin-top:20px;padding-top:8px;text-align:center;color:#999;font-size:10px;">
           Gym BRO — Твой личный тренировочный журнал
         </div>
       </div>`
@@ -1849,7 +1849,7 @@ export default function App() {
       margin: 0,
       filename: `gymBRO_${fileMonth}_${fileYear}.pdf`,
       image: { type: 'jpeg', quality: 0.95 },
-      html2canvas: { scale: 2, backgroundColor: '#1a1a1a' },
+      html2canvas: { scale: 2, backgroundColor: '#ffffff' },
       jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
     }).from(html).save()
   }
@@ -2433,9 +2433,11 @@ export default function App() {
         </div>
         <div style={{display:'flex',alignItems:'center',gap:8}}>
           <button onClick={() => { const isOpen=timerSecs!==null||stopwatchRunning||timerMode==='stopwatch'; if(isOpen){setTimerSecs(null);setTimerPaused(false);setStopwatchRunning(false);setStopwatchSecs(0);setTimerMode('countdown')}else{setTimerSecs(timerDuration);setTimerPaused(true)} }} style={{
-            background:thm.btnBg,border:`1px solid ${thm.btnBorder}`,
+            background: (timerSecs!==null||stopwatchRunning||timerMode==='stopwatch') ? 'rgba(48,209,88,0.15)' : thm.btnBg,
+            border: (timerSecs!==null||stopwatchRunning||timerMode==='stopwatch') ? '1px solid rgba(48,209,88,0.3)' : `1px solid ${thm.btnBorder}`,
             borderRadius:10,padding:'0',width:36,height:36,cursor:'pointer',
-            color:thm.text70,fontSize:18,display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0
+            color: (timerSecs!==null||stopwatchRunning||timerMode==='stopwatch') ? '#30D158' : thm.text70,
+            fontSize:18,display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0
           }}>⏱</button>
           {streak >= 1 && <button onClick={openStreakModal} style={{
             background:'rgba(255,100,0,0.12)',border:'1px solid rgba(255,100,0,0.25)',
