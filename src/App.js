@@ -1808,8 +1808,9 @@ export default function App() {
     async function load() {
       if (!user) return
       const thisM = new Date().toISOString().slice(0,7)
-      const { count: monthCount } = await supabase.from('workouts').select('workout_date', { count: 'exact', head: false }).eq('user_id', user.id).gte('workout_date', thisM + '-01')
-      if (monthCount === null) return
+      const { data: wDates } = await supabase.from('workouts').select('workout_date').eq('user_id', user.id).gte('workout_date', thisM + '-01')
+      if (!wDates) return
+      const monthCount = new Set(wDates.map(w => w.workout_date)).size
       setStreak(monthCount)
     }
     load()
