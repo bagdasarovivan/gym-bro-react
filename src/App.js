@@ -2652,13 +2652,29 @@ export default function App() {
                   </button>
                 </div>
               )}
-              <button onClick={()=>setShowExModal(true)} style={{width:'100%',marginBottom:16,padding:'16px 20px',borderRadius:16,border:'1px solid rgba(255,255,255,0.09)',background:'rgba(255,255,255,0.06)',cursor:'pointer',display:'flex',alignItems:'center',gap:14,textAlign:'left'}}>
+              <button onClick={()=>setShowExModal(true)} style={{width:'100%',marginBottom:10,padding:'16px 20px',borderRadius:16,border:'1px solid rgba(255,255,255,0.09)',background:'rgba(255,255,255,0.06)',cursor:'pointer',display:'flex',alignItems:'center',gap:14,textAlign:'left'}}>
                 <div style={{width:44,height:44,borderRadius:12,background:'rgba(255,255,255,0.08)',display:'flex',alignItems:'center',justifyContent:'center',fontSize:20,flexShrink:0}}>＋</div>
                 <div style={{flex:1}}>
                   <div style={{fontSize:15,fontWeight:600,color:'#fff'}}>Добавить упражнение</div>
                   <div style={{fontSize:12,color:'rgba(255,255,255,0.4)',marginTop:2}}>Выбрать вручную</div>
                 </div>
                 <span style={{color:'rgba(255,255,255,0.2)',fontSize:18}}>›</span>
+              </button>
+              <button disabled style={{width:'100%',marginBottom:10,padding:'16px 20px',borderRadius:16,border:'1px solid rgba(255,255,255,0.06)',background:'rgba(255,255,255,0.03)',cursor:'default',display:'flex',alignItems:'center',gap:14,textAlign:'left',opacity:1}}>
+                <div style={{width:44,height:44,borderRadius:12,background:'rgba(255,200,0,0.12)',display:'flex',alignItems:'center',justifyContent:'center',fontSize:20,flexShrink:0}}>🤸</div>
+                <div style={{flex:1}}>
+                  <div style={{fontSize:15,fontWeight:600,color:'rgba(255,255,255,0.4)'}}>Разминка</div>
+                  <div style={{fontSize:12,color:'rgba(255,255,255,0.25)',marginTop:2}}>Скоро появится 🔜</div>
+                </div>
+                <span style={{color:'rgba(255,255,255,0.1)',fontSize:18}}>›</span>
+              </button>
+              <button disabled style={{width:'100%',marginBottom:16,padding:'16px 20px',borderRadius:16,border:'1px solid rgba(255,255,255,0.06)',background:'rgba(255,255,255,0.03)',cursor:'default',display:'flex',alignItems:'center',gap:14,textAlign:'left',opacity:1}}>
+                <div style={{width:44,height:44,borderRadius:12,background:'rgba(100,180,255,0.1)',display:'flex',alignItems:'center',justifyContent:'center',fontSize:20,flexShrink:0}}>🧘</div>
+                <div style={{flex:1}}>
+                  <div style={{fontSize:15,fontWeight:600,color:'rgba(255,255,255,0.4)'}}>Растяжка</div>
+                  <div style={{fontSize:12,color:'rgba(255,255,255,0.25)',marginTop:2}}>Скоро появится 🔜</div>
+                </div>
+                <span style={{color:'rgba(255,255,255,0.1)',fontSize:18}}>›</span>
               </button>
               {workoutExercises.length > 0 && (
                 <button className={`save-btn${saved?' done':''}`} onClick={saveWorkout} disabled={saving || saved}>
