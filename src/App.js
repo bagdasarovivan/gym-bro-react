@@ -575,9 +575,6 @@ function formatDateShort(d) {
   return new Date(d).toLocaleDateString('ru', { day:'numeric', month:'long' })
 }
 
-// daysAgo removed
-
-// todayLabel removed
 
 const RANK_LEVELS = [
   { min:1,  max:3,        icon:'🌱', name:'Новичок' },
@@ -1671,6 +1668,7 @@ export default function App() {
   const [sets, setSets] = useState([{ weight: 0, reps: 0 }])
   const [saved, setSaved] = useState(false)
   const [saving, setSaving] = useState(false)
+  const savingRef = useRef(false)
   const [streak, setStreak] = useState(0)
   const [history, setHistory] = useState([])
   const [openDays, setOpenDays] = useState({})
@@ -2239,8 +2237,8 @@ export default function App() {
 
   const saveWorkout = async () => {
     if (!workoutExercises.length) return
-    if (saveWorkout._saving) return
-    saveWorkout._saving = true
+    if (savingRef.current) return
+    savingRef.current = true
     setSaving(true)
     for (const exItem of workoutExercises) {
       const exIsTimed = (EXERCISE_TYPE[exItem.name] || 'light') === 'timed'
@@ -2254,7 +2252,7 @@ export default function App() {
       }
       if (!ex) continue
       const { data: w } = await supabase.from('workouts').insert({ workout_date: workoutDate, exercise_id: ex.id, user_id: user.id }).select().single()
-      if (!w) { saveWorkout._saving = false; continue }
+      if (!w) { savingRef.current = false; continue }
       const exIsTimed2 = (EXERCISE_TYPE[exItem.name] || 'light') === 'timed'
       await supabase.from('sets').insert(filled.map((s,i) => ({
         workout_id: w.id, set_no: i+1,
@@ -2280,7 +2278,7 @@ export default function App() {
     setStreak(monthCount)
     setStreakAlert({ type: 'month', count: monthCount, msg: getMotivation(monthCount) })
     setTimeout(() => setStreakAlert(null), 4500)
-    saveWorkout._saving = false
+    savingRef.current = false
     setSaving(false)
     // Check if any plan exercises were in this workout
     const planEx = workoutExercises.find(e => e.planId)
@@ -2342,7 +2340,7 @@ export default function App() {
   const firstDow = new Date(calYear,calMonth,1).getDay()
   const offset = firstDow === 0 ? 6 : firstDow - 1
   const daysInMonth = new Date(calYear,calMonth+1,0).getDate()
-  const todayStr = new Date().toISOString().split('T')[0] // eslint-disable-line
+  const todayStr = new Date().toISOString().split('T')[0]
   const weightOpts = selectedEx ? getWeightOptions(selectedEx) : LIGHT_WEIGHTS
   const exType = EXERCISE_TYPE[selectedEx] || 'light'
   const isFav = favorites.includes(selectedEx)
