@@ -2532,7 +2532,7 @@ export default function App() {
           ) : (
             <>
               <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:16}}>
-                <button onClick={()=>{if(workoutExercises.length>0&&!window.confirm('Выйти? Все упражнения будут потеряны.'))return;setWorkoutStarted(false);setWorkoutExercises([]);setSaved(false)}} style={{background:'none',border:'none',color:thm.text45,fontSize:16,cursor:'pointer',padding:'4px 0',fontWeight:700}}>← Назад</button>
+                <button onClick={()=>{if(workoutExercises.length>0&&!window.confirm('Выйти? Все упражнения будут потеряны.'))return;setWorkoutStarted(false);setWorkoutExercises([]);setSaved(false)}} style={{background:'none',border:'none',color:thm.text45,fontSize:'17px',fontWeight:'700',fontFamily:'inherit',lineHeight:1,cursor:'pointer',padding:'4px 0'}}>← Назад</button>
                 <div style={{fontSize:13,color:thm.text50,fontWeight:600}}>
                   📅 {new Date(workoutDate+'T12:00:00').toLocaleDateString('ru',{day:'numeric',month:'long'})}
                 </div>
