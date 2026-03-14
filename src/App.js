@@ -1808,9 +1808,9 @@ export default function App() {
     async function load() {
       if (!user) return
       const thisM = new Date().toISOString().slice(0,7)
-      const { data: wDates } = await supabase.from('workouts').select('workout_date').eq('user_id', user.id).gte('workout_date', thisM + '-01')
-      if (!wDates) return
-      const monthCount = new Set(wDates.map(w => w.workout_date)).size
+      const { data: sessLoad } = await supabase.from('workouts').select('session_id').eq('user_id', user.id).gte('workout_date', thisM + '-01').not('session_id', 'is', null)
+      if (!sessLoad) return
+      const monthCount = new Set(sessLoad.map(w => w.session_id)).size
       setStreak(monthCount)
     }
     load()
@@ -1974,6 +1974,7 @@ export default function App() {
     if (saveWorkout._saving) return
     saveWorkout._saving = true
     setSaving(true)
+    const sessionId = crypto.randomUUID()
     for (const exItem of workoutExercises) {
       const exIsTimed = (EXERCISE_TYPE[exItem.name] || 'light') === 'timed'
       const filled = exItem.sets.filter(s => exIsTimed ? s.weight > 0 : (s.weight > 0 && s.reps > 0))
@@ -1985,7 +1986,7 @@ export default function App() {
         ex = inserted
       }
       if (!ex) continue
-      const { data: w } = await supabase.from('workouts').insert({ workout_date: workoutDate, exercise_id: ex.id, user_id: user.id }).select().single()
+      const { data: w } = await supabase.from('workouts').insert({ workout_date: workoutDate, exercise_id: ex.id, user_id: user.id, session_id: sessionId }).select().single()
       if (!w) { saveWorkout._saving = false; continue }
       const exIsTimed2 = (EXERCISE_TYPE[exItem.name] || 'light') === 'timed'
       await supabase.from('sets').insert(filled.map((s,i) => ({
@@ -2007,8 +2008,8 @@ export default function App() {
       }
     }
     const thisM2 = new Date().toISOString().slice(0,7)
-    const { count: totalCount } = await supabase.from('workouts').select('workout_date', { count: 'exact', head: false }).eq('user_id', user.id).gte('workout_date', thisM2 + '-01')
-    const monthCount = totalCount || 0
+    const { data: sessData } = await supabase.from('workouts').select('session_id').eq('user_id', user.id).gte('workout_date', thisM2 + '-01').not('session_id', 'is', null)
+    const monthCount = new Set((sessData || []).map(w => w.session_id)).size
     setStreak(monthCount)
     setStreakAlert({ type: 'month', count: monthCount, msg: getMotivation(monthCount) })
     setTimeout(() => setStreakAlert(null), 4500)
