@@ -1,7 +1,7 @@
 /* eslint-disable no-unused-vars */
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { supabase } from './supabase'
-import { jsPDF } from 'jspdf'
+import html2pdf from 'html2pdf.js'
 
 const HEAVY_WEIGHTS = Array.from({ length: 61 }, (_, i) => i * 5)
 const LIGHT_WEIGHTS = [...new Set([
@@ -1793,140 +1793,65 @@ export default function App() {
     const totalKg = rows.reduce((sum, w) => sum + (w.sets||[]).reduce((s2, s) => s2 + (s.weight||0)*(s.reps||1), 0), 0)
     const totalKgK = totalKg >= 1000 ? `${(totalKg/1000).toFixed(1)}K` : String(Math.round(totalKg))
 
-    const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' })
-    const W = 210, H = 297
-    const MARGIN = 18
-    const GREEN = [48, 209, 88]
-    const BG = [26, 26, 26]
-    const TEXT = [230, 230, 230]
-    const MUTED = [120, 120, 120]
-    const LINE = [55, 55, 55]
-
-    // Background
-    doc.setFillColor(...BG)
-    doc.rect(0, 0, W, H, 'F')
-
-    let y = MARGIN + 8
-
-    // Header
-    doc.setFont('helvetica', 'bold')
-    doc.setFontSize(22)
-    doc.setTextColor(...GREEN)
-    doc.text('GYM BRO', MARGIN, y)
-    y += 7
-    doc.setFontSize(13)
-    doc.setTextColor(...TEXT)
-    doc.text(`Отчёт за ${periodLabel}`, MARGIN, y)
-    y += 5
-    doc.setFontSize(9)
-    doc.setTextColor(...MUTED)
-    doc.text(`Сгенерировано: ${genDate}`, MARGIN, y)
-    y += 8
-
-    // Divider
-    doc.setDrawColor(...LINE)
-    doc.setLineWidth(0.3)
-    doc.line(MARGIN, y, W - MARGIN, y)
-    y += 8
-
-    // Stats block
-    doc.setFont('helvetica', 'bold')
-    doc.setFontSize(10)
-    doc.setTextColor(...GREEN)
-    doc.text('ОБЩАЯ СТАТИСТИКА', MARGIN, y)
-    y += 6
-    doc.setFont('helvetica', 'normal')
-    doc.setFontSize(10)
-    doc.setTextColor(...TEXT)
-    doc.text(`Тренировок за месяц: ${workoutDatesMonth.length}`, MARGIN, y); y += 5
-    doc.text(`Всего тренировок: ${workoutDatesAll.length}`, MARGIN, y); y += 5
-    doc.text(`Поднято за период: ${totalKgK} кг`, MARGIN, y); y += 8
-
-    // Divider
-    doc.setDrawColor(...LINE)
-    doc.line(MARGIN, y, W - MARGIN, y)
-    y += 8
-
-    // Workouts
-    doc.setFont('helvetica', 'bold')
-    doc.setFontSize(10)
-    doc.setTextColor(...GREEN)
-    doc.text('ТРЕНИРОВКИ', MARGIN, y)
-    y += 7
-
-    const pageH = H - 18 // bottom margin
-    const addPage = () => {
-      doc.addPage()
-      doc.setFillColor(...BG)
-      doc.rect(0, 0, W, H, 'F')
-      y = MARGIN
-    }
-
-    for (const date of sortedDates) {
-      if (y > pageH - 20) addPage()
-
-      // Date header
-      doc.setFont('helvetica', 'bold')
-      doc.setFontSize(11)
-      doc.setTextColor(...GREEN)
+    const workoutRows = sortedDates.map(date => {
       const dateStr = new Date(date + 'T12:00:00').toLocaleDateString('ru', { day: 'numeric', month: 'long', year: 'numeric' })
-      doc.text(dateStr, MARGIN, y)
-      y += 5
-
-      // Divider under date
-      doc.setDrawColor(...LINE)
-      doc.line(MARGIN, y, W - MARGIN, y)
-      y += 4
-
       const exGroups = {}
       byDate[date].forEach(w => {
         const name = w.exercises?.name || ''
         if (!exGroups[name]) exGroups[name] = []
         exGroups[name].push(...(w.sets || []))
       })
-
-      for (const [exName, sets] of Object.entries(exGroups)) {
-        if (y > pageH - 10) addPage()
+      const exRows = Object.entries(exGroups).map(([exName, sets]) => {
         const validSets = sets.filter(s => s.weight > 0 || s.reps > 0 || s.time_sec > 0)
-        if (!validSets.length) continue
-
-        doc.setFont('helvetica', 'normal')
-        doc.setFontSize(10)
-        doc.setTextColor(...TEXT)
-
+        if (!validSets.length) return ''
         const setsCount = validSets.length
         const weights = [...new Set(validSets.map(s => s.weight).filter(Boolean))]
         const reps = [...new Set(validSets.map(s => s.reps).filter(Boolean))]
         const weightStr = weights.length ? weights.join('/') + ' кг' : ''
         const repsStr = reps.length ? `${setsCount} × ${reps.join('/')}` : `${setsCount} подх.`
-        const setLine = weightStr ? `${repsStr}   ${weightStr}` : repsStr
+        const setLine = weightStr ? `${repsStr} &nbsp;&nbsp; ${weightStr}` : repsStr
+        return `<tr><td style="padding:4px 8px;color:#e6e6e6;font-size:13px;">${exName}</td><td style="padding:4px 8px;color:#888;font-size:13px;text-align:right;">${setLine}</td></tr>`
+      }).join('')
+      return `
+        <div style="margin-bottom:18px;">
+          <div style="color:#30D158;font-size:14px;font-weight:700;padding:6px 0 4px;">${dateStr}</div>
+          <div style="border-bottom:1px solid #373737;margin-bottom:6px;"></div>
+          <table style="width:100%;border-collapse:collapse;">${exRows}</table>
+        </div>`
+    }).join('')
 
-        const maxNameW = 100
-        const nameClipped = doc.getTextWidth(exName) > maxNameW
-          ? exName.substring(0, Math.floor(exName.length * maxNameW / doc.getTextWidth(exName))) + '…'
-          : exName
-
-        doc.text(`  ${nameClipped}`, MARGIN, y)
-        doc.setTextColor(...MUTED)
-        doc.text(setLine, MARGIN + 105, y, { align: 'left' })
-        doc.setTextColor(...TEXT)
-        y += 5.5
-      }
-      y += 3
-    }
-
-    // Footer
-    if (y > pageH - 12) addPage()
-    doc.setDrawColor(...LINE)
-    doc.line(MARGIN, pageH - 10, W - MARGIN, pageH - 10)
-    doc.setFont('helvetica', 'italic')
-    doc.setFontSize(8)
-    doc.setTextColor(...MUTED)
-    doc.text('Gym BRO — Твой личный тренировочный журнал', W / 2, pageH - 5, { align: 'center' })
+    const html = `
+      <div style="font-family:'Helvetica Neue',Arial,sans-serif;background:#1a1a1a;color:#e6e6e6;padding:28px 28px 20px;min-height:100%;">
+        <div style="margin-bottom:16px;">
+          <div style="color:#30D158;font-size:26px;font-weight:800;letter-spacing:-0.5px;">GYM BRO</div>
+          <div style="color:#e6e6e6;font-size:15px;font-weight:600;margin-top:2px;">Отчёт за ${periodLabel}</div>
+          <div style="color:#888;font-size:11px;margin-top:2px;">Сгенерировано: ${genDate}</div>
+        </div>
+        <div style="border-bottom:1px solid #373737;margin-bottom:16px;"></div>
+        <div style="margin-bottom:16px;">
+          <div style="color:#30D158;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px;">Статистика</div>
+          <div style="font-size:13px;margin-bottom:4px;">Тренировок за месяц: <b>${workoutDatesMonth.length}</b></div>
+          <div style="font-size:13px;margin-bottom:4px;">Всего тренировок: <b>${workoutDatesAll.length}</b></div>
+          <div style="font-size:13px;">Поднято за период: <b>${totalKgK} кг</b></div>
+        </div>
+        <div style="border-bottom:1px solid #373737;margin-bottom:16px;"></div>
+        <div style="color:#30D158;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:12px;">Тренировки</div>
+        ${workoutRows}
+        <div style="border-top:1px solid #373737;margin-top:20px;padding-top:8px;text-align:center;color:#555;font-size:10px;">
+          Gym BRO — Твой личный тренировочный журнал
+        </div>
+      </div>`
 
     const fileMonth = now.toLocaleDateString('ru', { month: 'long' }).replace(' ', '_')
     const fileYear = now.getFullYear()
-    doc.save(`gymBRO_${fileMonth}_${fileYear}.pdf`)
+
+    html2pdf().set({
+      margin: 0,
+      filename: `gymBRO_${fileMonth}_${fileYear}.pdf`,
+      image: { type: 'jpeg', quality: 0.95 },
+      html2canvas: { scale: 2, backgroundColor: '#1a1a1a' },
+      jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+    }).from(html).save()
   }
 
   const clearHistory = async () => {
@@ -2607,7 +2532,7 @@ export default function App() {
           ) : (
             <>
               <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:16}}>
-                <button onClick={()=>{if(workoutExercises.length>0&&!window.confirm('Выйти? Все упражнения будут потеряны.'))return;setWorkoutStarted(false);setWorkoutExercises([]);setSaved(false)}} style={{background:'none',border:'none',color:thm.text45,fontSize:15,cursor:'pointer',padding:'4px 0',fontWeight:600}}>← Назад</button>
+                <button onClick={()=>{if(workoutExercises.length>0&&!window.confirm('Выйти? Все упражнения будут потеряны.'))return;setWorkoutStarted(false);setWorkoutExercises([]);setSaved(false)}} style={{background:'none',border:'none',color:thm.text45,fontSize:16,cursor:'pointer',padding:'4px 0',fontWeight:700}}>← Назад</button>
                 <div style={{fontSize:13,color:thm.text50,fontWeight:600}}>
                   📅 {new Date(workoutDate+'T12:00:00').toLocaleDateString('ru',{day:'numeric',month:'long'})}
                 </div>
