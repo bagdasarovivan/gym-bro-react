@@ -252,6 +252,257 @@ function getWeightOptions(exName) {
   return t === 'heavy' ? HEAVY_WEIGHTS : t === 'timed' ? TIME_OPTIONS : t === 'machine' ? MACHINE_WEIGHTS : LIGHT_WEIGHTS
 }
 
+// ─── PLAN DEFINITIONS ───────────────────────────────────────────────────────
+const PLAN_ICONS = { strength:'🏋️', mass:'💪', cut:'🔥', fit:'🤸' }
+const PLAN_NAMES = { strength:'Сила', mass:'Масса', cut:'Рельеф', fit:'Форма' }
+const PLAN_DESC  = { strength:'5×5, база', mass:'8–12 повт', cut:'12–15', fit:'Баланс' }
+
+const PLAN_DAYS = {
+  strength: [
+    {
+      label:'День А — Верх тела',
+      warmupHint:'плечи, грудь, поясница',
+      exercises:[
+        {name:'Жим лёжа',           sets:5, reps:5,  isBase:true},
+        {name:'Тяга штанги в наклоне',sets:5, reps:5,  isBase:true},
+        {name:'Жим гантелей наклон', sets:3, reps:8,  isBase:false},
+        {name:'Тяга горизонтального блока',sets:3,reps:10,isBase:false},
+        {name:'Французский жим',     sets:3, reps:10, isBase:false},
+        {name:'Подъём гантелей на бицепс',sets:3,reps:10,isBase:false},
+      ]
+    },
+    {
+      label:'День Б — Низ тела',
+      warmupHint:'ноги, поясница, бёдра',
+      exercises:[
+        {name:'Приседания',          sets:5, reps:5,  isBase:true},
+        {name:'Румынская тяга',      sets:4, reps:8,  isBase:true},
+        {name:'Жим ногами',          sets:4, reps:10, isBase:false},
+        {name:'Сгибание ног',        sets:3, reps:12, isBase:false},
+        {name:'Подъём на икры сидя', sets:4, reps:15, isBase:false},
+      ]
+    }
+  ],
+  mass: [
+    {
+      label:'День А — Push',
+      warmupHint:'плечи, грудь',
+      exercises:[
+        {name:'Жим лёжа',              sets:4, reps:10, isBase:true},
+        {name:'Жим гантелей наклон',   sets:3, reps:12, isBase:false},
+        {name:'Жим Арнольда',          sets:3, reps:12, isBase:false},
+        {name:'Разведение гантелей стоя',sets:3,reps:15,isBase:false},
+        {name:'Отжимания на брусьях',  sets:3, reps:12, isBase:false},
+        {name:'Разгибания на блоке',   sets:3, reps:15, isBase:false},
+      ]
+    },
+    {
+      label:'День Б — Pull',
+      warmupHint:'плечи, спина',
+      exercises:[
+        {name:'Тяга штанги в наклоне',    sets:4,reps:10,isBase:true},
+        {name:'Тяга вертикального блока', sets:3,reps:12,isBase:false},
+        {name:'Тяга горизонтального блока',sets:3,reps:12,isBase:false},
+        {name:'Тяга к лицу',             sets:3,reps:15,isBase:false},
+        {name:'Подъём гантелей на бицепс',sets:3,reps:12,isBase:false},
+        {name:'Молотки',                  sets:3,reps:12,isBase:false},
+      ]
+    },
+    {
+      label:'День В — Ноги',
+      warmupHint:'ноги, бёдра, поясница',
+      exercises:[
+        {name:'Приседания',          sets:4,reps:10,isBase:true},
+        {name:'Румынская тяга',      sets:4,reps:10,isBase:false},
+        {name:'Жим ногами',          sets:3,reps:12,isBase:false},
+        {name:'Болгарские выпады',   sets:3,reps:12,isBase:false},
+        {name:'Сгибание ног',        sets:3,reps:15,isBase:false},
+        {name:'Подъём на икры сидя', sets:4,reps:20,isBase:false},
+      ]
+    }
+  ],
+  cut: [
+    {
+      label:'День А — Верх + Пресс',
+      warmupHint:'всё тело, 5 мин кардио',
+      exercises:[
+        {name:'Жим лёжа',                    sets:3,reps:15,isBase:false},
+        {name:'Тяга горизонтального блока',   sets:3,reps:15,isBase:false},
+        {name:'Жим гантелей наклон',          sets:3,reps:15,isBase:false},
+        {name:'Тяга вертикального блока',     sets:3,reps:15,isBase:false},
+        {name:'Разведение гантелей стоя',     sets:3,reps:15,isBase:false},
+        {name:'Тяга к лицу',                 sets:3,reps:15,isBase:false},
+        {name:'Скручивания',                  sets:3,reps:20,isBase:false},
+        {name:'Планка',                       sets:3,reps:45,isBase:false},
+      ]
+    },
+    {
+      label:'День Б — Низ + Кардио',
+      warmupHint:'ноги, 5 мин прыжки',
+      exercises:[
+        {name:'Приседания',          sets:4,reps:15,isBase:false},
+        {name:'Сгибание ног',        sets:4,reps:15,isBase:false},
+        {name:'Болгарские выпады',   sets:3,reps:12,isBase:false},
+        {name:'Жим ногами',          sets:3,reps:20,isBase:false},
+        {name:'Подъём на икры сидя', sets:4,reps:20,isBase:false},
+        {name:'Подъём ног в висе на пресс',sets:3,reps:15,isBase:false},
+      ]
+    },
+    {
+      label:'День В — Всё тело',
+      warmupHint:'5 мин кардио',
+      exercises:[
+        {name:'Жим над головой',       sets:3,reps:15,isBase:false},
+        {name:'Тяга штанги в наклоне', sets:3,reps:15,isBase:false},
+        {name:'Махи гирей',            sets:4,reps:15,isBase:false},
+        {name:'Выпады',                sets:3,reps:12,isBase:false},
+        {name:'Отжимания',             sets:3,reps:0, isBase:false},
+        {name:'Русские скручивания',   sets:3,reps:20,isBase:false},
+      ]
+    }
+  ],
+  fit: [
+    {
+      label:'День А',
+      warmupHint:'всё тело',
+      exercises:[
+        {name:'Приседания',                sets:3,reps:12,isBase:false},
+        {name:'Жим гантелей лёжа',         sets:3,reps:12,isBase:false},
+        {name:'Тяга вертикального блока',  sets:3,reps:12,isBase:false},
+        {name:'Жим Арнольда',              sets:3,reps:12,isBase:false},
+        {name:'Гиперэкстензия',            sets:3,reps:15,isBase:false},
+        {name:'Планка',                    sets:3,reps:30,isBase:false},
+      ]
+    },
+    {
+      label:'День Б',
+      warmupHint:'всё тело',
+      exercises:[
+        {name:'Румынская тяга',              sets:3,reps:12,isBase:false},
+        {name:'Жим гантелей наклон',         sets:3,reps:12,isBase:false},
+        {name:'Тяга горизонтального блока',  sets:3,reps:12,isBase:false},
+        {name:'Разведение гантелей стоя',    sets:3,reps:15,isBase:false},
+        {name:'Подъём гантелей на бицепс',   sets:2,reps:12,isBase:false},
+        {name:'Разгибания на блоке',         sets:2,reps:12,isBase:false},
+        {name:'Скручивания',                 sets:3,reps:15,isBase:false},
+      ]
+    },
+    {
+      label:'День В',
+      warmupHint:'всё тело',
+      exercises:[
+        {name:'Выпады',                    sets:3,reps:12,isBase:false},
+        {name:'Отжимания',                 sets:3,reps:0, isBase:false},
+        {name:'Тяга гантели в наклоне',    sets:3,reps:12,isBase:false},
+        {name:'Тяга к лицу',              sets:3,reps:15,isBase:false},
+        {name:'Молотки',                   sets:2,reps:12,isBase:false},
+        {name:'Французский жим',           sets:2,reps:12,isBase:false},
+        {name:'Подъём ног в висе на пресс',sets:3,reps:12,isBase:false},
+      ]
+    }
+  ]
+}
+
+const WARMUP_NO_WARMUP = new Set([
+  'Разгибание из-за головы на трицепс','Французский жим','Разгибания на блоке',
+  'Кроссовер','Разводка гантелей стоя','Разведение гантелей стоя',
+  'Изолированные сгибания на бицепс','Сгибания на скамье Скотта','Сгибания на блоке',
+  'Подъём на икры сидя','Скручивания','Русские скручивания','Подъём ног в висе на пресс',
+  'Планка','Гиперэкстензия','Отжимания','Отжимания на брусьях','Подтягивания',
+  'Отведение ноги в блоке','Ягодичный мост','Болгарские выпады','Выпады',
+  'Шраги','Махи гирей','Сгибания запястий',
+])
+
+function getWarmupSets(exName, workingWeight) {
+  if (WARMUP_NO_WARMUP.has(exName)) return []
+  const w = Math.round(workingWeight)
+  if (w <= 0) return []
+
+  // Группа A — Штанга
+  const barbellSquat = ['Приседания','Фронтальный присед','Жим Соца']
+  const barbellPress = ['Жим лёжа','Жим над головой','Жим штанги в наклоне']
+  const barbellDead  = ['Становая тяга','Румынская тяга','Тяга штанги в наклоне','Тяга Т-штанги']
+  // Группа B — Тренажёры
+  const machinePull  = ['Тяга вертикального блока','Тяга горизонтального блока']
+  const machineLeg   = ['Жим ногами','Сгибание ног','Разгибание ног','Гакк-приседания']
+  const machineChest = ['Жим в тренажёре на грудь','Вертикальный жим']
+  // Группа C — Гантели
+  const dumbPress    = ['Жим гантелей лёжа','Жим гантелей наклон','Жим Арнольда']
+  const dumbBicep    = ['Подъём гантелей на бицепс','Молотки','Молотки лёжа']
+  const dumbFly      = ['Разводка гантелей','Тяга к лицу','Обратная разводка']
+
+  const r = (v) => Math.round(v)
+
+  if (barbellSquat.includes(exName)) {
+    if (w <= 40) return []
+    const sets = [{w:20,r:8}]
+    if (w >= 60)  sets.push({w:40,r:5})
+    if (w >= 80)  sets.push({w:r(w*0.75),r:3})
+    if (w >= 100) sets.push({w:r(w*0.875),r:2})
+    sets.push({w,r:'рабочие'})
+    return sets.slice(0,-1)
+  }
+  if (barbellPress.includes(exName)) {
+    if (w <= 20) return []
+    const sets = [{w:20,r:8}]
+    if (w >= 60)  sets.push({w:40,r:5})
+    if (w >= 80)  sets.push({w:r(w*0.75),r:3})
+    if (w >= 100) sets.push({w:r(w*0.875),r:2})
+    return sets
+  }
+  if (barbellDead.includes(exName)) {
+    if (w <= 40) return []
+    const sets = [{w:20,r:8}]
+    if (w >= 60)  sets.push({w:40,r:5})
+    if (w >= 80)  sets.push({w:r(w*0.75),r:3})
+    if (w >= 100) sets.push({w:r(w*0.875),r:2})
+    return sets
+  }
+  if (machinePull.includes(exName)) {
+    if (w <= 30) return []
+    const sets = [{w:20,r:10}]
+    if (w >= 50) sets.push({w:30,r:8})
+    if (w >= 60) sets.push({w:r(w*0.75),r:5})
+    return sets
+  }
+  if (machineLeg.includes(exName)) {
+    if (w <= 50) return []
+    const sets = [{w:30,r:10}]
+    if (w >= 70) sets.push({w:r(w*0.625),r:8})
+    if (w >= 90) sets.push({w:r(w*0.8),r:5})
+    return sets
+  }
+  if (machineChest.includes(exName)) {
+    if (w <= 30) return []
+    const sets = [{w:20,r:10}]
+    if (w >= 50) sets.push({w:30,r:8})
+    if (w >= 70) sets.push({w:r(w*0.75),r:5})
+    return sets
+  }
+  if (dumbPress.includes(exName)) {
+    if (w <= 14) return []
+    const sets = [{w:r(w*0.5),r:10}]
+    if (w >= 22) sets.push({w:r(w*0.7),r:8})
+    if (w >= 28) sets.push({w:r(w*0.85),r:5})
+    return sets
+  }
+  if (dumbBicep.includes(exName)) {
+    if (w <= 8) return []
+    const sets = [{w:r(w*0.55),r:12}]
+    if (w >= 12) sets.push({w:r(w*0.72),r:10})
+    if (w >= 16) sets.push({w:r(w*0.85),r:8})
+    return sets
+  }
+  if (dumbFly.includes(exName)) {
+    if (w <= 8) return []
+    const sets = [{w:r(w*0.55),r:12}]
+    if (w >= 12) sets.push({w:r(w*0.75),r:10})
+    if (w >= 16) sets.push({w:r(w*0.88),r:8})
+    return sets
+  }
+  return []
+}
+// ─────────────────────────────────────────────────────────────────────────────
 
 const EN_TO_RU = {
   'Bench Press':'Жим лёжа','Squat':'Приседания','Deadlift':'Становая тяга',
@@ -1472,6 +1723,16 @@ export default function App() {
   const [exTabFilter, setExTabFilter] = useState('all')
   const [exDetailModal, setExDetailModal] = useState(null)
 
+  // Plan state
+  const [activePlans, setActivePlans] = useState([])
+  const [planWeights, setPlanWeights] = useState({})
+  const [showPlanModal, setShowPlanModal] = useState(false)
+  const [showDayPreview, setShowDayPreview] = useState(null) // {plan, dayIdx, dayDef}
+  const [showRatingModal, setShowRatingModal] = useState(false)
+  const [pendingRatingPlan, setPendingRatingPlan] = useState(null)
+  const [planOnboarding, setPlanOnboarding] = useState(false)
+  const [editSetModal, setEditSetModal] = useState(null) // {exIdx, setIdx, weight, reps}
+
   const handleAuth = async () => {
     setAuthLoading(true); setAuthError('')
     if (authMode === 'login') {
@@ -1817,6 +2078,24 @@ export default function App() {
   }, [saved, user])
 
   useEffect(() => {
+    async function loadPlans() {
+      if (!user) return
+      const { data: plans } = await supabase.from('workout_plans').select('*').eq('user_id', user.id).eq('is_active', true).order('slot')
+      if (!plans) return
+      setActivePlans(plans)
+      if (plans.length > 0) {
+        const { data: pw } = await supabase.from('plan_weights').select('*').in('plan_id', plans.map(p => p.id))
+        const map = {}
+        for (const row of (pw || [])) {
+          map[`${row.plan_id}:${row.exercise_name}`] = row
+        }
+        setPlanWeights(map)
+      }
+    }
+    loadPlans()
+  }, [user, saved])
+
+  useEffect(() => {
     if (tab !== 'history' || !user) return
     supabase.from('workouts').select('id,workout_date,exercises(name),sets(set_no,weight,reps,time_sec)')
       .eq('user_id', user.id).order('workout_date', { ascending: false }).order('id', { ascending: false }).limit(200)
@@ -1969,6 +2248,68 @@ export default function App() {
     setWorkoutExercises(prev => [...prev, { name, grip, open: true, lastSession: lastSess, sets: [{ weight: 0, reps: 0 }] }])
   }
 
+  const getProgressStep = (planType, exName, isBase) => {
+    const legEx = ['Приседания','Жим ногами','Становая тяга']
+    if (planType === 'strength') {
+      if (!isBase) return 0
+      return legEx.includes(exName) ? 5 : 2.5
+    }
+    if (planType === 'mass' || planType === 'cut' || planType === 'fit') {
+      const t = EXERCISE_TYPE[exName] || 'light'
+      if (t === 'machine') return 5
+      if (t === 'heavy') return 2.5
+      return 2
+    }
+    return 2
+  }
+
+  const applyProgression = async (plan, rating, completedMap) => {
+    const days = PLAN_DAYS[plan.plan_type] || []
+    const dayIdx = (plan.current_day - 1) % days.length
+    const dayDef = days[dayIdx]
+    if (!dayDef) return
+
+    const updates = []
+    for (const ex of dayDef.exercises) {
+      const key = `${plan.id}:${ex.name}`
+      const pw = planWeights[key]
+      if (!pw || pw.working_weight === 0) continue
+      const completedSets = completedMap[ex.name] || 0
+      const allCompleted = completedSets >= ex.sets
+      let newWeight = pw.working_weight
+      const step = getProgressStep(plan.plan_type, ex.name, ex.isBase)
+
+      if (plan.plan_type === 'strength') {
+        if (ex.isBase) {
+          if ((rating === 'good' || rating === 'super') && allCompleted) {
+            newWeight = pw.working_weight + step
+          } else if (rating === 'hard') {
+            newWeight = Math.round(pw.working_weight * 0.9)
+          }
+        }
+      } else {
+        if ((rating === 'good' || rating === 'super') && allCompleted && step > 0) {
+          newWeight = pw.working_weight + step
+        } else if (rating === 'hard') {
+          newWeight = Math.round(pw.working_weight * 0.95)
+        }
+      }
+      if (newWeight !== pw.working_weight) {
+        updates.push({ plan_id: plan.id, exercise_name: ex.name, working_weight: newWeight, last_rating: rating })
+      } else {
+        updates.push({ plan_id: plan.id, exercise_name: ex.name, working_weight: pw.working_weight, last_rating: rating })
+      }
+    }
+
+    for (const u of updates) {
+      await supabase.from('plan_weights').update({ working_weight: u.working_weight, last_rating: u.last_rating, updated_at: new Date().toISOString() })
+        .eq('user_id', user.id).eq('plan_id', u.plan_id).eq('exercise_name', u.exercise_name)
+    }
+
+    const nextDay = (plan.current_day % plan.total_days) + 1
+    await supabase.from('workout_plans').update({ current_day: nextDay, workout_count: plan.workout_count + 1 }).eq('id', plan.id)
+  }
+
   const saveWorkout = async () => {
     if (!workoutExercises.length) return
     if (saveWorkout._saving) return
@@ -2014,6 +2355,16 @@ export default function App() {
     setTimeout(() => setStreakAlert(null), 4500)
     saveWorkout._saving = false
     setSaving(false)
+    // Check if any plan exercises were in this workout
+    const planEx = workoutExercises.find(e => e.planId)
+    if (planEx) {
+      const plan = activePlans.find(p => p.id === planEx.planId)
+      if (plan) {
+        setPendingRatingPlan(plan)
+        setShowRatingModal(true)
+        return
+      }
+    }
     setSaved(true)
     setTimeout(() => { setSaved(false); setWorkoutStarted(false); setWorkoutExercises([]) }, 1000)
   }
@@ -2304,29 +2655,93 @@ export default function App() {
                             </div>
                           </div>
                         )}
-                        {ex.sets.map((s,si) => (
-                          <div key={si} className="set-row">
-                            <span className="set-num">{si+1}</span>
-                            {exType2 === 'timed' ? (
-                              <DropdownPicker options={TIME_OPTIONS} value={s.weight} onChange={v=>setWorkoutExercises(prev=>prev.map((e,i)=>i!==exIdx?e:{...e,sets:e.sets.map((ss,j)=>j!==si?ss:{...ss,weight:v})}))} unit="s" label={`Подход ${si+1}`}/>
-                            ) : (
-                              <>
-                                <DropdownPicker options={wOpts} value={s.weight} onChange={v=>setWorkoutExercises(prev=>prev.map((e,i)=>i!==exIdx?e:{...e,sets:e.sets.map((ss,j)=>j!==si?ss:{...ss,weight:v})}))} unit={settings.units==='lbs'?'':wUnit} labelFn={settings.units==='lbs'?(v=>`${kgToDisplay(v)} lbs`):null} label={`Подход ${si+1} — Вес`}/>
-                                <span className="set-sep">×</span>
-                                <DropdownPicker options={REPS_OPTIONS} value={s.reps} onChange={v=>setWorkoutExercises(prev=>prev.map((e,i)=>i!==exIdx?e:{...e,sets:e.sets.map((ss,j)=>j!==si?ss:{...ss,reps:v})}))} unit="повт" label={`Подход ${si+1} — Повт`}/>
-                              </>
-                            )}
-                          </div>
-                        ))}
-                        <div className="set-btns" style={{marginTop:4}}>
-                          <button className="set-btn" onClick={()=>setWorkoutExercises(prev=>prev.map((e,i)=>i!==exIdx?e:{...e,sets:[...e.sets,{weight:e.sets[e.sets.length-1]?.weight||0,reps:e.sets[e.sets.length-1]?.reps||0}]}))}>➕ Подход</button>
-                          <button className="set-btn" onClick={()=>setWorkoutExercises(prev=>prev.map((e,i)=>i!==exIdx?e:{...e,sets:e.sets.length>1?e.sets.slice(0,-1):e.sets}))} style={{opacity:ex.sets.length<=1?0.35:1}}>➖ Убрать</button>
-                        </div>
+                        {(() => {
+                          const workingWeight = ex.sets[0]?.weight || 0
+                          const warmups = exType2 === 'timed' ? [] : getWarmupSets(ex.name, workingWeight)
+                          const doneCount = ex.sets.filter(s => s.done).length
+                          const totalSets = ex.sets.length
+                          return (
+                            <>
+                              {warmups.length > 0 && (
+                                <div style={{marginBottom:10}}>
+                                  <div style={{fontSize:11,color:'rgba(255,255,255,0.35)',textTransform:'uppercase',letterSpacing:'0.5px',marginBottom:6}}>Разминка (не в счёт)</div>
+                                  {warmups.map((wu,wi) => (
+                                    <div key={wi} style={{fontSize:13,color:'rgba(255,255,255,0.45)',marginBottom:3,paddingLeft:4}}>— {wu.w} кг × {wu.r}</div>
+                                  ))}
+                                </div>
+                              )}
+                              <div style={{marginBottom:8}}>
+                                <div style={{fontSize:11,color:'rgba(255,255,255,0.35)',textTransform:'uppercase',letterSpacing:'0.5px',marginBottom:6}}>Рабочие подходы</div>
+                                {totalSets > 0 && (
+                                  <div style={{height:4,borderRadius:99,background:'rgba(255,255,255,0.1)',marginBottom:10,overflow:'hidden'}}>
+                                    <div style={{height:'100%',borderRadius:99,background:'#30D158',width:`${(doneCount/totalSets)*100}%`,transition:'width 0.3s'}}/>
+                                  </div>
+                                )}
+                                {ex.sets.map((s,si) => (
+                                  <div key={si} style={{display:'flex',alignItems:'center',gap:10,marginBottom:8,padding:'8px 10px',borderRadius:12,background:s.done?'rgba(48,209,88,0.1)':'rgba(255,255,255,0.04)',transition:'background 0.2s'}}>
+                                    <span style={{fontSize:13,color:'rgba(255,255,255,0.4)',minWidth:18,fontWeight:600}}>{si+1}</span>
+                                    {exType2 === 'timed' ? (
+                                      <span style={{flex:1,fontSize:15,fontWeight:600,color:s.done?'#30D158':'rgba(255,255,255,0.85)'}}>
+                                        {s.weight > 0 ? `${s.weight} сек` : '— сек'}
+                                      </span>
+                                    ) : (
+                                      <span style={{flex:1,fontSize:15,fontWeight:600,color:s.done?'#30D158':'rgba(255,255,255,0.85)'}}>
+                                        {s.weight > 0 ? `${kgToDisplay(s.weight)} ${settings.units==='lbs'?'lbs':wUnit}` : '— кг'} × {s.reps > 0 ? s.reps : '—'}
+                                      </span>
+                                    )}
+                                    <button onClick={()=>setEditSetModal({exIdx,setIdx:si,weight:s.weight,reps:s.reps,isTimed:exType2==='timed'})}
+                                      style={{background:'none',border:'none',fontSize:16,cursor:'pointer',padding:'2px 6px',opacity:0.55}}>✏️</button>
+                                    <button onClick={()=>setWorkoutExercises(prev=>prev.map((e,i)=>i!==exIdx?e:{...e,sets:e.sets.map((ss,j)=>j!==si?ss:{...ss,done:!ss.done})}))}
+                                      style={{width:28,height:28,borderRadius:99,border:`2px solid ${s.done?'#30D158':'rgba(255,255,255,0.25)'}`,background:s.done?'#30D158':'transparent',display:'flex',alignItems:'center',justifyContent:'center',cursor:'pointer',flexShrink:0,transition:'all 0.2s'}}>
+                                      {s.done && <span style={{color:'#fff',fontSize:14,fontWeight:700}}>✓</span>}
+                                    </button>
+                                  </div>
+                                ))}
+                              </div>
+                              <div className="set-btns" style={{marginTop:4}}>
+                                <button className="set-btn" onClick={()=>setWorkoutExercises(prev=>prev.map((e,i)=>i!==exIdx?e:{...e,sets:[...e.sets,{weight:e.sets[e.sets.length-1]?.weight||0,reps:e.sets[e.sets.length-1]?.reps||0,done:false}]}))}>➕ Подход</button>
+                                <button className="set-btn" onClick={()=>setWorkoutExercises(prev=>prev.map((e,i)=>i!==exIdx?e:{...e,sets:e.sets.length>1?e.sets.slice(0,-1):e.sets}))} style={{opacity:ex.sets.length<=1?0.35:1}}>➖ Убрать</button>
+                              </div>
+                            </>
+                          )
+                        })()}
                       </div>
                     )}
                   </div>
                 )
               })}
+              {/* Plan cards */}
+              {activePlans.length === 0 ? (
+                <button onClick={()=>setShowPlanModal(true)} style={{width:'100%',marginBottom:12,padding:'12px 16px',borderRadius:14,border:'1px dashed rgba(255,255,255,0.2)',background:'rgba(255,255,255,0.04)',color:'rgba(255,255,255,0.55)',fontSize:14,fontWeight:600,cursor:'pointer',display:'flex',alignItems:'center',gap:8}}>
+                  📋 Выбрать план тренировок
+                </button>
+              ) : (
+                <div style={{marginBottom:12}}>
+                  {activePlans.map(plan => {
+                    const days = PLAN_DAYS[plan.plan_type] || []
+                    const dayIdx = (plan.current_day - 1) % days.length
+                    const dayDef = days[dayIdx]
+                    const week = Math.floor((plan.workout_count) / days.length) + 1
+                    return (
+                      <div key={plan.id} onClick={()=>setShowDayPreview({plan, dayIdx, dayDef})} style={{background:'rgba(255,255,255,0.06)',borderRadius:14,border:'1px solid rgba(255,255,255,0.1)',padding:'12px 14px',marginBottom:8,cursor:'pointer'}}>
+                        <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:4}}>
+                          <span style={{fontSize:15,fontWeight:700,color:'rgba(255,255,255,0.9)'}}>{PLAN_ICONS[plan.plan_type]} {PLAN_NAMES[plan.plan_type]}</span>
+                          <span style={{fontSize:11,color:'rgba(255,255,255,0.35)',fontWeight:600}}>{plan.slot===1?'основной':'доп.'}</span>
+                        </div>
+                        <div style={{fontSize:13,color:'rgba(255,255,255,0.5)'}}>{dayDef?.label} · Неделя {week} · тренировка {plan.workout_count+1}</div>
+                      </div>
+                    )
+                  })}
+                  {activePlans.length < 2 && (
+                    <button onClick={()=>setShowPlanModal(true)} style={{width:'100%',padding:'8px 14px',borderRadius:12,border:'1px dashed rgba(255,255,255,0.15)',background:'transparent',color:'rgba(255,255,255,0.4)',fontSize:13,fontWeight:600,cursor:'pointer'}}>
+                      + Добавить второй план
+                    </button>
+                  )}
+                  <button onClick={()=>setShowPlanModal(true)} style={{width:'100%',marginTop:6,padding:'8px 14px',borderRadius:12,border:'none',background:'transparent',color:'rgba(255,255,255,0.35)',fontSize:12,cursor:'pointer'}}>
+                    🔄 Изменить планы
+                  </button>
+                </div>
+              )}
               <button className="ex-selector-btn" onClick={()=>setShowExModal(true)} style={{marginBottom:16}}>
                 <span style={{opacity:0.55}}>➕ Добавить упражнение...</span>
               </button>
@@ -2963,6 +3378,190 @@ export default function App() {
           </div>
         )
       })()}
+
+              {/* Edit set modal */}
+              {editSetModal && (
+                <div style={{position:'fixed',inset:0,background:'rgba(0,0,0,0.7)',zIndex:1000,display:'flex',alignItems:'flex-end',justifyContent:'center'}} onClick={()=>setEditSetModal(null)}>
+                  <div style={{background:'#1C1C1E',borderRadius:'20px 20px 0 0',padding:24,width:'100%',maxWidth:480}} onClick={e=>e.stopPropagation()}>
+                    <div style={{fontSize:17,fontWeight:700,color:'rgba(255,255,255,0.9)',marginBottom:20}}>Изменить подход</div>
+                    {editSetModal.isTimed ? (
+                      <div style={{marginBottom:16}}>
+                        <div style={{fontSize:13,color:'rgba(255,255,255,0.4)',marginBottom:8}}>Секунды</div>
+                        <input type="number" value={editSetModal.weight} onChange={e=>setEditSetModal(m=>({...m,weight:+e.target.value}))}
+                          style={{width:'100%',padding:'12px',borderRadius:12,border:'1px solid rgba(255,255,255,0.15)',background:'rgba(255,255,255,0.07)',color:'#fff',fontSize:16,boxSizing:'border-box'}}/>
+                      </div>
+                    ) : (
+                      <div style={{display:'flex',gap:12,marginBottom:16}}>
+                        <div style={{flex:1}}>
+                          <div style={{fontSize:13,color:'rgba(255,255,255,0.4)',marginBottom:8}}>Вес (кг)</div>
+                          <input type="number" value={editSetModal.weight} onChange={e=>setEditSetModal(m=>({...m,weight:+e.target.value}))}
+                            style={{width:'100%',padding:'12px',borderRadius:12,border:'1px solid rgba(255,255,255,0.15)',background:'rgba(255,255,255,0.07)',color:'#fff',fontSize:16,boxSizing:'border-box'}}/>
+                        </div>
+                        <div style={{flex:1}}>
+                          <div style={{fontSize:13,color:'rgba(255,255,255,0.4)',marginBottom:8}}>Повторения</div>
+                          <input type="number" value={editSetModal.reps} onChange={e=>setEditSetModal(m=>({...m,reps:+e.target.value}))}
+                            style={{width:'100%',padding:'12px',borderRadius:12,border:'1px solid rgba(255,255,255,0.15)',background:'rgba(255,255,255,0.07)',color:'#fff',fontSize:16,boxSizing:'border-box'}}/>
+                        </div>
+                      </div>
+                    )}
+                    <button onClick={()=>{
+                      setWorkoutExercises(prev=>prev.map((e,i)=>i!==editSetModal.exIdx?e:{...e,sets:e.sets.map((ss,j)=>j!==editSetModal.setIdx?ss:{...ss,weight:editSetModal.weight,reps:editSetModal.reps})}))
+                      setEditSetModal(null)
+                    }} style={{width:'100%',padding:'14px',borderRadius:14,background:'#30D158',color:'#fff',fontSize:16,fontWeight:700,border:'none',cursor:'pointer'}}>
+                      Сохранить
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              {/* Plan selection modal */}
+              {showPlanModal && (
+                <div style={{position:'fixed',inset:0,background:'rgba(0,0,0,0.8)',zIndex:1000,display:'flex',alignItems:'flex-end',justifyContent:'center'}} onClick={()=>setShowPlanModal(false)}>
+                  <div style={{background:'#1C1C1E',borderRadius:'20px 20px 0 0',padding:24,width:'100%',maxWidth:480,paddingBottom:40}} onClick={e=>e.stopPropagation()}>
+                    <div style={{fontSize:19,fontWeight:700,color:'rgba(255,255,255,0.9)',marginBottom:6}}>Выбери план тренировок</div>
+                    <div style={{fontSize:13,color:'rgba(255,255,255,0.4)',marginBottom:20}}>Gym BRO будет подбирать упражнения и веса автоматически</div>
+                    <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:12,marginBottom:16}}>
+                      {['strength','mass','cut','fit'].map(type => (
+                        <button key={type} onClick={async ()=>{
+                          setShowPlanModal(false)
+                          const days = PLAN_DAYS[type]
+                          const slot = activePlans.length + 1
+                          const { data: plan } = await supabase.from('workout_plans').insert({
+                            user_id: user.id, plan_type: type, slot, total_days: days.length,
+                            current_day: 1, workout_count: 0
+                          }).select().single()
+                          if (plan) {
+                            setActivePlans(prev => [...prev, plan])
+                            setPlanOnboarding(true)
+                          }
+                        }} style={{padding:'18px 12px',borderRadius:16,border:'1px solid rgba(255,255,255,0.1)',background:'rgba(255,255,255,0.05)',cursor:'pointer',textAlign:'left'}}>
+                          <div style={{fontSize:28,marginBottom:8}}>{PLAN_ICONS[type]}</div>
+                          <div style={{fontSize:15,fontWeight:700,color:'rgba(255,255,255,0.9)',marginBottom:4}}>{PLAN_NAMES[type]}</div>
+                          <div style={{fontSize:12,color:'rgba(255,255,255,0.4)'}}>{PLAN_DESC[type]}</div>
+                        </button>
+                      ))}
+                    </div>
+                    {activePlans.length > 0 && (
+                      <button onClick={async ()=>{
+                        if (!window.confirm('Удалить все планы?')) return
+                        for (const p of activePlans) await supabase.from('workout_plans').update({is_active:false}).eq('id',p.id)
+                        setActivePlans([])
+                        setPlanWeights({})
+                        setShowPlanModal(false)
+                      }} style={{width:'100%',padding:'12px',borderRadius:12,border:'none',background:'rgba(255,59,48,0.1)',color:'#FF453A',fontSize:14,fontWeight:600,cursor:'pointer'}}>
+                        Отменить все планы
+                      </button>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {/* Onboarding modal */}
+              {planOnboarding && (
+                <div style={{position:'fixed',inset:0,background:'rgba(0,0,0,0.85)',zIndex:1001,display:'flex',alignItems:'center',justifyContent:'center',padding:24}}>
+                  <div style={{background:'#1C1C1E',borderRadius:24,padding:28,maxWidth:360,width:'100%',textAlign:'center'}}>
+                    <div style={{fontSize:36,marginBottom:16}}>👋</div>
+                    <div style={{fontSize:20,fontWeight:700,color:'rgba(255,255,255,0.9)',marginBottom:12}}>Первая тренировка</div>
+                    <div style={{fontSize:15,color:'rgba(255,255,255,0.55)',lineHeight:1.6,marginBottom:24}}>
+                      Сегодня найдём твой стартовый вес.<br/>
+                      Возьми вес с которым сделаешь нужное количество повторений комфортно — не на максимуме.<br/><br/>
+                      Gym BRO запомнит и будет считать прогрессию сам.
+                    </div>
+                    <button onClick={()=>setPlanOnboarding(false)} style={{width:'100%',padding:'14px',borderRadius:14,background:'#30D158',color:'#fff',fontSize:16,fontWeight:700,border:'none',cursor:'pointer'}}>
+                      Понятно, начинаем!
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              {/* Day preview modal */}
+              {showDayPreview && (()=>{
+                const {plan, dayIdx, dayDef} = showDayPreview
+                const week = Math.floor(plan.workout_count / (PLAN_DAYS[plan.plan_type]?.length||1)) + 1
+                return (
+                  <div style={{position:'fixed',inset:0,background:'rgba(0,0,0,0.8)',zIndex:1000,display:'flex',alignItems:'flex-end',justifyContent:'center'}} onClick={()=>setShowDayPreview(null)}>
+                    <div style={{background:'#1C1C1E',borderRadius:'20px 20px 0 0',padding:24,width:'100%',maxWidth:480,paddingBottom:40,maxHeight:'85vh',overflowY:'auto'}} onClick={e=>e.stopPropagation()}>
+                      <div style={{fontSize:17,fontWeight:700,color:'rgba(255,255,255,0.9)',marginBottom:4}}>{dayDef.label}</div>
+                      <div style={{fontSize:13,color:'rgba(255,255,255,0.4)',marginBottom:4}}>{PLAN_ICONS[plan.plan_type]} {PLAN_NAMES[plan.plan_type]} · Неделя {week} · тренировка {plan.workout_count+1}</div>
+                      <div style={{fontSize:13,color:'#FF9F0A',marginBottom:16}}>⚡ Разогрей {dayDef.warmupHint}</div>
+                      {dayDef.exercises.map((ex,i) => {
+                        const key = `${plan.id}:${ex.name}`
+                        const pw = planWeights[key]
+                        const hasWeight = pw && pw.working_weight > 0
+                        return (
+                          <div key={i} style={{display:'flex',alignItems:'center',justifyContent:'space-between',padding:'10px 12px',background:'rgba(255,255,255,0.05)',borderRadius:12,marginBottom:6}}>
+                            <div>
+                              <span style={{fontSize:14,fontWeight:600,color:'rgba(255,255,255,0.85)'}}>{ex.name}</span>
+                              {ex.isBase && <span style={{fontSize:11,color:'#FF9F0A',marginLeft:6,fontWeight:600}}>база</span>}
+                            </div>
+                            <span style={{fontSize:13,color:'rgba(255,255,255,0.45)',fontWeight:600}}>
+                              {hasWeight ? `${pw.working_weight}кг × ${ex.reps} × ${ex.sets}` : `? × ${ex.reps} × ${ex.sets}`}
+                            </span>
+                          </div>
+                        )
+                      })}
+                      <button onClick={async ()=>{
+                        setShowDayPreview(null)
+                        const newExercises = []
+                        for (const ex of dayDef.exercises) {
+                          const key = `${plan.id}:${ex.name}`
+                          let pw = planWeights[key]
+                          if (!pw) {
+                            const { data: inserted } = await supabase.from('plan_weights').insert({
+                              user_id: user.id, plan_id: plan.id, exercise_name: ex.name,
+                              working_weight: 0, target_reps: ex.reps, target_sets: ex.sets
+                            }).select().single()
+                            pw = inserted
+                            if (pw) setPlanWeights(prev => ({...prev, [key]: pw}))
+                          }
+                          const wt = pw?.working_weight || 0
+                          const sets = Array.from({length: ex.sets}, () => ({weight: wt, reps: ex.reps, done: false}))
+                          const grip = ['Тяга вертикального блока','Тяга горизонтального блока','Подтягивания','Тяга штанги в наклоне','Жим лёжа'].includes(ex.name) ? 'Стандартный' : null
+                          newExercises.push({name: ex.name, grip, open: true, lastSession: null, sets, planId: plan.id, isBase: ex.isBase})
+                        }
+                        setWorkoutExercises(prev => {
+                          const existing = prev.filter(e => !newExercises.some(n => n.name === e.name))
+                          return [...existing, ...newExercises]
+                        })
+                        if (!workoutStarted) setWorkoutStarted(true)
+                      }} style={{width:'100%',marginTop:16,padding:'14px',borderRadius:14,background:'#30D158',color:'#fff',fontSize:16,fontWeight:700,border:'none',cursor:'pointer'}}>
+                        Загрузить в тренировку
+                      </button>
+                      <button onClick={()=>setShowDayPreview(null)} style={{width:'100%',marginTop:8,padding:'12px',borderRadius:14,border:'none',background:'transparent',color:'rgba(255,255,255,0.4)',fontSize:14,cursor:'pointer'}}>
+                        ← Закрыть
+                      </button>
+                    </div>
+                  </div>
+                )
+              })()}
+
+              {/* Rating modal */}
+              {showRatingModal && pendingRatingPlan && (
+                <div style={{position:'fixed',inset:0,background:'rgba(0,0,0,0.85)',zIndex:1001,display:'flex',alignItems:'center',justifyContent:'center',padding:24}}>
+                  <div style={{background:'#1C1C1E',borderRadius:24,padding:28,maxWidth:360,width:'100%',textAlign:'center'}}>
+                    <div style={{fontSize:22,fontWeight:700,color:'rgba(255,255,255,0.9)',marginBottom:20}}>Как прошла тренировка? 💪</div>
+                    <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:10,marginBottom:20}}>
+                      {[{key:'hard',label:'😓 Тяжело'},{key:'ok',label:'😐 Нормально'},{key:'good',label:'😊 Хорошо'},{key:'super',label:'🔥 Супер'}].map(r=>(
+                        <button key={r.key} onClick={async ()=>{
+                          const completedMap = {}
+                          for (const ex of workoutExercises) {
+                            if (ex.planId === pendingRatingPlan.id) {
+                              completedMap[ex.name] = ex.sets.filter(s=>s.done).length
+                            }
+                          }
+                          await applyProgression(pendingRatingPlan, r.key, completedMap)
+                          setShowRatingModal(false)
+                          setPendingRatingPlan(null)
+                          setSaved(true)
+                          setTimeout(() => { setSaved(false); setWorkoutStarted(false); setWorkoutExercises([]) }, 1000)
+                        }} style={{padding:'14px',borderRadius:14,border:'1px solid rgba(255,255,255,0.1)',background:'rgba(255,255,255,0.06)',color:'rgba(255,255,255,0.85)',fontSize:15,fontWeight:600,cursor:'pointer'}}>
+                          {r.label}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              )}
 
       <div className="nav-bar">
         {[{id:'add',icon:'➕',label:'Тренировка'},{id:'history',icon:'📜',label:'История'},{id:'progress',icon:'📈',label:'Прогресс'},{id:'exercises',icon:'📋',label:'Упражнения'}].map(t=>(
