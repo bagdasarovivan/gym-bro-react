@@ -1800,44 +1800,53 @@ export default function App() {
       })
       const dayKg = byDate[date].reduce((sum, w) => sum + (w.sets||[]).reduce((s2, s) => s2 + (s.weight||0)*(s.reps||1), 0), 0)
       const dayKgStr = dayKg >= 1000 ? `${(dayKg/1000).toFixed(1)}K кг` : `${Math.round(dayKg)} кг`
-      const exRows = Object.entries(exGroups).map(([exName, sets]) => {
+      const exCards = Object.entries(exGroups).map(([exName, sets]) => {
         const validSets = sets.filter(s => s.weight > 0 || s.reps > 0 || s.time_sec > 0)
-        if (!validSets.length) return ''
+        if (!validSets.length) return null
         const ruExName = normalizeName(exName)
         const setLines = validSets.map((s, i) => {
-          if (s.time_sec > 0) return `<div style="padding:1px 0 1px 12px;color:#555;font-size:12px;">Подход ${i+1}: ${s.time_sec} сек</div>`
-          return `<div style="padding:1px 0 1px 12px;color:#555;font-size:12px;">Подход ${i+1}: ${s.weight} кг × ${s.reps}</div>`
+          const label = s.time_sec > 0
+            ? `Подход ${i+1}: ${s.time_sec} сек`
+            : `Подход ${i+1}: ${s.weight} кг × ${s.reps}`
+          return `<div style="padding:2px 0;color:rgba(255,255,255,0.6);font-size:11px;">${label}</div>`
         }).join('')
-        return `<div style="margin-bottom:8px;"><div style="font-size:13px;font-weight:600;color:#111111;">${ruExName}</div>${setLines}</div>`
-      }).join('')
+        return `<div style="margin-bottom:12px;"><div style="font-size:12px;font-weight:700;color:#ffffff;margin-bottom:4px;">${ruExName}</div>${setLines}</div>`
+      }).filter(Boolean)
+      // Split exercises into two columns
+      const half = Math.ceil(exCards.length / 2)
+      const col1 = exCards.slice(0, half).join('')
+      const col2 = exCards.slice(half).join('')
       return `
-        <div style="margin-bottom:20px;">
+        <div style="margin-bottom:24px;">
           <div style="display:flex;justify-content:space-between;align-items:baseline;padding:6px 0 4px;">
-            <div style="color:#30D158;font-size:14px;font-weight:700;">${dateStr}</div>
-            <div style="color:#555;font-size:12px;">Итого: ${dayKgStr}</div>
+            <div style="color:#22a84a;font-size:13px;font-weight:700;">${dateStr}</div>
+            <div style="color:rgba(255,255,255,0.5);font-size:11px;">Итого: ${dayKgStr}</div>
           </div>
-          <div style="border-bottom:1px solid #ddd;margin-bottom:8px;"></div>
-          ${exRows}
+          <div style="border-bottom:1px solid rgba(255,255,255,0.1);margin-bottom:10px;"></div>
+          <div style="display:table;width:100%;table-layout:fixed;">
+            <div style="display:table-cell;width:50%;vertical-align:top;padding-right:12px;">${col1}</div>
+            <div style="display:table-cell;width:50%;vertical-align:top;padding-left:12px;border-left:1px solid rgba(255,255,255,0.08);">${col2}</div>
+          </div>
         </div>`
     }).join('')
 
     const html = `
-      <div style="font-family:'Helvetica Neue',Arial,sans-serif;background:#ffffff;color:#111111;padding:28px 28px 20px;min-height:100%;">
+      <div style="font-family:'Helvetica Neue',Arial,sans-serif;background:#1a1a1a;color:#ffffff;padding:28px 28px 20px;min-height:100%;">
         <div style="margin-bottom:16px;">
-          <div style="color:#30D158;font-size:26px;font-weight:800;letter-spacing:-0.5px;">GYM BRO</div>
-          <div style="color:#111111;font-size:15px;font-weight:600;margin-top:2px;">Отчёт за ${periodLabel}</div>
-          <div style="color:#555;font-size:11px;margin-top:2px;">Отчёт за ${genDate}</div>
+          <div style="color:#22a84a;font-size:38px;font-weight:800;letter-spacing:-1px;line-height:1;">GYM BRO</div>
+          <div style="color:rgba(255,255,255,0.85);font-size:14px;font-weight:600;margin-top:6px;">Отчёт за ${periodLabel}</div>
+          <div style="color:rgba(255,255,255,0.4);font-size:11px;margin-top:2px;">Отчёт за ${genDate}</div>
         </div>
-        <div style="border-bottom:1px solid #ddd;margin-bottom:16px;"></div>
+        <div style="border-bottom:1px solid rgba(255,255,255,0.1);margin-bottom:16px;"></div>
         <div style="margin-bottom:16px;">
-          <div style="color:#30D158;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px;">Статистика</div>
-          <div style="font-size:13px;margin-bottom:4px;">Всего тренировок: <b>${workoutDatesAll.length}</b></div>
-          <div style="font-size:13px;">Поднято за период: <b>${totalKgK} кг</b></div>
+          <div style="color:#22a84a;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.8px;margin-bottom:8px;">Статистика</div>
+          <div style="font-size:12px;margin-bottom:4px;color:rgba(255,255,255,0.8);">Всего тренировок: <b style="color:#ffffff;">${workoutDatesAll.length}</b></div>
+          <div style="font-size:12px;color:rgba(255,255,255,0.8);">Поднято за период: <b style="color:#ffffff;">${totalKgK} кг</b></div>
         </div>
-        <div style="border-bottom:1px solid #ddd;margin-bottom:16px;"></div>
-        <div style="color:#30D158;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:12px;">Тренировки</div>
+        <div style="border-bottom:1px solid rgba(255,255,255,0.1);margin-bottom:16px;"></div>
+        <div style="color:#22a84a;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.8px;margin-bottom:14px;">Тренировки</div>
         ${workoutRows}
-        <div style="border-top:1px solid #ddd;margin-top:20px;padding-top:8px;text-align:center;color:#999;font-size:10px;">
+        <div style="border-top:1px solid rgba(255,255,255,0.1);margin-top:20px;padding-top:8px;text-align:center;color:rgba(255,255,255,0.25);font-size:10px;">
           Gym BRO — Твой личный тренировочный журнал
         </div>
       </div>`
@@ -1848,8 +1857,8 @@ export default function App() {
     html2pdf().set({
       margin: 0,
       filename: `gymBRO_${fileMonth}_${fileYear}.pdf`,
-      image: { type: 'jpeg', quality: 0.95 },
-      html2canvas: { scale: 2, backgroundColor: '#ffffff' },
+      image: { type: 'jpeg', quality: 0.97 },
+      html2canvas: { scale: 2, backgroundColor: '#1a1a1a' },
       jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
     }).from(html).save()
   }
