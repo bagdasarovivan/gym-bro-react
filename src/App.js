@@ -2626,8 +2626,8 @@ export default function App() {
                 <button onClick={()=>setShowPlanModal(true)} style={{width:'100%',marginBottom:10,padding:'16px 20px',borderRadius:16,border:'1px solid rgba(255,255,255,0.09)',background:'rgba(255,255,255,0.06)',cursor:'pointer',display:'flex',alignItems:'center',gap:14,textAlign:'left'}}>
                   <div style={{width:44,height:44,borderRadius:12,background:'rgba(48,209,88,0.15)',display:'flex',alignItems:'center',justifyContent:'center',fontSize:20,flexShrink:0}}>📋</div>
                   <div style={{flex:1}}>
-                    <div style={{fontSize:15,fontWeight:600,color:'#fff'}}>Выбрать план тренировок</div>
-                    <div style={{fontSize:12,color:'rgba(255,255,255,0.4)',marginTop:2}}>Тренируйся по программе</div>
+                    <div style={{fontSize:16,fontWeight:600,color:'#fff',marginBottom:4}}>Выбрать план тренировок</div>
+                    <div style={{fontSize:12,color:'rgba(255,255,255,0.35)',marginTop:4}}>Тренируйся по программе</div>
                   </div>
                   <span style={{color:'rgba(255,255,255,0.2)',fontSize:18}}>›</span>
                 </button>
@@ -2656,24 +2656,24 @@ export default function App() {
               <button onClick={()=>setShowExModal(true)} style={{width:'100%',marginBottom:10,padding:'16px 20px',borderRadius:16,border:'1px solid rgba(255,255,255,0.09)',background:'rgba(255,255,255,0.06)',cursor:'pointer',display:'flex',alignItems:'center',gap:14,textAlign:'left'}}>
                 <div style={{width:44,height:44,borderRadius:12,background:'rgba(255,255,255,0.08)',display:'flex',alignItems:'center',justifyContent:'center',fontSize:20,flexShrink:0}}>＋</div>
                 <div style={{flex:1}}>
-                  <div style={{fontSize:15,fontWeight:600,color:'#fff'}}>Добавить упражнение</div>
-                  <div style={{fontSize:12,color:'rgba(255,255,255,0.4)',marginTop:2}}>Выбрать вручную</div>
+                  <div style={{fontSize:16,fontWeight:600,color:'#fff',marginBottom:4}}>Добавить упражнение</div>
+                  <div style={{fontSize:12,color:'rgba(255,255,255,0.35)',marginTop:4}}>Выбрать вручную</div>
                 </div>
                 <span style={{color:'rgba(255,255,255,0.2)',fontSize:18}}>›</span>
               </button>
               <button onClick={()=>setShowComingSoon(true)} style={{width:'100%',marginBottom:10,padding:'16px 20px',borderRadius:16,border:'1px solid rgba(255,255,255,0.08)',background:'rgba(255,255,255,0.05)',cursor:'pointer',display:'flex',alignItems:'center',gap:14,textAlign:'left'}}>
                 <div style={{width:44,height:44,borderRadius:12,background:'rgba(255,200,0,0.12)',display:'flex',alignItems:'center',justifyContent:'center',fontSize:20,flexShrink:0}}>🤸</div>
                 <div style={{flex:1}}>
-                  <div style={{fontSize:15,fontWeight:600,color:'rgba(255,255,255,0.5)'}}>Разминка</div>
-                  <div style={{fontSize:12,color:'rgba(255,255,255,0.3)',marginTop:2}}>Подготовь тело к тренировке</div>
+                  <div style={{fontSize:16,fontWeight:600,color:'rgba(255,255,255,0.5)',marginBottom:4}}>Разминка</div>
+                  <div style={{fontSize:12,color:'rgba(255,255,255,0.35)',marginTop:4}}>Подготовь тело к тренировке</div>
                 </div>
                 <span style={{color:'rgba(255,255,255,0.2)',fontSize:18}}>›</span>
               </button>
               <button onClick={()=>setShowComingSoon(true)} style={{width:'100%',marginBottom:16,padding:'16px 20px',borderRadius:16,border:'1px solid rgba(255,255,255,0.08)',background:'rgba(255,255,255,0.05)',cursor:'pointer',display:'flex',alignItems:'center',gap:14,textAlign:'left'}}>
                 <div style={{width:44,height:44,borderRadius:12,background:'rgba(100,180,255,0.1)',display:'flex',alignItems:'center',justifyContent:'center',fontSize:20,flexShrink:0}}>🧘</div>
                 <div style={{flex:1}}>
-                  <div style={{fontSize:15,fontWeight:600,color:'rgba(255,255,255,0.5)'}}>Растяжка</div>
-                  <div style={{fontSize:12,color:'rgba(255,255,255,0.3)',marginTop:2}}>Восстановление после нагрузки</div>
+                  <div style={{fontSize:16,fontWeight:600,color:'rgba(255,255,255,0.5)',marginBottom:4}}>Растяжка</div>
+                  <div style={{fontSize:12,color:'rgba(255,255,255,0.35)',marginTop:4}}>Восстановление после нагрузки</div>
                 </div>
                 <span style={{color:'rgba(255,255,255,0.2)',fontSize:18}}>›</span>
               </button>
