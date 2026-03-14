@@ -2621,8 +2621,13 @@ export default function App() {
               })}
               {/* Plan cards */}
               {activePlans.length === 0 ? (
-                <button onClick={()=>setShowPlanModal(true)} style={{width:'100%',marginBottom:12,padding:'12px 16px',borderRadius:14,border:'1px solid rgba(255,255,255,0.08)',background:'rgba(255,255,255,0.04)',color:'rgba(255,255,255,0.55)',fontSize:14,fontWeight:600,cursor:'pointer',display:'flex',alignItems:'center',gap:8}}>
-                  📋 Выбрать план тренировок
+                <button onClick={()=>setShowPlanModal(true)} style={{width:'100%',marginBottom:10,padding:'16px 20px',borderRadius:16,border:'1px solid rgba(255,255,255,0.09)',background:'rgba(255,255,255,0.06)',cursor:'pointer',display:'flex',alignItems:'center',gap:14,textAlign:'left'}}>
+                  <div style={{width:44,height:44,borderRadius:12,background:'rgba(48,209,88,0.15)',display:'flex',alignItems:'center',justifyContent:'center',fontSize:20,flexShrink:0}}>📋</div>
+                  <div style={{flex:1}}>
+                    <div style={{fontSize:15,fontWeight:600,color:'#fff'}}>Выбрать план тренировок</div>
+                    <div style={{fontSize:12,color:'rgba(255,255,255,0.4)',marginTop:2}}>Тренируйся по программе</div>
+                  </div>
+                  <span style={{color:'rgba(255,255,255,0.2)',fontSize:18}}>›</span>
                 </button>
               ) : (
                 <div style={{marginBottom:12}}>
@@ -2646,8 +2651,13 @@ export default function App() {
                   </button>
                 </div>
               )}
-              <button className="ex-selector-btn" onClick={()=>setShowExModal(true)} style={{marginBottom:16}}>
-                <span style={{opacity:0.55}}>➕ Добавить упражнение...</span>
+              <button onClick={()=>setShowExModal(true)} style={{width:'100%',marginBottom:16,padding:'16px 20px',borderRadius:16,border:'1px solid rgba(255,255,255,0.09)',background:'rgba(255,255,255,0.06)',cursor:'pointer',display:'flex',alignItems:'center',gap:14,textAlign:'left'}}>
+                <div style={{width:44,height:44,borderRadius:12,background:'rgba(255,255,255,0.08)',display:'flex',alignItems:'center',justifyContent:'center',fontSize:20,flexShrink:0}}>＋</div>
+                <div style={{flex:1}}>
+                  <div style={{fontSize:15,fontWeight:600,color:'#fff'}}>Добавить упражнение</div>
+                  <div style={{fontSize:12,color:'rgba(255,255,255,0.4)',marginTop:2}}>Выбрать вручную</div>
+                </div>
+                <span style={{color:'rgba(255,255,255,0.2)',fontSize:18}}>›</span>
               </button>
               {workoutExercises.length > 0 && (
                 <button className={`save-btn${saved?' done':''}`} onClick={saveWorkout} disabled={saving || saved}>
