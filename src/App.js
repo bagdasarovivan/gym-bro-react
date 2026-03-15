@@ -1417,6 +1417,11 @@ function LineChart({ data, period, setPeriod, unit = 'кг' }) {
           const fullDate = tooltip.date
             ? new Date(tooltip.date+'T12:00:00').toLocaleDateString('ru',{day:'numeric',month:'long',year:'numeric'})
             : tooltip.label
+          const setLine = tooltip.bestTimeSec > 0
+            ? `${tooltip.bestTimeSec} сек`
+            : (tooltip.bestWeight > 0 && tooltip.bestReps > 0)
+              ? `${tooltip.bestWeight} ${unit} × ${tooltip.bestReps} повт`
+              : null
           return (
             <div style={{
               position:'absolute',
@@ -1434,7 +1439,8 @@ function LineChart({ data, period, setPeriod, unit = 'кг' }) {
               whiteSpace:'nowrap',
             }}>
               <div style={{fontSize:18,fontWeight:700,color:'#30D158',lineHeight:1.2}}>~{tooltip.val} {unit}</div>
-              <div style={{fontSize:12,color:'rgba(255,255,255,0.45)',marginTop:4}}>{fullDate}</div>
+              {setLine && <div style={{fontSize:13,fontWeight:600,color:'rgba(255,255,255,0.9)',marginTop:3}}>{setLine}</div>}
+              <div style={{fontSize:11,color:'rgba(255,255,255,0.4)',marginTop:3}}>{fullDate}</div>
             </div>
           )
         })()}
@@ -2147,14 +2153,25 @@ export default function App() {
       const enName = Object.entries(EN_TO_RU).find(([,v])=>v===chartEx)?.[0] || chartEx
       const matchName = (n) => !n ? false : (normalizeName(n) === chartEx || normalizeName(n).replace(/\s*\([^)]*\)\s*$/, '').trim() === chartEx || n === chartEx || n === enName || ruName(n) === chartEx || n.startsWith(chartEx + ' (') || n.startsWith(enName + ' ('))
       const byDate = {}
+      const findBestSet = (sets) => {
+        let best = null, bestOrm = -1
+        ;(sets||[]).forEach(s => {
+          if (s.time_sec > 0) {
+            if (!best || s.time_sec > (best.time_sec || 0)) best = s
+          } else if (s.weight > 0 && s.reps > 0) {
+            const orm = s.weight * (1 + s.reps / 30)
+            if (orm > bestOrm) { bestOrm = orm; best = s }
+          }
+        })
+        return { best, orm: bestOrm }
+      }
       // First try from already-loaded history
       history.forEach(w => {
         if (!matchName(w.exercises?.name)) return
-        const best = (w.sets||[]).filter(s=>s.weight>0&&s.reps>0).reduce((b,s)=>{
-          const orm = s.weight*(1+s.reps/30)
-          return orm > b ? orm : b
-        }, 0)
-        if (best > 0 && (!byDate[w.workout_date] || best > byDate[w.workout_date])) byDate[w.workout_date] = best
+        const { best, orm } = findBestSet(w.sets)
+        if (!best) return
+        const cur = byDate[w.workout_date]
+        if (!cur || orm > cur.orm) byDate[w.workout_date] = { orm, best }
       })
       // If nothing found, query DB directly
       if (Object.keys(byDate).length === 0) {
@@ -2164,17 +2181,23 @@ export default function App() {
         const r2b = (!r1a.data?.length && !r1b.data?.length) ? await supabase.from('exercises').select('id').ilike('name', `${enName} (%)`) : {data:[]}
         const exIds = [...(r1a.data||[]), ...(r1b.data||[]), ...(r2a.data||[]), ...(r2b.data||[])].map(e=>e.id)
         if (exIds.length) {
-          const { data } = await supabase.from('workouts').select('workout_date,sets(weight,reps)').in('exercise_id',exIds).eq('user_id', user.id).order('workout_date',{ascending:false}).limit(200)
+          const { data } = await supabase.from('workouts').select('workout_date,sets(weight,reps,time_sec)').in('exercise_id',exIds).eq('user_id', user.id).order('workout_date',{ascending:false}).limit(200)
           ;(data||[]).forEach(w => {
-            const best = (w.sets||[]).filter(s=>s.weight>0&&s.reps>0).reduce((b,s)=>{
-              const orm = s.weight*(1+s.reps/30)
-              return orm > b ? orm : b
-            }, 0)
-            if (best > 0 && (!byDate[w.workout_date] || best > byDate[w.workout_date])) byDate[w.workout_date] = best
+            const { best, orm } = findBestSet(w.sets)
+            if (!best) return
+            const cur = byDate[w.workout_date]
+            if (!cur || orm > cur.orm) byDate[w.workout_date] = { orm, best }
           })
         }
       }
-      const pts = Object.entries(byDate).sort(([a],[b])=>a.localeCompare(b)).map(([date,val])=>({ val: parseFloat(val.toFixed(1)), date, label: new Date(date+'T12:00:00').toLocaleDateString('ru',{day:'numeric',month:'short'}) })).filter(p=>p.val>0)
+      const pts = Object.entries(byDate).sort(([a],[b])=>a.localeCompare(b)).map(([date,{orm,best}])=>({
+        val: parseFloat(orm.toFixed(1)),
+        date,
+        label: new Date(date+'T12:00:00').toLocaleDateString('ru',{day:'numeric',month:'short'}),
+        bestWeight: best.weight || 0,
+        bestReps: best.reps || 0,
+        bestTimeSec: best.time_sec || 0,
+      })).filter(p=>p.val>0)
       setChartData(pts)
     }
     load()
