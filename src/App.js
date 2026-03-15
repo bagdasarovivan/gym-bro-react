@@ -233,9 +233,18 @@ const MUSCLE_RECOVERY_HOURS = {
   hamstrings: 84,
   glutes:     84,
 }
+// Max = recovery-based theoretical max × 1.5 buffer
+// So "100%" = 1.5x the physiological limit = actual injury territory
+// At 2x/week for heavy muscles: ~67% = "Отлично", not red
 const MUSCLE_MAX_MONTHLY = Object.fromEntries(
-  Object.entries(MUSCLE_RECOVERY_HOURS).map(([k, v]) => [k, Math.floor(720 / v)])
+  Object.entries(MUSCLE_RECOVERY_HOURS).map(([k, v]) => [k, Math.ceil(720 / v * 1.5)])
 )
+
+// Secondary coefficient per muscle:
+// lower_back acts as stabilizer — reduce to avoid red from compound movements
+const SECONDARY_COEFF_MAP = {
+  lower_back: 0.15,
+}
 
 function calcMuscleLoad(workouts, periodDays) {
   // Group by day first — one day = max 1.0 load per muscle regardless of exercise count
@@ -252,10 +261,12 @@ function calcMuscleLoad(workouts, periodDays) {
       exMuscles = EXERCISE_MUSCLES[exName]
     }
     if (!exMuscles) return
-    // Primary muscles get 1.0 — override any secondary 0.35 already recorded
+    // Primary muscles get 1.0 — override any secondary already recorded
     exMuscles.primary?.forEach(m => { dayMuscleMap[date][m] = 1.0 })
-    // Secondary muscles get 0.35 — only if primary hasn't claimed it today
-    exMuscles.secondary?.forEach(m => { if (!dayMuscleMap[date][m]) dayMuscleMap[date][m] = 0.35 })
+    // Secondary muscles — muscle-specific coeff, only if primary hasn't claimed it today
+    exMuscles.secondary?.forEach(m => {
+      if (!dayMuscleMap[date][m]) dayMuscleMap[date][m] = SECONDARY_COEFF_MAP[m] ?? 0.35
+    })
   })
   // Sum across days
   const muscleLoad = {}
