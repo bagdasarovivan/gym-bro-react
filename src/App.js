@@ -238,12 +238,11 @@ const MUSCLE_MAX_MONTHLY = Object.fromEntries(
 )
 
 function calcMuscleLoad(workouts, periodDays) {
-  const PRIMARY_COEFF   = 1.0
-  const SECONDARY_COEFF = 0.35
-  const trainingDays = {}
+  // Group by day first — one day = max 1.0 load per muscle regardless of exercise count
+  const dayMuscleMap = {} // { 'YYYY-MM-DD': Map(muscle -> maxCoeff) }
   workouts.forEach(workout => {
     const date = workout.workout_date
-    if (!trainingDays[date]) trainingDays[date] = new Set()
+    if (!dayMuscleMap[date]) dayMuscleMap[date] = {}
     const exName = normalizeName(workout.exercises?.name)
     const gripMatch = exName && exName.match(/^(.+) \((.+)\)$/)
     let exMuscles
@@ -253,22 +252,21 @@ function calcMuscleLoad(workouts, periodDays) {
       exMuscles = EXERCISE_MUSCLES[exName]
     }
     if (!exMuscles) return
-    exMuscles.primary?.forEach(m => trainingDays[date].add(`${m}|primary`))
-    exMuscles.secondary?.forEach(m => trainingDays[date].add(`${m}|secondary`))
+    // Primary muscles get 1.0 — override any secondary 0.35 already recorded
+    exMuscles.primary?.forEach(m => { dayMuscleMap[date][m] = 1.0 })
+    // Secondary muscles get 0.35 — only if primary hasn't claimed it today
+    exMuscles.secondary?.forEach(m => { if (!dayMuscleMap[date][m]) dayMuscleMap[date][m] = 0.35 })
   })
-  const effectiveTrainings = {}
-  Object.values(trainingDays).forEach(dayMuscles => {
-    dayMuscles.forEach(key => {
-      const lastPipe = key.lastIndexOf('|')
-      const muscle = key.slice(0, lastPipe)
-      const type   = key.slice(lastPipe + 1)
-      const coeff  = type === 'primary' ? PRIMARY_COEFF : SECONDARY_COEFF
-      effectiveTrainings[muscle] = (effectiveTrainings[muscle] || 0) + coeff
+  // Sum across days
+  const muscleLoad = {}
+  Object.values(dayMuscleMap).forEach(dayMuscles => {
+    Object.entries(dayMuscles).forEach(([muscle, coeff]) => {
+      muscleLoad[muscle] = (muscleLoad[muscle] || 0) + coeff
     })
   })
   const periodMonths = periodDays / 30
   const result = {}
-  Object.entries(effectiveTrainings).forEach(([muscle, trainings]) => {
+  Object.entries(muscleLoad).forEach(([muscle, trainings]) => {
     const maxForPeriod = (MUSCLE_MAX_MONTHLY[muscle] || 10) * periodMonths
     const percent = Math.round((trainings / maxForPeriod) * 100)
     let label, color
@@ -1780,6 +1778,7 @@ export default function App() {
   const [showRatingModal, setShowRatingModal] = useState(false)
   const [pendingRatingPlan, setPendingRatingPlan] = useState(null)
   const [planOnboarding, setPlanOnboarding] = useState(false)
+  const [confirmDeletePlan, setConfirmDeletePlan] = useState(null)
   const [editSetModal, setEditSetModal] = useState(null) // {exIdx, setIdx, weight, reps}
 
   const handleAuth = async () => {
@@ -2680,37 +2679,43 @@ export default function App() {
                 )
               })}
               {/* Plan cards */}
-              {activePlans.length === 0 ? (
-                <button onClick={()=>setShowPlanModal(true)} style={{width:'100%',marginBottom:10,padding:'16px 20px',borderRadius:16,border:'1px solid rgba(255,255,255,0.09)',background:'rgba(255,255,255,0.06)',cursor:'pointer',display:'flex',alignItems:'center',gap:14,textAlign:'left'}}>
-                  <div style={{width:44,height:44,borderRadius:12,background:'rgba(48,209,88,0.15)',display:'flex',alignItems:'center',justifyContent:'center',fontSize:20,flexShrink:0}}>📋</div>
-                  <div style={{flex:1}}>
-                    <div style={{fontSize:16,fontWeight:600,color:'#fff',marginBottom:4}}>Выбрать план тренировок</div>
-                    <div style={{fontSize:12,color:'rgba(255,255,255,0.35)',marginTop:4}}>Тренируйся по программе</div>
-                  </div>
-                  <span style={{color:'rgba(255,255,255,0.2)',fontSize:18}}>›</span>
-                </button>
-              ) : (
-                <div style={{marginBottom:12}}>
-                  {activePlans.map(plan => {
-                    const days = PLAN_DAYS[plan.plan_type] || []
-                    const dayIdx = (plan.current_day - 1) % days.length
-                    const dayDef = days[dayIdx]
-                    const week = Math.floor((plan.workout_count) / days.length) + 1
-                    return (
-                      <div key={plan.id} onClick={()=>setShowDayPreview({plan, dayIdx, dayDef})} style={{background:'rgba(255,255,255,0.06)',borderRadius:14,border:'1px solid rgba(255,255,255,0.1)',padding:'12px 14px',marginBottom:8,cursor:'pointer'}}>
-                        <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:4}}>
-                          <span style={{fontSize:15,fontWeight:700,color:'rgba(255,255,255,0.9)'}}>{PLAN_ICONS[plan.plan_type]} {PLAN_NAMES[plan.plan_type]}</span>
-                          <span style={{fontSize:11,color:'rgba(255,255,255,0.35)',fontWeight:600}}>{plan.slot===1?'основной':'доп.'}</span>
-                        </div>
-                        <div style={{fontSize:13,color:'rgba(255,255,255,0.5)'}}>{dayDef?.label} · Неделя {week} · тренировка {plan.workout_count+1}</div>
+              <div style={{marginBottom:12}}>
+                {activePlans.map(plan => {
+                  const days = PLAN_DAYS[plan.plan_type] || []
+                  const dayIdx = (plan.current_day - 1) % days.length
+                  const dayDef = days[dayIdx]
+                  const week = Math.floor((plan.workout_count) / days.length) + 1
+                  return (
+                    <div key={plan.id} onClick={()=>setShowDayPreview({plan, dayIdx, dayDef})} style={{background:'rgba(255,255,255,0.06)',borderRadius:14,border:'1px solid rgba(255,255,255,0.1)',padding:'12px 14px',marginBottom:8,cursor:'pointer'}}>
+                      <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:4}}>
+                        <span style={{fontSize:15,fontWeight:700,color:'rgba(255,255,255,0.9)'}}>{PLAN_ICONS[plan.plan_type]} {PLAN_NAMES[plan.plan_type]}</span>
+                        <span style={{fontSize:11,color:'rgba(255,255,255,0.35)',fontWeight:600}}>{plan.slot===1?'основной':'доп.'}</span>
                       </div>
-                    )
-                  })}
-                  <button onClick={()=>setShowPlanModal(true)} style={{width:'100%',marginTop:6,padding:'8px 14px',borderRadius:12,border:'none',background:'transparent',color:'rgba(255,255,255,0.35)',fontSize:12,cursor:'pointer'}}>
-                    🔄 Изменить планы
+                      <div style={{fontSize:13,color:'rgba(255,255,255,0.5)'}}>{dayDef?.label} · Неделя {week} · тренировка {plan.workout_count+1}</div>
+                    </div>
+                  )
+                })}
+                {activePlans.length === 0 && (
+                  <button onClick={()=>setShowPlanModal(true)} style={{width:'100%',marginBottom:10,padding:'16px 20px',borderRadius:16,border:'1px solid rgba(255,255,255,0.09)',background:'rgba(255,255,255,0.06)',cursor:'pointer',display:'flex',alignItems:'center',gap:14,textAlign:'left'}}>
+                    <div style={{width:44,height:44,borderRadius:12,background:'rgba(48,209,88,0.15)',display:'flex',alignItems:'center',justifyContent:'center',fontSize:20,flexShrink:0}}>📋</div>
+                    <div style={{flex:1}}>
+                      <div style={{fontSize:16,fontWeight:600,color:'#fff',marginBottom:4}}>Выбрать план тренировок</div>
+                      <div style={{fontSize:12,color:'rgba(255,255,255,0.35)',marginTop:4}}>Тренируйся по программе</div>
+                    </div>
+                    <span style={{color:'rgba(255,255,255,0.2)',fontSize:18}}>›</span>
                   </button>
-                </div>
-              )}
+                )}
+                {activePlans.length === 1 && (
+                  <button onClick={()=>setShowPlanModal(true)} style={{width:'100%',marginBottom:8,padding:'10px 14px',borderRadius:12,border:'1px dashed rgba(255,255,255,0.15)',background:'transparent',color:'rgba(255,255,255,0.5)',fontSize:13,fontWeight:600,cursor:'pointer'}}>
+                    + Добавить второй план
+                  </button>
+                )}
+                {activePlans.length > 0 && (
+                  <button onClick={()=>setShowPlanModal(true)} style={{width:'100%',marginTop:2,padding:'8px 14px',borderRadius:12,border:'none',background:'transparent',color:'rgba(255,255,255,0.35)',fontSize:12,cursor:'pointer'}}>
+                    ⚙️ Управление планами
+                  </button>
+                )}
+              </div>
               <button onClick={()=>setShowExModal(true)} style={{width:'100%',marginBottom:10,padding:'16px 20px',borderRadius:16,border:'1px solid rgba(255,255,255,0.09)',background:'rgba(255,255,255,0.06)',cursor:'pointer',display:'flex',alignItems:'center',gap:14,textAlign:'left'}}>
                 <div style={{width:44,height:44,borderRadius:12,background:'rgba(255,255,255,0.08)',display:'flex',alignItems:'center',justifyContent:'center',fontSize:20,flexShrink:0}}>＋</div>
                 <div style={{flex:1}}>
@@ -3397,38 +3402,67 @@ export default function App() {
                 <div style={{position:'fixed',inset:0,background:'rgba(0,0,0,0.8)',zIndex:1000,display:'flex',alignItems:'center',justifyContent:'center',padding:20}} onClick={()=>setShowPlanModal(false)}>
                   <div style={{background:'#1C1C1E',borderRadius:24,padding:24,width:'100%',maxWidth:400}} onClick={e=>e.stopPropagation()}>
                     <div style={{fontSize:19,fontWeight:700,color:'rgba(255,255,255,0.9)',marginBottom:6}}>Выбери план тренировок</div>
-                    <div style={{fontSize:13,color:'rgba(255,255,255,0.4)',marginBottom:20}}>Gym BRO будет подбирать упражнения и веса автоматически</div>
-                    <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:12,marginBottom:16}}>
-                      {['strength','mass','cut','fit'].map(type => (
-                        <button key={type} onClick={async ()=>{
-                          setShowPlanModal(false)
-                          const days = PLAN_DAYS[type]
-                          const slot = activePlans.length + 1
-                          const { data: plan } = await supabase.from('workout_plans').insert({
-                            user_id: user.id, plan_type: type, slot, total_days: days.length,
-                            current_day: 1, workout_count: 0
-                          }).select().single()
-                          if (plan) {
-                            setActivePlans(prev => [...prev, plan])
-                            setPlanOnboarding(true)
-                          }
-                        }} style={{padding:'18px 12px',borderRadius:16,border:'1px solid rgba(255,255,255,0.1)',background:'rgba(255,255,255,0.05)',cursor:'pointer',textAlign:'left'}}>
-                          <div style={{fontSize:28,marginBottom:8}}>{PLAN_ICONS[type]}</div>
-                          <div style={{fontSize:15,fontWeight:700,color:'rgba(255,255,255,0.9)'}}>{PLAN_NAMES[type]}</div>
-                        </button>
-                      ))}
-                    </div>
+                    <div style={{fontSize:13,color:'rgba(255,255,255,0.4)',marginBottom:16}}>Gym BRO будет подбирать упражнения и веса автоматически</div>
                     {activePlans.length > 0 && (
-                      <button onClick={async ()=>{
-                        if (!window.confirm('Удалить все планы?')) return
-                        for (const p of activePlans) await supabase.from('workout_plans').update({is_active:false}).eq('id',p.id)
-                        setActivePlans([])
-                        setPlanWeights({})
-                        setShowPlanModal(false)
-                      }} style={{width:'100%',padding:'12px',borderRadius:12,border:'none',background:'rgba(255,59,48,0.1)',color:'#FF453A',fontSize:14,fontWeight:600,cursor:'pointer'}}>
-                        Отменить все планы
-                      </button>
+                      <div style={{marginBottom:16}}>
+                        <div style={{fontSize:11,fontWeight:700,textTransform:'uppercase',letterSpacing:'0.6px',color:'rgba(255,255,255,0.3)',marginBottom:8}}>Активные планы</div>
+                        {activePlans.map(plan => {
+                          const days = PLAN_DAYS[plan.plan_type] || []
+                          const dayIdx = (plan.current_day - 1) % days.length
+                          const dayDef = days[dayIdx]
+                          const week = Math.floor((plan.workout_count) / days.length) + 1
+                          return (
+                            <div key={plan.id} onClick={()=>setShowPlanModal(false)} style={{display:'flex',alignItems:'center',justifyContent:'space-between',background:'rgba(255,255,255,0.06)',borderRadius:12,padding:'10px 12px',marginBottom:8,cursor:'pointer'}}>
+                              <div>
+                                <div style={{fontSize:14,fontWeight:700,color:'rgba(255,255,255,0.9)'}}>{PLAN_ICONS[plan.plan_type]} {PLAN_NAMES[plan.plan_type]}</div>
+                                <div style={{fontSize:12,color:'rgba(255,255,255,0.4)',marginTop:2}}>{dayDef?.label} · Неделя {week}</div>
+                              </div>
+                              <button onClick={e=>{e.stopPropagation();setConfirmDeletePlan(plan)}} style={{background:'rgba(255,59,48,0.12)',border:'none',color:'#FF453A',width:28,height:28,borderRadius:8,cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',fontSize:14,fontWeight:700,flexShrink:0}}>✕</button>
+                            </div>
+                          )
+                        })}
+                      </div>
                     )}
+                    {activePlans.length < 2 && (
+                      <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:12}}>
+                        {['strength','mass','cut','fit'].map(type => (
+                          <button key={type} onClick={async ()=>{
+                            setShowPlanModal(false)
+                            const days = PLAN_DAYS[type]
+                            const slot = activePlans.length + 1
+                            const { data: plan } = await supabase.from('workout_plans').insert({
+                              user_id: user.id, plan_type: type, slot, total_days: days.length,
+                              current_day: 1, workout_count: 0
+                            }).select().single()
+                            if (plan) {
+                              setActivePlans(prev => [...prev, plan])
+                              setPlanOnboarding(true)
+                            }
+                          }} style={{padding:'18px 12px',borderRadius:16,border:'1px solid rgba(255,255,255,0.1)',background:'rgba(255,255,255,0.05)',cursor:'pointer',textAlign:'left'}}>
+                            <div style={{fontSize:28,marginBottom:8}}>{PLAN_ICONS[type]}</div>
+                            <div style={{fontSize:15,fontWeight:700,color:'rgba(255,255,255,0.9)'}}>{PLAN_NAMES[type]}</div>
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {/* Confirm delete plan modal */}
+              {confirmDeletePlan && (
+                <div style={{position:'fixed',inset:0,background:'rgba(0,0,0,0.7)',zIndex:1002,display:'flex',alignItems:'center',justifyContent:'center',padding:32}}>
+                  <div style={{background:'#1C1C1E',borderRadius:20,padding:24,width:'100%',maxWidth:320,textAlign:'center'}}>
+                    <div style={{fontSize:16,fontWeight:700,color:'rgba(255,255,255,0.9)',marginBottom:8}}>Удалить план «{PLAN_NAMES[confirmDeletePlan.plan_type]}»?</div>
+                    <div style={{fontSize:13,color:'rgba(255,255,255,0.4)',marginBottom:24}}>Прогресс весов будет сохранён.</div>
+                    <div style={{display:'flex',gap:10}}>
+                      <button onClick={()=>setConfirmDeletePlan(null)} style={{flex:1,padding:'12px',borderRadius:12,border:'1px solid rgba(255,255,255,0.1)',background:'transparent',color:'rgba(255,255,255,0.6)',fontSize:15,fontWeight:600,cursor:'pointer'}}>Отмена</button>
+                      <button onClick={async ()=>{
+                        await supabase.from('workout_plans').update({is_active:false}).eq('id',confirmDeletePlan.id)
+                        setActivePlans(prev => prev.filter(p => p.id !== confirmDeletePlan.id))
+                        setConfirmDeletePlan(null)
+                      }} style={{flex:1,padding:'12px',borderRadius:12,border:'none',background:'rgba(255,59,48,0.85)',color:'#fff',fontSize:15,fontWeight:700,cursor:'pointer'}}>Удалить</button>
+                    </div>
                   </div>
                 </div>
               )}
