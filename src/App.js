@@ -2468,10 +2468,10 @@ export default function App() {
   // Loading state
   if (user === undefined) return (
     <div style={{minHeight:'100vh',background:'#000',display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center'}}>
-      <div style={{width:80,height:80,borderRadius:'50%',background:'#1c1c1e',border:'2px solid rgba(255,255,255,0.1)',display:'flex',alignItems:'center',justifyContent:'center',overflow:'hidden'}}>
-        <img src="/images/gymbro_logo.png" alt="Gym BRO" style={{width:60,height:60,objectFit:'contain'}}/>
+      <div style={{width:120,height:120,borderRadius:28,overflow:'hidden',border:'2px solid rgba(255,255,255,0.08)'}}>
+        <img src="/images/gymbro_logo.png" alt="Gym BRO" style={{width:'100%',height:'100%',objectFit:'cover'}}/>
       </div>
-      <div style={{fontSize:22,fontWeight:700,color:'#fff',marginTop:16,letterSpacing:1}}>Gym BRO</div>
+      <div style={{fontSize:24,fontWeight:700,color:'#fff',marginTop:16,letterSpacing:1}}>Gym BRO</div>
     </div>
   )
 
