@@ -2687,7 +2687,6 @@ export default function App() {
                             <>
                               {warmups.length > 0 && (
                                 <div style={{marginBottom:10}}>
-                                  <div style={{fontSize:11,color:'rgba(255,255,255,0.35)',textTransform:'uppercase',letterSpacing:'0.5px',marginBottom:6}}>Разминка (не в счёт)</div>
                                   {warmups.map((wu,wi) => (
                                     <div key={wi} style={{fontSize:13,color:'rgba(255,255,255,0.45)',marginBottom:3,paddingLeft:4}}>— {wu.w} кг × {wu.r}</div>
                                   ))}
