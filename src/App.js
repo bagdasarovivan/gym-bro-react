@@ -2719,8 +2719,8 @@ export default function App() {
                   </div>
                 )
               })}
-              {/* Plan cards */}
-              <div style={{marginBottom:12}}>
+              {/* Plan cards — only shown when no exercises added yet */}
+              {workoutExercises.length === 0 && <div style={{marginBottom:12}}>
                 {activePlans.map(plan => {
                   const days = PLAN_DAYS[plan.plan_type] || []
                   const dayIdx = (plan.current_day - 1) % days.length
@@ -2756,7 +2756,7 @@ export default function App() {
                     ⚙️ Управление планами
                   </button>
                 )}
-              </div>
+              </div>}
               <button onClick={()=>setShowExModal(true)} style={{width:'100%',marginBottom:10,padding:'16px 20px',borderRadius:16,border:'1px solid rgba(255,255,255,0.09)',background:'rgba(255,255,255,0.06)',cursor:'pointer',display:'flex',alignItems:'center',gap:14,textAlign:'left'}}>
                 <div style={{width:44,height:44,borderRadius:12,background:'rgba(255,255,255,0.08)',display:'flex',alignItems:'center',justifyContent:'center',fontSize:20,flexShrink:0}}>＋</div>
                 <div style={{flex:1}}>
@@ -2765,6 +2765,7 @@ export default function App() {
                 </div>
                 <span style={{color:'rgba(255,255,255,0.2)',fontSize:18}}>›</span>
               </button>
+              {workoutExercises.length === 0 && (<>
               <button onClick={()=>setShowComingSoon(true)} style={{width:'100%',marginBottom:10,padding:'16px 20px',borderRadius:16,border:'1px solid rgba(255,255,255,0.08)',background:'rgba(255,255,255,0.05)',cursor:'pointer',display:'flex',alignItems:'center',gap:14,textAlign:'left'}}>
                 <div style={{width:44,height:44,borderRadius:12,background:'rgba(255,200,0,0.12)',display:'flex',alignItems:'center',justifyContent:'center',fontSize:20,flexShrink:0}}>🤸</div>
                 <div style={{flex:1}}>
@@ -2781,6 +2782,7 @@ export default function App() {
                 </div>
                 <span style={{color:'rgba(255,255,255,0.2)',fontSize:18}}>›</span>
               </button>
+              </>)}
               {workoutExercises.length > 0 && (
                 <button className={`save-btn${saved?' done':''}`} onClick={saveWorkout} disabled={saving || saved}>
                   {saved ? '✅ Сохранено!' : saving ? '⏳ Сохранение...' : `💾 Сохранить тренировку (${workoutExercises.length} упр.)`}
