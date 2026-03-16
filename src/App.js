@@ -1,5 +1,5 @@
 /* eslint-disable no-unused-vars */
-import { useState, useEffect, useRef, useCallback } from 'react'
+import { useState, useEffect, useRef, useCallback, useMemo, memo } from 'react'
 import { supabase } from './supabase'
 import html2pdf from 'html2pdf.js'
 
@@ -1654,10 +1654,10 @@ function DropdownPicker({ options, value, onChange, unit = '', label = '', label
     </div>
   )
 }
-function ModalItem({ ex, onSelect, isFav, onToggleFav }) {
+const ModalItem = memo(function ModalItem({ ex, onAdd, isFav, onToggleFav }) {
   const img = getExImage(ex.name)
   return (
-    <div className="modal-item" onClick={onSelect} style={{display:'flex',alignItems:'center',justifyContent:'space-between'}}>
+    <div className="modal-item" onClick={()=>onAdd(ex.name)} style={{display:'flex',alignItems:'center',justifyContent:'space-between'}}>
       <div style={{display:'flex',alignItems:'center',gap:12,flex:1,minWidth:0}}>
         {img ? <img src={img} alt={ex.name} className="modal-img" onError={e => e.target.style.display='none'}/> : <div className="modal-ph">🏋️</div>}
         <span style={{overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{ex.name}</span>
@@ -1667,7 +1667,7 @@ function ModalItem({ ex, onSelect, isFav, onToggleFav }) {
       )}
     </div>
   )
-}
+})
 
 function EditModal({ data, onClose, onSave }) {
   const [workouts, setWorkouts] = useState(data.workouts.map(w => ({
@@ -2240,7 +2240,7 @@ export default function App() {
   const addSet = () => { setSets(prev => { const last = prev[prev.length-1]; return [...prev, { weight: last.weight, reps: last.reps }] }) }
   const removeSet = () => sets.length > 1 && setSets(sets.slice(0,-1))
   const updateSet = (i, f, v) => { const n=[...sets]; n[i][f]=v; setSets(n) }
-  const toggleFav = async (name) => {
+  const toggleFav = useCallback(async (name) => {
     const isFavNow = favorites.includes(name)
     const newFavs = isFavNow ? favorites.filter(f => f !== name) : [...favorites, name]
     setFavorites(newFavs)
@@ -2251,22 +2251,27 @@ export default function App() {
         await supabase.from('favorites').insert({ user_id: user.id, exercise_name: name })
       }
     }
-  }
-  const addExToWorkout = async (name) => {
+  }, [favorites, user])
+  const addExToWorkout = useCallback(async (name) => {
     setShowExModal(false)
     setModalSearch('')
-    // fetch last session for this exercise (including grip variants)
-    let lastSess = null
-    const { data: exDbExact } = await supabase.from('exercises').select('id').eq('name', name)
-    const { data: exDbGrip } = await supabase.from('exercises').select('id').ilike('name', `${name} (%)`)
-    const allExIds = [...(exDbExact||[]), ...(exDbGrip||[])].map(e => e.id)
-    if (allExIds.length) {
-      const { data: lastW } = await supabase.from('workouts').select('workout_date,sets(set_no,weight,reps,time_sec)').in('exercise_id', allExIds).eq('user_id', user.id).order('workout_date',{ascending:false}).limit(1).single()
-      lastSess = lastW || null
-    }
     const grip = GRIP_EXERCISES.includes(name) ? 'Стандартный' : null
-    setWorkoutExercises(prev => [...prev, { name, grip, open: true, lastSession: lastSess, sets: [{ weight: 0, reps: 0 }] }])
-  }
+    const tempId = Date.now()
+    // Add immediately — optimistic UI (no lag)
+    setWorkoutExercises(prev => [...prev, { tempId, name, grip, open: true, lastSession: null, sets: [{ weight: 0, reps: 0 }] }])
+    // Load last session in background
+    try {
+      const { data: exDbExact } = await supabase.from('exercises').select('id').eq('name', name)
+      const { data: exDbGrip } = await supabase.from('exercises').select('id').ilike('name', `${name} (%)`)
+      const allExIds = [...(exDbExact||[]), ...(exDbGrip||[])].map(e => e.id)
+      if (allExIds.length) {
+        const { data: lastW } = await supabase.from('workouts').select('workout_date,sets(set_no,weight,reps,time_sec)').in('exercise_id', allExIds).eq('user_id', user.id).order('workout_date',{ascending:false}).limit(1).single()
+        if (lastW) {
+          setWorkoutExercises(prev => prev.map(e => e.tempId === tempId ? {...e, lastSession: lastW} : e))
+        }
+      }
+    } catch {}
+  }, [user])
 
   const getProgressStep = (planType, exName, isBase) => {
     const legEx = ['Приседания','Жим ногами','Становая тяга']
@@ -2423,13 +2428,13 @@ export default function App() {
     setEditModal(null); setSaved(p => !p)
   }
 
-  const filtered = exercises.filter(e => {
+  const filtered = useMemo(() => {
     const q = modalSearch.toLowerCase().trim()
-    if (!q) return true
-    return e.name.toLowerCase().includes(q)
-  })
-  const favFiltered = filtered.filter(e => favorites.includes(e.name))
-  const restFiltered = filtered.filter(e => !favorites.includes(e.name))
+    if (!q) return exercises
+    return exercises.filter(e => e.name.toLowerCase().includes(q))
+  }, [exercises, modalSearch])
+  const favFiltered = useMemo(() => filtered.filter(e => favorites.includes(e.name)), [filtered, favorites])
+  const restFiltered = useMemo(() => filtered.filter(e => !favorites.includes(e.name)), [filtered, favorites])
   const grouped = history.reduce((acc,w) => { if(!acc[w.workout_date]) acc[w.workout_date]=[]; acc[w.workout_date].push(w); return acc }, {})
   const calMonthName = new Date(calYear,calMonth).toLocaleDateString('ru',{month:'long',year:'numeric'})
   const firstDow = new Date(calYear,calMonth,1).getDay()
@@ -2971,8 +2976,8 @@ export default function App() {
               <div className="modal-srch-wrap"><span className="modal-srch-icon">🔍</span><input className="modal-srch" placeholder="Поиск..." value={modalSearch} onChange={e=>setModalSearch(e.target.value)}/></div>
             </div>
             <div className="modal-list">
-              {!modalSearch&&favFiltered.length>0&&<><div className="modal-sect-lbl">⭐ Избранные</div>{favFiltered.map(ex=><ModalItem key={ex.id} ex={ex} onSelect={()=>addExToWorkout(ex.name)} isFav={true} onToggleFav={toggleFav}/>)}<div className="modal-sect-lbl">Все упражнения</div></>}
-              {(modalSearch?filtered:restFiltered).map(ex=><ModalItem key={ex.id} ex={ex} onSelect={()=>addExToWorkout(ex.name)} isFav={favorites.includes(ex.name)} onToggleFav={toggleFav}/>)}
+              {!modalSearch&&favFiltered.length>0&&<><div className="modal-sect-lbl">⭐ Избранные</div>{favFiltered.map(ex=><ModalItem key={ex.id} ex={ex} onAdd={addExToWorkout} isFav={true} onToggleFav={toggleFav}/>)}<div className="modal-sect-lbl">Все упражнения</div></>}
+              {(modalSearch?filtered:restFiltered).map(ex=><ModalItem key={ex.id} ex={ex} onAdd={addExToWorkout} isFav={favorites.includes(ex.name)} onToggleFav={toggleFav}/>)}
             </div>
           </div>
         </div>
