@@ -1020,7 +1020,7 @@ function buildCopyText(date, workouts) {
   const reversed = [...workouts].reverse()
   reversed.forEach(w => {
     const sets = w.sets?.sort((a,b) => a.set_no-b.set_no)
-      .map(s => s.time_sec > 0 ? `${s.time_sec}s` : `${s.weight}×${s.reps}`).join(', ')
+      .map(s => s.time_sec > 0 ? (s.weight > 0 ? `${s.time_sec}s×${s.weight}кг` : `${s.time_sec}s`) : `${s.weight}×${s.reps}`).join(', ')
     lines.push(`${w.exercises?.name}: ${sets}`)
   })
   return lines.join('\n')
@@ -1612,7 +1612,11 @@ function DropdownPicker({ options, value, onChange, unit = '', label = '', label
   useEffect(() => {
     if (!open) return
     const el = ref.current?.querySelector(`[data-val="${value}"]`)
-    if (el) el.scrollIntoView({ block: 'center' })
+    const dropdown = ref.current?.querySelector('.dpicker-dropdown')
+    if (el && dropdown) {
+      // Scroll only the dropdown container (not the page) to center active item
+      dropdown.scrollTop = el.offsetTop - dropdown.clientHeight / 2 + el.clientHeight / 2
+    }
   }, [open, value])
 
   useEffect(() => {
@@ -1875,7 +1879,7 @@ export default function App() {
         const ruExName = normalizeName(exName)
         const setLines = validSets.map((s, i) => {
           const label = s.time_sec > 0
-            ? `Подход ${i+1}: ${s.time_sec} сек`
+            ? (s.weight > 0 ? `Подход ${i+1}: ${s.time_sec} сек × ${s.weight} кг` : `Подход ${i+1}: ${s.time_sec} сек`)
             : `Подход ${i+1}: ${s.weight} кг × ${s.reps}`
           return `<div style="padding:2px 0;color:rgba(255,255,255,0.6);font-size:11px;">${label}</div>`
         }).join('')
@@ -2356,7 +2360,7 @@ export default function App() {
       const exIsTimed2 = (EXERCISE_TYPE[exItem.name] || 'light') === 'timed'
       await supabase.from('sets').insert(filled.map((s,i) => ({
         workout_id: w.id, set_no: i+1,
-        weight: exIsTimed2 ? 0 : (s.weight||0),
+        weight: exIsTimed2 ? (s.timedWeight||0) : (s.weight||0),
         reps: exIsTimed2 ? 0 : (s.reps||0),
         time_sec: exIsTimed2 ? (s.weight||0) : null
       })))
@@ -2667,7 +2671,7 @@ export default function App() {
                       <div style={{padding:'0 14px 14px'}}>
                         {ex.lastSession && (
                           <div style={{fontSize:12,color:thm.text35,marginBottom:10,padding:'7px 10px',background:thm.card2,borderRadius:8}}>
-                            💡 Прошлый раз: {ex.lastSession.sets?.sort((a,b)=>a.set_no-b.set_no).map(s=>s.time_sec>0?`${s.time_sec}s`:`${kgToDisplay(s.weight)}×${s.reps}`).join(' · ')}
+                            💡 Прошлый раз: {ex.lastSession.sets?.sort((a,b)=>a.set_no-b.set_no).map(s=>s.time_sec>0?(s.weight>0?`${s.time_sec}s×${s.weight}кг`:`${s.time_sec}s`):`${kgToDisplay(s.weight)}×${s.reps}`).join(' · ')}
                           </div>
                         )}
                         {ex.grip !== null && ex.grip !== undefined && (
@@ -2701,7 +2705,18 @@ export default function App() {
                                 <div key={si} className="set-row">
                                   <span className="set-num">{si+1}</span>
                                   {exType2 === 'timed' ? (
-                                    <DropdownPicker options={TIME_OPTIONS} value={s.weight} onChange={v=>setWorkoutExercises(prev=>prev.map((e,i)=>i!==exIdx?e:{...e,sets:e.sets.map((ss,j)=>j!==si?ss:{...ss,weight:v})}))} unit="s" label={`Подход ${si+1}`}/>
+                                    <>
+                                      <DropdownPicker options={TIME_OPTIONS} value={s.weight} onChange={v=>setWorkoutExercises(prev=>prev.map((e,i)=>i!==exIdx?e:{...e,sets:e.sets.map((ss,j)=>j!==si?ss:{...ss,weight:v})}))} unit="s" label={`Подход ${si+1}`}/>
+                                      <span className="set-sep">×</span>
+                                      <div style={{display:'flex',flexDirection:'column',flex:1}}>
+                                        <div className="dpicker-label">Вес (кг)</div>
+                                        <div style={{display:'flex',alignItems:'center',gap:6,height:51}}>
+                                          <button onClick={()=>setWorkoutExercises(prev=>prev.map((e,i)=>i!==exIdx?e:{...e,sets:e.sets.map((ss,j)=>j!==si?ss:{...ss,timedWeight:Math.max(0,(ss.timedWeight||0)-5)})}))} style={{width:40,height:40,borderRadius:10,border:'1.5px solid rgba(255,255,255,0.1)',background:'rgba(255,255,255,0.06)',color:'rgba(255,255,255,0.7)',fontSize:20,cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0}}>−</button>
+                                          <span style={{flex:1,textAlign:'center',fontSize:17,fontWeight:600,color:(s.timedWeight||0)>0?'#fff':'rgba(255,255,255,0.3)'}}>{s.timedWeight||0}</span>
+                                          <button onClick={()=>setWorkoutExercises(prev=>prev.map((e,i)=>i!==exIdx?e:{...e,sets:e.sets.map((ss,j)=>j!==si?ss:{...ss,timedWeight:(ss.timedWeight||0)+5})}))} style={{width:40,height:40,borderRadius:10,border:'1.5px solid rgba(255,255,255,0.1)',background:'rgba(255,255,255,0.06)',color:'rgba(255,255,255,0.7)',fontSize:20,cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0}}>+</button>
+                                        </div>
+                                      </div>
+                                    </>
                                   ) : (
                                     <>
                                       <DropdownPicker options={wOpts} value={s.weight} onChange={v=>setWorkoutExercises(prev=>prev.map((e,i)=>i!==exIdx?e:{...e,sets:e.sets.map((ss,j)=>j!==si?ss:{...ss,weight:v})}))} unit={settings.units==='lbs'?'':wUnit} labelFn={settings.units==='lbs'?(v=>`${kgToDisplay(v)} lbs`):null} label={`Подход ${si+1} — Вес`}/>
@@ -2712,7 +2727,7 @@ export default function App() {
                                 </div>
                               ))}
                               <div className="set-btns" style={{marginTop:4}}>
-                                <button className="set-btn" onClick={()=>setWorkoutExercises(prev=>prev.map((e,i)=>i!==exIdx?e:{...e,sets:[...e.sets,{weight:e.sets[e.sets.length-1]?.weight||0,reps:e.sets[e.sets.length-1]?.reps||0}]}))}>➕ Подход</button>
+                                <button className="set-btn" onClick={()=>setWorkoutExercises(prev=>prev.map((e,i)=>i!==exIdx?e:{...e,sets:[...e.sets,{weight:e.sets[e.sets.length-1]?.weight||0,reps:e.sets[e.sets.length-1]?.reps||0,timedWeight:e.sets[e.sets.length-1]?.timedWeight||0}]}))}>➕ Подход</button>
                                 <button className="set-btn" onClick={()=>setWorkoutExercises(prev=>prev.map((e,i)=>i!==exIdx?e:{...e,sets:e.sets.length>1?e.sets.slice(0,-1):e.sets}))} style={{opacity:ex.sets.length<=1?0.35:1}}>➖ Убрать</button>
                               </div>
                             </>
@@ -2857,7 +2872,7 @@ export default function App() {
                             <div className="hist-ex">{normalizeName(w.exercises?.name)}</div>
                             <button onClick={()=>deleteWorkout(w.id)} style={{background:'none',border:'none',cursor:'pointer',fontSize:16,opacity:0.4,padding:'0 4px',color:'#ff453a'}} title="Удалить упражнение">✕</button>
                           </div>
-                          <div className="chips">{w.sets?.sort((a,b)=>a.set_no-b.set_no).map((s,i) => <span key={i} className="chip">{s.time_sec>0?`${s.time_sec}s`:`${kgToDisplay(s.weight)}×${s.reps}`}</span>)}</div>
+                          <div className="chips">{w.sets?.sort((a,b)=>a.set_no-b.set_no).map((s,i) => <span key={i} className="chip">{s.time_sec>0?(s.weight>0?`${s.time_sec}s×${s.weight}кг`:`${s.time_sec}s`):`${kgToDisplay(s.weight)}×${s.reps}`}</span>)}</div>
                         </div>
                       ))}
                     </div>
@@ -2992,7 +3007,7 @@ export default function App() {
               {calDayModal.workouts.map(w=>(
                 <div key={w.id} style={{padding:'12px 10px',borderRadius:12,marginBottom:6,background:thm.card2,border:`1px solid ${thm.border}`}}>
                   <div style={{fontSize:14,fontWeight:700,marginBottom:7,color:thm.text}}>{normalizeName(w.exercises?.name)}</div>
-                  <div className="chips">{w.sets?.sort((a,b)=>a.set_no-b.set_no).map((s,i)=><span key={i} className="chip">{s.time_sec>0?`${s.time_sec}s`:`${kgToDisplay(s.weight)}×${s.reps}`}</span>)}</div>
+                  <div className="chips">{w.sets?.sort((a,b)=>a.set_no-b.set_no).map((s,i)=><span key={i} className="chip">{s.time_sec>0?(s.weight>0?`${s.time_sec}s×${s.weight}кг`:`${s.time_sec}s`):`${kgToDisplay(s.weight)}×${s.reps}`}</span>)}</div>
                 </div>
               ))}
             </div>
