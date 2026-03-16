@@ -1062,7 +1062,7 @@ input[type=number]::-webkit-inner-spin-button{-webkit-appearance:none}
 .set-row{display:flex;gap:10px;margin-bottom:16px;align-items:flex-end}
 .set-num{opacity:0.25;width:18px;font-size:13px;font-weight:500;flex-shrink:0;text-align:center;padding-bottom:14px}
 .set-sep{opacity:0.2;flex-shrink:0;font-size:16px;padding-bottom:14px}
-.dpicker-wrap{flex:1;position:relative;z-index:10}
+.dpicker-wrap{flex:1;position:relative;z-index:10}.dpicker-wrap.is-open{z-index:200}
 .dpicker-label{font-size:11px;font-weight:600;opacity:0.35;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px}
 .dpicker-btn{width:100%;background:#1c1c1e;border:1.5px solid rgba(255,255,255,0.08);border-radius:12px;padding:14px 14px;color:white;font-size:17px;font-weight:600;cursor:pointer;display:flex;align-items:center;justify-content:space-between;transition:all 0.15s;text-align:left}
 .dpicker-btn.open{border-color:rgba(48,209,88,0.5);background:#1c1c1e}
@@ -1070,7 +1070,7 @@ input[type=number]::-webkit-inner-spin-button{-webkit-appearance:none}
 .dpicker-unit{font-size:13px;opacity:0.45;font-weight:500}
 .dpicker-chevron{opacity:0.4;font-size:18px;transition:transform 0.2s}
 .dpicker-btn.open .dpicker-chevron{transform:rotate(180deg);opacity:0.7}
-.dpicker-dropdown{position:absolute;top:calc(100% + 4px);left:0;right:0;background:#2c2c2e;border-radius:14px;max-height:220px;overflow-y:auto;z-index:200;box-shadow:0 8px 32px rgba(0,0,0,0.5);border:1px solid rgba(255,255,255,0.08)}
+.dpicker-dropdown{position:absolute;top:calc(100% + 4px);left:0;right:0;background:#2c2c2e;border-radius:14px;max-height:220px;overflow-y:auto;z-index:300;box-shadow:0 8px 32px rgba(0,0,0,0.5);border:1px solid rgba(255,255,255,0.08)}
 .dpicker-opt{padding:13px 16px;font-size:17px;font-weight:500;cursor:pointer;transition:background 0.1s;color:rgba(255,255,255,0.75)}
 .dpicker-opt:hover{background:rgba(255,255,255,0.06)}
 .dpicker-opt.active{color:#30D158;font-weight:700;background:rgba(48,209,88,0.08)}
@@ -1624,13 +1624,17 @@ function DropdownPicker({ options, value, onChange, unit = '', label = '', label
 
   useEffect(() => {
     if (!open) return
-    const handleScroll = () => setOpen(false)
+    const handleScroll = (e) => {
+      // Don't close when scrolling inside the dropdown itself
+      if (ref.current?.contains(e.target)) return
+      setOpen(false)
+    }
     window.addEventListener('scroll', handleScroll, true)
     return () => window.removeEventListener('scroll', handleScroll, true)
   }, [open])
 
   return (
-    <div className="dpicker-wrap" ref={ref} style={{position:'relative', zIndex: open ? 1000 : undefined}}>
+    <div className={`dpicker-wrap${open ? ' is-open' : ''}`} ref={ref}>
       {label && <div className="dpicker-label">{label}</div>}
       <button className={`dpicker-btn${open?' open':''}`} onClick={() => setOpen(o => !o)}>
         <span className="dpicker-val">{labelFn ? (value ? labelFn(value) : '') : value}{!labelFn && unit && <span className="dpicker-unit"> {unit}</span>}</span>
