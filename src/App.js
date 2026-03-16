@@ -1879,7 +1879,7 @@ export default function App() {
         const ruExName = normalizeName(exName)
         const setLines = validSets.map((s, i) => {
           const label = s.time_sec > 0
-            ? (s.weight > 0 ? `Подход ${i+1}: ${s.time_sec} сек × ${s.weight} кг` : `Подход ${i+1}: ${s.time_sec} сек`)
+            ? (s.weight > 0 ? `Подход ${i+1}: ${s.time_sec} сек × ${kgToDisplay(s.weight)} ${wUnit}` : `Подход ${i+1}: ${s.time_sec} сек`)
             : `Подход ${i+1}: ${s.weight} кг × ${s.reps}`
           return `<div style="padding:2px 0;color:rgba(255,255,255,0.6);font-size:11px;">${label}</div>`
         }).join('')
@@ -2265,8 +2265,10 @@ export default function App() {
     setWorkoutExercises(prev => [...prev, { tempId, name, grip, open: true, lastSession: null, sets: [{ weight: 0, reps: 0 }] }])
     // Load last session in background
     try {
-      const { data: exDbExact } = await supabase.from('exercises').select('id').eq('name', name)
-      const { data: exDbGrip } = await supabase.from('exercises').select('id').ilike('name', `${name} (%)`)
+      const [{ data: exDbExact }, { data: exDbGrip }] = await Promise.all([
+        supabase.from('exercises').select('id').eq('name', name),
+        supabase.from('exercises').select('id').ilike('name', `${name} (%)`)
+      ])
       const allExIds = [...(exDbExact||[]), ...(exDbGrip||[])].map(e => e.id)
       if (allExIds.length) {
         const { data: lastW } = await supabase.from('workouts').select('workout_date,sets(set_no,weight,reps,time_sec)').in('exercise_id', allExIds).eq('user_id', user.id).order('workout_date',{ascending:false}).limit(1).single()
@@ -2357,12 +2359,11 @@ export default function App() {
       if (!ex) continue
       const { data: w } = await supabase.from('workouts').insert({ workout_date: workoutDate, exercise_id: ex.id, user_id: user.id }).select().single()
       if (!w) { savingRef.current = false; continue }
-      const exIsTimed2 = (EXERCISE_TYPE[exItem.name] || 'light') === 'timed'
       await supabase.from('sets').insert(filled.map((s,i) => ({
         workout_id: w.id, set_no: i+1,
-        weight: exIsTimed2 ? (s.timedWeight||0) : (s.weight||0),
-        reps: exIsTimed2 ? 0 : (s.reps||0),
-        time_sec: exIsTimed2 ? (s.weight||0) : null
+        weight: exIsTimed ? (s.timedWeight||0) : (s.weight||0),
+        reps: exIsTimed ? 0 : (s.reps||0),
+        time_sec: exIsTimed ? (s.weight||0) : null
       })))
       const maxSaved = Math.max(...filled.map(s => s.weight))
       const repsSaved = filled.find(s => s.weight === maxSaved)?.reps || 0
@@ -2437,8 +2438,9 @@ export default function App() {
     if (!q) return exercises
     return exercises.filter(e => e.name.toLowerCase().includes(q))
   }, [exercises, modalSearch])
-  const favFiltered = useMemo(() => filtered.filter(e => favorites.includes(e.name)), [filtered, favorites])
-  const restFiltered = useMemo(() => filtered.filter(e => !favorites.includes(e.name)), [filtered, favorites])
+  const favSet = useMemo(() => new Set(favorites), [favorites])
+  const favFiltered = useMemo(() => filtered.filter(e => favSet.has(e.name)), [filtered, favSet])
+  const restFiltered = useMemo(() => filtered.filter(e => !favSet.has(e.name)), [filtered, favSet])
   const grouped = history.reduce((acc,w) => { if(!acc[w.workout_date]) acc[w.workout_date]=[]; acc[w.workout_date].push(w); return acc }, {})
   const calMonthName = new Date(calYear,calMonth).toLocaleDateString('ru',{month:'long',year:'numeric'})
   const firstDow = new Date(calYear,calMonth,1).getDay()
@@ -2671,7 +2673,7 @@ export default function App() {
                       <div style={{padding:'0 14px 14px'}}>
                         {ex.lastSession && (
                           <div style={{fontSize:12,color:thm.text35,marginBottom:10,padding:'7px 10px',background:thm.card2,borderRadius:8}}>
-                            💡 Прошлый раз: {ex.lastSession.sets?.sort((a,b)=>a.set_no-b.set_no).map(s=>s.time_sec>0?(s.weight>0?`${s.time_sec}s×${s.weight}кг`:`${s.time_sec}s`):`${kgToDisplay(s.weight)}×${s.reps}`).join(' · ')}
+                            💡 Прошлый раз: {ex.lastSession.sets?.sort((a,b)=>a.set_no-b.set_no).map(s=>s.time_sec>0?(s.weight>0?`${s.time_sec}s×${kgToDisplay(s.weight)}${wUnit}`:`${s.time_sec}s`):`${kgToDisplay(s.weight)}×${s.reps}`).join(' · ')}
                           </div>
                         )}
                         {ex.grip !== null && ex.grip !== undefined && (
@@ -2872,7 +2874,7 @@ export default function App() {
                             <div className="hist-ex">{normalizeName(w.exercises?.name)}</div>
                             <button onClick={()=>deleteWorkout(w.id)} style={{background:'none',border:'none',cursor:'pointer',fontSize:16,opacity:0.4,padding:'0 4px',color:'#ff453a'}} title="Удалить упражнение">✕</button>
                           </div>
-                          <div className="chips">{w.sets?.sort((a,b)=>a.set_no-b.set_no).map((s,i) => <span key={i} className="chip">{s.time_sec>0?(s.weight>0?`${s.time_sec}s×${s.weight}кг`:`${s.time_sec}s`):`${kgToDisplay(s.weight)}×${s.reps}`}</span>)}</div>
+                          <div className="chips">{w.sets?.sort((a,b)=>a.set_no-b.set_no).map((s,i) => <span key={i} className="chip">{s.time_sec>0?(s.weight>0?`${s.time_sec}s×${kgToDisplay(s.weight)}${wUnit}`:`${s.time_sec}s`):`${kgToDisplay(s.weight)}×${s.reps}`}</span>)}</div>
                         </div>
                       ))}
                     </div>
@@ -2992,7 +2994,7 @@ export default function App() {
             </div>
             <div className="modal-list">
               {!modalSearch&&favFiltered.length>0&&<><div className="modal-sect-lbl">⭐ Избранные</div>{favFiltered.map(ex=><ModalItem key={ex.id} ex={ex} onAdd={addExToWorkout} isFav={true} onToggleFav={toggleFav}/>)}<div className="modal-sect-lbl">Все упражнения</div></>}
-              {(modalSearch?filtered:restFiltered).map(ex=><ModalItem key={ex.id} ex={ex} onAdd={addExToWorkout} isFav={favorites.includes(ex.name)} onToggleFav={toggleFav}/>)}
+              {(modalSearch?filtered:restFiltered).map(ex=><ModalItem key={ex.id} ex={ex} onAdd={addExToWorkout} isFav={favSet.has(ex.name)} onToggleFav={toggleFav}/>)}
             </div>
           </div>
         </div>
@@ -3007,7 +3009,7 @@ export default function App() {
               {calDayModal.workouts.map(w=>(
                 <div key={w.id} style={{padding:'12px 10px',borderRadius:12,marginBottom:6,background:thm.card2,border:`1px solid ${thm.border}`}}>
                   <div style={{fontSize:14,fontWeight:700,marginBottom:7,color:thm.text}}>{normalizeName(w.exercises?.name)}</div>
-                  <div className="chips">{w.sets?.sort((a,b)=>a.set_no-b.set_no).map((s,i)=><span key={i} className="chip">{s.time_sec>0?(s.weight>0?`${s.time_sec}s×${s.weight}кг`:`${s.time_sec}s`):`${kgToDisplay(s.weight)}×${s.reps}`}</span>)}</div>
+                  <div className="chips">{w.sets?.sort((a,b)=>a.set_no-b.set_no).map((s,i)=><span key={i} className="chip">{s.time_sec>0?(s.weight>0?`${s.time_sec}s×${kgToDisplay(s.weight)}${wUnit}`:`${s.time_sec}s`):`${kgToDisplay(s.weight)}×${s.reps}`}</span>)}</div>
                 </div>
               ))}
             </div>
