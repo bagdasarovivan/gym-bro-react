@@ -2673,7 +2673,7 @@ export default function App() {
                       <div style={{padding:'0 14px 14px'}}>
                         {ex.lastSession && (
                           <div style={{fontSize:12,color:thm.text35,marginBottom:10,padding:'7px 10px',background:thm.card2,borderRadius:8}}>
-                            💡 Прошлый раз: {ex.lastSession.sets?.sort((a,b)=>a.set_no-b.set_no).map(s=>s.time_sec>0?(s.weight>0?`${s.time_sec}s×${kgToDisplay(s.weight)}${wUnit}`:`${s.time_sec}s`):`${kgToDisplay(s.weight)}×${s.reps}`).join(' · ')}
+                            💡 Прошлый раз: {ex.lastSession.sets?.sort((a,b)=>a.set_no-b.set_no).slice(-3).map(s=>s.time_sec>0?(s.weight>0?`${s.time_sec}s×${kgToDisplay(s.weight)}${wUnit}`:`${s.time_sec}s`):`${kgToDisplay(s.weight)}×${s.reps}`).join(' · ')}
                           </div>
                         )}
                         {ex.grip !== null && ex.grip !== undefined && (
@@ -2696,13 +2696,6 @@ export default function App() {
                           const warmups = exType2 === 'timed' ? [] : getWarmupSets(ex.name, workingWeight)
                           return (
                             <>
-                              {warmups.length > 0 && (
-                                <div style={{marginBottom:10}}>
-                                  {warmups.map((wu,wi) => (
-                                    <div key={wi} style={{fontSize:13,color:'rgba(255,255,255,0.45)',marginBottom:3,paddingLeft:4}}>— {wu.w} кг × {wu.r}</div>
-                                  ))}
-                                </div>
-                              )}
                               {ex.sets.map((s,si) => (
                                 <div key={si} className="set-row">
                                   <span className="set-num">{si+1}</span>
