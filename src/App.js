@@ -1,7 +1,6 @@
 /* eslint-disable no-unused-vars */
 import { useState, useEffect, useRef, useCallback, useMemo, memo } from 'react'
 import { supabase } from './supabase'
-import html2pdf from 'html2pdf.js'
 
 const HEAVY_WEIGHTS = Array.from({ length: 141 }, (_, i) => i * 5) // 0–700 кг
 const LIGHT_WEIGHTS = [...new Set([
@@ -34,77 +33,77 @@ const EXERCISE_TYPE = {
 
 const EXERCISE_IMAGES = {
   // Грудь
-  'Жим лёжа':'/images/bench.png',
-  'Жим гантелей лёжа':'/images/dumbbell_bench.png',
-  'Жим гантелей наклон':'/images/incline_dumbbell_press.png',
-  'Жим штанги в наклоне':'/images/incline_bench_press.png',
-  'Разводка гантелей':'/images/dumbbell_flyes.png',
-  'Кроссовер':'/images/cable_fly.png',
-  'Отжимания':'/images/push_ups.png',
-  'Пуловер':'/images/pullover.png',
+  'Жим лёжа':'/images/bench.webp',
+  'Жим гантелей лёжа':'/images/dumbbell_bench.webp',
+  'Жим гантелей наклон':'/images/incline_dumbbell_press.webp',
+  'Жим штанги в наклоне':'/images/incline_bench_press.webp',
+  'Разводка гантелей':'/images/dumbbell_flyes.webp',
+  'Кроссовер':'/images/cable_fly.webp',
+  'Отжимания':'/images/push_ups.webp',
+  'Пуловер':'/images/pullover.webp',
   // Плечи
-  'Жим над головой':'/images/ohp.png',
-  'Жим Арнольда':'/images/arnold_press.png',
-  'Тяга к лицу':'/images/face_pull.png',
-  'Разводка в наклоне':'/images/bent_over_raise.png',
-  'Разводка гантелей стоя':'/images/bent_over_raise.png',
-  'Разведение гантелей стоя':'/images/dumbbell_lateral_raise.png',
-  'Тяга к подбородку':'/images/upright_row.png',
+  'Жим над головой':'/images/ohp.webp',
+  'Жим Арнольда':'/images/arnold_press.webp',
+  'Тяга к лицу':'/images/face_pull.webp',
+  'Разводка в наклоне':'/images/bent_over_raise.webp',
+  'Разводка гантелей стоя':'/images/bent_over_raise.webp',
+  'Разведение гантелей стоя':'/images/dumbbell_lateral_raise.webp',
+  'Тяга к подбородку':'/images/upright_row.webp',
   // Трапеции / Верх спины
-  'Шраги':'/images/shrugs.png',
+  'Шраги':'/images/shrugs.webp',
   // Спина
-  'Тяга вертикального блока':'/images/lat_pulldown.png',
-  'Тяга горизонтального блока':'/images/seated_cable_row.png',
-  'Тяга штанги в наклоне':'/images/barbell_row.png',
-  'Тяга гантели в наклоне':'/images/single_arm_dumbbell_row.png',
-  'Тяга Т-штанги':'/images/t_bar_row.png',
-  'Подтягивания':'/images/pull_ups.png',
-  'Гиперэкстензия':'/images/hyperextension.png',
+  'Тяга вертикального блока':'/images/lat_pulldown.webp',
+  'Тяга горизонтального блока':'/images/seated_cable_row.webp',
+  'Тяга штанги в наклоне':'/images/barbell_row.webp',
+  'Тяга гантели в наклоне':'/images/single_arm_dumbbell_row.webp',
+  'Тяга Т-штанги':'/images/t_bar_row.webp',
+  'Подтягивания':'/images/pull_ups.webp',
+  'Гиперэкстензия':'/images/hyperextension.webp',
   // Бицепс
-  'Подъём штанги на бицепс':'/images/barbell_curl.png',
-  'Подъём гантелей на бицепс':'/images/dumbbell_curl.png',
-  'Молотки':'/images/hammer_curl.png',
-  'Молотки лёжа':'/images/lying_hammer_curl.png',
-  'Изолированные сгибания на бицепс':'/images/concentration_curl.png',
-  'Сгибания на скамье Скотта':'/images/scott_curl.png',
-  'Сгибания на блоке':'/images/cable_curl.png',
+  'Подъём штанги на бицепс':'/images/barbell_curl.webp',
+  'Подъём гантелей на бицепс':'/images/dumbbell_curl.webp',
+  'Молотки':'/images/hammer_curl.webp',
+  'Молотки лёжа':'/images/lying_hammer_curl.webp',
+  'Изолированные сгибания на бицепс':'/images/concentration_curl.webp',
+  'Сгибания на скамье Скотта':'/images/scott_curl.webp',
+  'Сгибания на блоке':'/images/cable_curl.webp',
   // Трицепс
-  'Французский жим':'/images/french_press.png',
-  'Разгибания на блоке':'/images/cable_pushdown.png',
-  'Разгибание из-за головы на трицепс':'/images/triceps.png',
-  'Отжимания на брусьях':'/images/dips.png',
+  'Французский жим':'/images/french_press.webp',
+  'Разгибания на блоке':'/images/cable_pushdown.webp',
+  'Разгибание из-за головы на трицепс':'/images/triceps.webp',
+  'Отжимания на брусьях':'/images/dips.webp',
   // Ноги — квадрицепс
-  'Приседания':'/images/squat.png',
-  'Жим ногами':'/images/leg_press.png',
-  'Разгибание ног':'/images/leg_extension.png',
-  'Болгарские выпады':'/images/bulgarian_split_squat.png',
-  'Выпады':'/images/lunges.png',
-  'Приседания с гантелью (гоблет)':'/images/goblet_squat.png',
-  'Гакк-приседания':'/images/hack_squat.png',
+  'Приседания':'/images/squat.webp',
+  'Жим ногами':'/images/leg_press.webp',
+  'Разгибание ног':'/images/leg_extension.webp',
+  'Болгарские выпады':'/images/bulgarian_split_squat.webp',
+  'Выпады':'/images/lunges.webp',
+  'Приседания с гантелью (гоблет)':'/images/goblet_squat.webp',
+  'Гакк-приседания':'/images/hack_squat.webp',
   // Ноги — бицепс бедра
-  'Становая тяга':'/images/deadlift.png',
-  'Румынская тяга':'/images/romanian_deadlift.png',
-  'Сгибание ног':'/images/leg_curl.png',
+  'Становая тяга':'/images/deadlift.webp',
+  'Румынская тяга':'/images/romanian_deadlift.webp',
+  'Сгибание ног':'/images/leg_curl.webp',
   // Ягодицы
-  'Ягодичный мост':'/images/hip_thrust.png',
-  'Отведение ноги в блоке':'/images/cable_kickback.png',
+  'Ягодичный мост':'/images/hip_thrust.webp',
+  'Отведение ноги в блоке':'/images/cable_kickback.webp',
   // Пресс
-  'Скручивания':'/images/crunches.png',
-  'Планка':'/images/plank.png',
-  'Русские скручивания':'/images/russian_twist.png',
-  'Подъём ног в висе на пресс':'/images/hanging_leg_raise.png',
-  'Колесо для пресса':'/images/ab_wheel.png',
+  'Скручивания':'/images/crunches.webp',
+  'Планка':'/images/plank.webp',
+  'Русские скручивания':'/images/russian_twist.webp',
+  'Подъём ног в висе на пресс':'/images/hanging_leg_raise.webp',
+  'Колесо для пресса':'/images/ab_wheel.webp',
 
   // Предплечья
-  'Сгибания запястий':'/images/wrist_curl.png',
+  'Сгибания запястий':'/images/wrist_curl.webp',
   // Новые
-  'Фронтальный присед':'/images/front_squat.png',
-  'Жим Соца':'/images/sots_press.png',
-  'Вертикальный жим':'/images/machine_shoulder_press.png',
-  'Подъём на икры сидя':'/images/seated_calf_raise.png',
-  'Жим в тренажёре на грудь':'/images/machine_chest_press.png',
-  'Обратная разводка':'/images/reverse_pec_deck.png',
-  'Махи гирей':'/images/kettlebell_swing.png',
+  'Фронтальный присед':'/images/front_squat.webp',
+  'Жим Соца':'/images/sots_press.webp',
+  'Вертикальный жим':'/images/machine_shoulder_press.webp',
+  'Подъём на икры сидя':'/images/seated_calf_raise.webp',
+  'Жим в тренажёре на грудь':'/images/machine_chest_press.webp',
+  'Обратная разводка':'/images/reverse_pec_deck.webp',
+  'Махи гирей':'/images/kettlebell_swing.webp',
 }
 
 
@@ -1689,7 +1688,7 @@ const ModalItem = memo(function ModalItem({ ex, onAdd, isFav, onToggleFav }) {
   return (
     <div className="modal-item" onClick={()=>onAdd(ex.name)} style={{display:'flex',alignItems:'center',justifyContent:'space-between'}}>
       <div style={{display:'flex',alignItems:'center',gap:12,flex:1,minWidth:0}}>
-        {img ? <img src={img} alt={ex.name} className="modal-img" onError={e => e.target.style.display='none'}/> : <div className="modal-ph">🏋️</div>}
+        {img ? <img src={img} alt={ex.name} className="modal-img" loading="lazy" decoding="async" onError={e => e.target.style.display='none'}/> : <div className="modal-ph">🏋️</div>}
         <span style={{overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{ex.name}</span>
       </div>
       {onToggleFav && (
@@ -1953,6 +1952,8 @@ export default function App() {
     const fileMonth = now.toLocaleDateString('ru', { month: 'long' }).replace(' ', '_')
     const fileYear = now.getFullYear()
 
+    // html2pdf (~1 МБ) грузится только при экспорте, а не при открытии приложения
+    const { default: html2pdf } = await import('html2pdf.js')
     html2pdf().set({
       margin: 0,
       filename: `gymBRO_${fileMonth}_${fileYear}.pdf`,
@@ -2050,14 +2051,16 @@ export default function App() {
     return () => { vv.removeEventListener('resize', update); vv.removeEventListener('scroll', update) }
   }, [])
 
-  // Auth listener
+  // Auth listener. Supabase fires several events on start (INITIAL_SESSION, TOKEN_REFRESHED…)
+  // with a new user object each time — keep the same object while the user id is unchanged,
+  // otherwise every [user] effect refetches its data 2–3 times.
   useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setUser(session?.user ?? null)
-    })
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      setUser(session?.user ?? null)
-    })
+    const applySession = (session) => {
+      const next = session?.user ?? null
+      setUser(prev => (prev && next && prev.id === next.id) ? prev : next)
+    }
+    supabase.auth.getSession().then(({ data: { session } }) => applySession(session))
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => applySession(session))
     return () => subscription.unsubscribe()
   }, [])
 
@@ -2511,7 +2514,7 @@ export default function App() {
   if (user === undefined) return (
     <div style={{minHeight:'100vh',background:'#000',display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center'}}>
       <div style={{width:120,height:120,borderRadius:28,overflow:'hidden',border:'2px solid rgba(255,255,255,0.08)'}}>
-        <img src="/images/gymbro_logo.png" alt="Gym BRO" style={{width:'100%',height:'100%',objectFit:'cover'}}/>
+        <img src="/images/gymbro_logo.webp" alt="Gym BRO" style={{width:'100%',height:'100%',objectFit:'cover'}}/>
       </div>
       <div style={{fontSize:24,fontWeight:700,color:'#fff',marginTop:16,letterSpacing:1}}>Gym BRO</div>
     </div>
@@ -2684,7 +2687,7 @@ export default function App() {
                     <button onClick={()=>setWorkoutExercises(prev=>prev.map((e,i)=>i===exIdx?{...e,open:!e.open}:e))}
                       style={{width:'100%',background:'none',border:'none',padding:'12px 14px',display:'flex',alignItems:'center',gap:10,cursor:'pointer',textAlign:'left'}}>
                       {getExImage(ex.name)
-                        ? <img src={getExImage(ex.name)} alt={ex.name} style={{width:36,height:36,borderRadius:8,objectFit:'cover',flexShrink:0}} onError={e=>e.target.style.display='none'}/>
+                        ? <img src={getExImage(ex.name)} alt={ex.name} loading="lazy" decoding="async" style={{width:36,height:36,borderRadius:8,objectFit:'cover',flexShrink:0}} onError={e=>e.target.style.display='none'}/>
                         : <div style={{width:36,height:36,borderRadius:8,background:thm.btnBg,display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0,fontSize:18}}>🏋️</div>
                       }
                       <div style={{flex:1}}>
@@ -2975,7 +2978,7 @@ export default function App() {
             return (
               <div key={name} style={{borderBottom: prIdx<prs.length-1 ? `1px solid ${thm.border2}` : 'none'}}>
                 <button style={{width:'100%',background:'none',border:'none',cursor:'pointer',padding:'11px 16px',display:'flex',alignItems:'center',gap:10,textAlign:'left'}} onClick={()=>setOpenPrs(p=>({...p,[name]:!p[name]}))}>
-                  {img ? <img src={img} alt={name} style={{width:32,height:32,borderRadius:7,objectFit:'cover',flexShrink:0}} onError={e=>e.target.style.display='none'}/> : <div style={{width:32,height:32,borderRadius:7,background:thm.btnBg,display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0,fontSize:16}}>🏋️</div>}
+                  {img ? <img src={img} alt={name} loading="lazy" decoding="async" style={{width:32,height:32,borderRadius:7,objectFit:'cover',flexShrink:0}} onError={e=>e.target.style.display='none'}/> : <div style={{width:32,height:32,borderRadius:7,background:thm.btnBg,display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0,fontSize:16}}>🏋️</div>}
                   <span style={{flex:1,color:thm.text85,fontSize:14,fontWeight:600}}>{normalizeName(name)}</span>
                   <span style={{color:'#30D158',fontSize:14,fontWeight:700,marginRight:8}}>{pr.time_sec>0 ? `${pr.time_sec}с` : `~${kgToDisplay(pr.est)} ${wUnit}`}</span>
                   <span style={{color:thm.text25,fontSize:11,display:'inline-block',transition:'transform 0.2s',transform:isOpen?'rotate(180deg)':'none'}}>▼</span>
@@ -3180,7 +3183,7 @@ export default function App() {
                 <div key={name} className="ex-list-item" style={{background:isDark?'rgba(255,255,255,0.04)':'rgba(0,0,0,0.03)',border:`1px solid ${thm.border}`}}
                   onClick={()=>setExDetailModal(name)}>
                   {img
-                    ? <img src={img} alt={name} className="ex-list-img" onError={e=>{e.target.style.display='none';e.target.nextSibling.style.display='flex'}}/>
+                    ? <img src={img} alt={name} className="ex-list-img" loading="lazy" decoding="async" onError={e=>{e.target.style.display='none';e.target.nextSibling.style.display='flex'}}/>
                     : null}
                   <div className="ex-list-ph" style={{display: img ? 'none' : 'flex'}}>💪</div>
                   <div style={{flex:1}}>
@@ -3216,7 +3219,7 @@ export default function App() {
               </div>
               <div className="modal-body">
                 {img
-                  ? <img src={img} alt={name} className="ex-detail-img" onError={e=>{e.target.style.display='none';e.target.nextSibling.style.display='flex'}}/>
+                  ? <img src={img} alt={name} className="ex-detail-img" loading="lazy" decoding="async" onError={e=>{e.target.style.display='none';e.target.nextSibling.style.display='flex'}}/>
                   : null}
                 <div className="ex-detail-ph" style={{display: img ? 'none' : 'flex'}}>💪</div>
                 <div className="ex-detail-muscles">
