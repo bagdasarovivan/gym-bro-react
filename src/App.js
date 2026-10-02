@@ -3,7 +3,7 @@ import { useState, useEffect, useRef, useCallback, useMemo, memo } from 'react'
 import { supabase } from './supabase'
 import html2pdf from 'html2pdf.js'
 
-const HEAVY_WEIGHTS = Array.from({ length: 61 }, (_, i) => i * 5)
+const HEAVY_WEIGHTS = Array.from({ length: 141 }, (_, i) => i * 5) // 0–700 кг
 const LIGHT_WEIGHTS = [...new Set([
   ...Array.from({ length: 11 }, (_, i) => i),
   ...Array.from({ length: 21 }, (_, i) => 10 + i * 2),
@@ -29,6 +29,7 @@ const EXERCISE_TYPE = {
   'Фронтальный присед':'heavy','Жим Соца':'heavy','Вертикальный жим':'heavy',
   'Подъём на икры сидя':'light','Жим в тренажёре на грудь':'light',
   'Обратная разводка':'light','Махи гирей':'heavy',
+  'Колесо для пресса':'bodyweight',
 }
 
 const EXERCISE_IMAGES = {
@@ -92,6 +93,7 @@ const EXERCISE_IMAGES = {
   'Планка':'/images/plank.png',
   'Русские скручивания':'/images/russian_twist.png',
   'Подъём ног в висе на пресс':'/images/hanging_leg_raise.png',
+  'Колесо для пресса':'/images/ab_wheel.png',
 
   // Предплечья
   'Сгибания запястий':'/images/wrist_curl.png',
@@ -174,6 +176,7 @@ const EXERCISE_MUSCLES = {
   'Планка':                   { primary: ['abs'], secondary: ['lower_back'] },
   'Русские скручивания':      { primary: ['abs'], secondary: [] },
   'Подъём ног в висе на пресс':{ primary: ['abs'], secondary: [] },
+  'Колесо для пресса':        { primary: ['abs'], secondary: ['lats','shoulders'] },
   // ПРЕДПЛЕЧЬЯ
   'Сгибания запястий': { primary: ['forearms'], secondary: [] },
   // ИКРЫ
@@ -214,6 +217,24 @@ const GRIP_MUSCLES = {
     'Широкий':     { primary: ['chest'],    secondary: ['shoulders'] },
     'Узкий':       { primary: ['triceps'],  secondary: ['chest'] },
   },
+  // Вариации (не хват). Первый вариант — по умолчанию, сохраняется без суффикса.
+  'Подъём гантелей на бицепс': {
+    'Обычный':     { primary: ['biceps'],   secondary: ['forearms'] },
+    'Молоток':     { primary: ['biceps','forearms'], secondary: [] },
+  },
+  'Колесо для пресса': {
+    'С колен':     { primary: ['abs'],      secondary: ['lats','shoulders'] },
+    'Стоя':        { primary: ['abs'],      secondary: ['lats','shoulders','lower_back'] },
+  },
+}
+// Упражнения, где выбор называется «Вариация», а не «Хват»
+const VARIANT_EXERCISES = new Set(['Подъём гантелей на бицепс', 'Колесо для пресса'])
+GRIP_EXERCISES.push(...VARIANT_EXERCISES)
+function getVariantOptions(name) {
+  return GRIP_MUSCLES[name] ? Object.keys(GRIP_MUSCLES[name]) : GRIP_OPTIONS
+}
+function getDefaultVariant(name) {
+  return GRIP_EXERCISES.includes(name) ? getVariantOptions(name)[0] : null
 }
 
 const MUSCLE_RECOVERY_HOURS = {
@@ -485,7 +506,7 @@ const WARMUP_NO_WARMUP = new Set([
   'Подъём на икры сидя','Скручивания','Русские скручивания','Подъём ног в висе на пресс',
   'Планка','Гиперэкстензия','Отжимания','Отжимания на брусьях','Подтягивания',
   'Отведение ноги в блоке','Ягодичный мост','Болгарские выпады','Выпады',
-  'Шраги','Махи гирей','Сгибания запястий',
+  'Шраги','Махи гирей','Сгибания запястий','Колесо для пресса',
 ])
 
 function getWarmupSets(exName, workingWeight) {
@@ -939,6 +960,11 @@ const EXERCISE_INFO = {
     desc: 'Вис на турнике. Поднимать прямые или согнутые ноги до горизонтали или выше.',
     benefit: 'Тяжёлое упражнение для нижнего пресса и сгибателей бедра. Отличная нагрузка на весь кор.',
     tips: 'Не раскачиваться. Поднимать ноги силой пресса, не инерцией. Медленное опускание.',
+  },
+  'Колесо для пресса': {
+    desc: 'Упор на колесо руками. Выкатывать колесо вперёд, опуская корпус к полу, и возвращаться силой пресса. С колен — опора на колени, стоя — на стопы.',
+    benefit: 'Одно из самых эффективных упражнений на пресс. Нагружает весь кор, а также широчайшие и плечи как стабилизаторы.',
+    tips: 'Поясница не прогибается — живот всё время напряжён. Начинать с колен и с небольшой амплитуды. Вариант стоя — только когда с колен получается 15+ чистых повторений.',
   },
   'Сгибания запястий': {
     desc: 'Сидя, предплечья на коленях хватом снизу. Сгибать и разгибать запястья с гантелями или штангой.',
@@ -2259,7 +2285,7 @@ export default function App() {
   const addExToWorkout = useCallback(async (name) => {
     setShowExModal(false)
     setModalSearch('')
-    const grip = GRIP_EXERCISES.includes(name) ? 'Стандартный' : null
+    const grip = getDefaultVariant(name)
     const tempId = Date.now()
     // Add immediately — optimistic UI (no lag)
     setWorkoutExercises(prev => [...prev, { tempId, name, grip, open: true, lastSession: null, sets: [{ weight: 0, reps: 0 }] }])
@@ -2347,10 +2373,11 @@ export default function App() {
     savingRef.current = true
     setSaving(true)
     for (const exItem of workoutExercises) {
-      const exIsTimed = (EXERCISE_TYPE[exItem.name] || 'light') === 'timed'
-      const filled = exItem.sets.filter(s => exIsTimed ? s.weight > 0 : (s.weight > 0 && s.reps > 0))
+      const exType = EXERCISE_TYPE[exItem.name] || 'light'
+      const exIsTimed = exType === 'timed'
+      const filled = exItem.sets.filter(s => exIsTimed ? s.weight > 0 : exType === 'bodyweight' ? s.reps > 0 : (s.weight > 0 && s.reps > 0))
       if (!filled.length) continue
-      const saveName = (exItem.grip && exItem.grip !== 'Стандартный') ? `${exItem.name} (${exItem.grip})` : exItem.name
+      const saveName = (exItem.grip && exItem.grip !== getDefaultVariant(exItem.name)) ? `${exItem.name} (${exItem.grip})` : exItem.name
       let { data: ex } = await supabase.from('exercises').select('id').eq('name', saveName).single()
       if (!ex) {
         const { data: inserted } = await supabase.from('exercises').insert({ name: saveName }).select().single()
@@ -2662,9 +2689,9 @@ export default function App() {
                       }
                       <div style={{flex:1}}>
                         <span style={{fontSize:15,fontWeight:700,color:thm.text85}}>{ex.name}</span>
-                        {ex.grip && ex.grip !== 'Стандартный' && <span style={{fontSize:11,color:'rgba(255,159,10,0.8)',marginLeft:6,fontWeight:600}}>({ex.grip})</span>}
+                        {ex.grip && ex.grip !== getDefaultVariant(ex.name) && <span style={{fontSize:11,color:'rgba(255,159,10,0.8)',marginLeft:6,fontWeight:600}}>({ex.grip})</span>}
                       </div>
-                      <span style={{fontSize:12,color:thm.text30,marginRight:4}}>{ex.sets.filter(s=>s.weight>0&&s.reps>0).length} подх.</span>
+                      <span style={{fontSize:12,color:thm.text30,marginRight:4}}>{ex.sets.filter(s=>exType2==='bodyweight'?s.reps>0:(s.weight>0&&s.reps>0)).length} подх.</span>
                       <button onClick={e=>{e.stopPropagation();setWorkoutExercises(prev=>prev.filter((_,i)=>i!==exIdx))}}
                         style={{background:'rgba(255,59,48,0.1)',border:'none',borderRadius:8,padding:'4px 8px',color:'#FF453A',cursor:'pointer',fontSize:12,fontWeight:700,marginRight:4}}>✕</button>
                       <span style={{color:thm.text40,fontSize:20,display:'inline-block',transform:isOpen?'rotate(180deg)':'none',transition:'transform 0.2s',padding:'2px 8px',minWidth:32,textAlign:'center'}}>▼</span>
@@ -2678,9 +2705,9 @@ export default function App() {
                         )}
                         {ex.grip !== null && ex.grip !== undefined && (
                           <div style={{marginBottom:12}}>
-                            <div style={{fontSize:11,opacity:0.4,textTransform:'uppercase',letterSpacing:'0.5px',marginBottom:6}}>Хват</div>
+                            <div style={{fontSize:11,opacity:0.4,textTransform:'uppercase',letterSpacing:'0.5px',marginBottom:6}}>{VARIANT_EXERCISES.has(ex.name) ? 'Вариация' : 'Хват'}</div>
                             <div style={{display:'flex',gap:6,flexWrap:'wrap'}}>
-                              {(GRIP_MUSCLES[ex.name] ? Object.keys(GRIP_MUSCLES[ex.name]) : GRIP_OPTIONS).map(g => (
+                              {getVariantOptions(ex.name).map(g => (
                                 <button key={g} onClick={()=>setWorkoutExercises(prev=>prev.map((e,i)=>i!==exIdx?e:{...e,grip:g}))}
                                   style={{padding:'5px 12px',borderRadius:99,fontSize:12,fontWeight:600,border:'none',cursor:'pointer',
                                     background: ex.grip===g ? '#FF9F0A' : thm.btnBg,
@@ -3584,7 +3611,7 @@ export default function App() {
                           }
                           const wt = pw?.working_weight || 0
                           const sets = Array.from({length: ex.sets}, () => ({weight: wt, reps: ex.reps, done: false}))
-                          const grip = ['Тяга вертикального блока','Тяга горизонтального блока','Подтягивания','Тяга штанги в наклоне','Жим лёжа'].includes(ex.name) ? 'Стандартный' : null
+                          const grip = getDefaultVariant(ex.name)
                           newExercises.push({name: ex.name, grip, open: true, lastSession: null, sets, planId: plan.id, isBase: ex.isBase})
                         }
                         setWorkoutExercises(prev => {
