@@ -1427,14 +1427,20 @@ function LineChart({ data, period, setPeriod, unit = 'кг' }) {
           ))}
           <path d={area} fill="url(#cg2)"/>
           <path d={path} fill="none" stroke="#30D158" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>
-          {pts.map((p,i) => (
-            <g key={i} style={{cursor:'pointer'}}
-              onMouseEnter={()=>setTooltip(p)} onMouseLeave={()=>setTooltip(null)}
-              onTouchStart={e=>{e.preventDefault();setTooltip(p)}} onTouchEnd={()=>setTimeout(()=>setTooltip(null),1200)}>
-              <circle cx={p.x} cy={p.y} r="16" fill="transparent"/>
-              <circle cx={p.x} cy={p.y} r={tooltip?.label===p.label?6:4} fill="#30D158" stroke="#000" strokeWidth="2"/>
-            </g>
-          ))}
+          {(() => {
+            // Много точек — уменьшаем кружки и зону касания, чтобы не слипались
+            const step = (W - padL - padR) / Math.max(pts.length - 1, 1)
+            const dense = pts.length > 25
+            const hitR = Math.max(4, Math.min(16, step / 2))
+            return pts.map((p,i) => (
+              <g key={i} style={{cursor:'pointer'}}
+                onMouseEnter={()=>setTooltip(p)} onMouseLeave={()=>setTooltip(null)}
+                onTouchStart={e=>{e.preventDefault();setTooltip(p)}} onTouchEnd={()=>setTimeout(()=>setTooltip(null),1200)}>
+                <circle cx={p.x} cy={p.y} r={hitR} fill="transparent"/>
+                <circle cx={p.x} cy={p.y} r={tooltip?.date===p.date ? (dense?4:6) : (dense?2:4)} fill="#30D158" stroke="#000" strokeWidth={dense?1:2}/>
+              </g>
+            ))
+          })()}
         </svg>
         {tooltip && (() => {
           const leftPct = Math.min(Math.max((tooltip.x / W) * 100, 10), 90)
@@ -2219,31 +2225,36 @@ export default function App() {
         })
         return { best, orm: bestOrm }
       }
-      // First try from already-loaded history
-      history.forEach(w => {
-        if (!matchName(w.exercises?.name)) return
-        const { best, orm } = findBestSet(w.sets)
-        if (!best) return
-        const cur = byDate[w.workout_date]
-        if (!cur || orm > cur.orm) byDate[w.workout_date] = { orm, best }
-      })
-      // If nothing found, query DB directly
-      if (Object.keys(byDate).length === 0) {
-        const r1a = await supabase.from('exercises').select('id').eq('name', chartEx)
-        const r1b = await supabase.from('exercises').select('id').ilike('name', `${chartEx} (%)`)
-        const r2a = (!r1a.data?.length && !r1b.data?.length) ? await supabase.from('exercises').select('id').eq('name', enName) : {data:[]}
-        const r2b = (!r1a.data?.length && !r1b.data?.length) ? await supabase.from('exercises').select('id').ilike('name', `${enName} (%)`) : {data:[]}
-        const exIds = [...(r1a.data||[]), ...(r1b.data||[]), ...(r2a.data||[]), ...(r2b.data||[])].map(e=>e.id)
-        if (exIds.length) {
-          const { data } = await supabase.from('workouts').select('workout_date,sets(weight,reps,time_sec)').in('exercise_id',exIds).eq('user_id', user.id).order('workout_date',{ascending:false}).limit(200)
-          ;(data||[]).forEach(w => {
+      // Всегда грузим из базы ВСЮ историю этого упражнения (раньше брали из вкладки
+      // «История», урезанной до 200 записей, — поэтому на графике было ~8 точек).
+      // Имена-кандидаты: русское, английское и старые названия, которые маппятся в это упражнение.
+      const candidates = [...new Set([
+        chartEx, enName,
+        ...Object.entries(LEGACY_NAMES).filter(([,v]) => v === chartEx).map(([k]) => k),
+        ...Object.entries(EN_TO_RU).filter(([,v]) => v === chartEx).map(([k]) => k),
+      ])]
+      const exRes = await Promise.all(candidates.flatMap(n => [
+        supabase.from('exercises').select('id,name').eq('name', n),
+        supabase.from('exercises').select('id,name').ilike('name', `${n} (%)`),
+      ]))
+      const exIds = [...new Set(exRes.flatMap(r => r.data || []).filter(e => matchName(e.name)).map(e => e.id))]
+      if (exIds.length) {
+        const PAGE = 1000
+        for (let from = 0; ; from += PAGE) {
+          const { data, error } = await supabase.from('workouts').select('workout_date,sets(weight,reps,time_sec)')
+            .in('exercise_id', exIds).eq('user_id', user.id)
+            .order('workout_date', { ascending: true }).range(from, from + PAGE - 1)
+          if (error || !data) break
+          data.forEach(w => {
             const { best, orm } = findBestSet(w.sets)
             if (!best) return
             const cur = byDate[w.workout_date]
             if (!cur || orm > cur.orm) byDate[w.workout_date] = { orm, best }
           })
+          if (data.length < PAGE) break
         }
       }
+      if (cancelled) return
       const pts = Object.entries(byDate).sort(([a],[b])=>a.localeCompare(b)).map(([date,{orm,best}])=>({
         val: parseFloat(orm.toFixed(1)),
         date,
@@ -2254,8 +2265,10 @@ export default function App() {
       })).filter(p=>p.val>0)
       setChartData(pts)
     }
+    let cancelled = false
     load()
-  }, [chartEx, tab, history, user])
+    return () => { cancelled = true }
+  }, [chartEx, tab, user, saved])
 
   useEffect(() => {
     if (!selectedEx || !user) return
