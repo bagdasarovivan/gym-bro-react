@@ -2131,11 +2131,28 @@ export default function App() {
     loadPlans()
   }, [user, saved])
 
+  // История за последние 12 месяцев. Раньше был limit(200) записей (= упражнений),
+  // что давало лишь ~4–5 месяцев. Грузим порциями, т.к. Supabase отдаёт максимум 1000 строк за запрос.
   useEffect(() => {
     if (tab !== 'history' || !user) return
-    supabase.from('workouts').select('id,workout_date,exercises(name),sets(set_no,weight,reps,time_sec)')
-      .eq('user_id', user.id).order('workout_date', { ascending: false }).order('id', { ascending: false }).limit(200)
-      .then(({ data }) => setHistory(data || []))
+    let cancelled = false
+    const since = new Date(); since.setMonth(since.getMonth() - 11); since.setDate(1)
+    const sinceStr = `${since.getFullYear()}-${String(since.getMonth()+1).padStart(2,'0')}-01`
+    const PAGE = 1000
+    ;(async () => {
+      const all = []
+      for (let from = 0; ; from += PAGE) {
+        const { data, error } = await supabase.from('workouts').select('id,workout_date,exercises(name),sets(set_no,weight,reps,time_sec)')
+          .eq('user_id', user.id).gte('workout_date', sinceStr)
+          .order('workout_date', { ascending: false }).order('id', { ascending: false })
+          .range(from, from + PAGE - 1)
+        if (error || !data) break
+        all.push(...data)
+        if (data.length < PAGE) break
+      }
+      if (!cancelled) setHistory(all)
+    })()
+    return () => { cancelled = true }
   }, [tab, saved, user])
 
   useEffect(() => {
