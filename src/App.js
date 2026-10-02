@@ -2653,7 +2653,7 @@ export default function App() {
                 `}</style>
                 <div className="pr1"/>
                 <div className="pr1 pr2"/>
-                <button className="start-btn" onClick={()=>setShowDateModal(true)} style={{
+                <button className="start-btn" onClick={()=>workoutExercises.length>0?setWorkoutStarted(true):setShowDateModal(true)} style={{
                   width:150,height:150,borderRadius:'50%',cursor:'pointer',zIndex:1,
                   background:'rgba(255,255,255,0.05)',border:'1px solid rgba(255,255,255,0.15)',
                   display:'flex',alignItems:'center',justifyContent:'center',
@@ -2666,14 +2666,14 @@ export default function App() {
                   onTouchStart={e=>e.currentTarget.style.transform='scale(0.95)'}
                   onTouchEnd={e=>e.currentTarget.style.transform='scale(1)'}
                 >
-                  <span style={{fontSize:13,fontWeight:700,color:thm.text70,letterSpacing:'3px',textTransform:'uppercase'}}>НАЧАТЬ</span>
+                  <span style={{fontSize:13,fontWeight:700,color:thm.text70,letterSpacing:'3px',textTransform:'uppercase'}}>{workoutExercises.length>0?'ПРОДОЛЖИТЬ':'НАЧАТЬ'}</span>
                 </button>
               </div>
             </div>
           ) : (
             <>
               <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:16}}>
-                <button onClick={()=>{if(workoutExercises.length>0&&!window.confirm('Выйти? Все упражнения будут потеряны.'))return;setWorkoutStarted(false);setWorkoutExercises([]);setSaved(false)}} className="back-btn">← Назад</button>
+                <button onClick={()=>{setWorkoutStarted(false);setSaved(false)}} className="back-btn">← Назад</button>
                 <div style={{fontSize:13,color:thm.text50,fontWeight:600}}>
                   📅 {new Date(workoutDate+'T12:00:00').toLocaleDateString('ru',{day:'numeric',month:'long'})}
                 </div>
