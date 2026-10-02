@@ -1046,7 +1046,7 @@ function buildCopyText(date, workouts) {
   const reversed = [...workouts].reverse()
   reversed.forEach(w => {
     const sets = w.sets?.sort((a,b) => a.set_no-b.set_no)
-      .map(s => s.time_sec > 0 ? (s.weight > 0 ? `${s.time_sec}s×${s.weight}кг` : `${s.time_sec}s`) : `${s.weight}×${s.reps}`).join(', ')
+      .map(s => s.time_sec > 0 ? (s.weight > 0 ? `${s.time_sec}s×${s.weight}кг` : `${s.time_sec}s`) : (s.weight > 0 ? `${s.weight}×${s.reps}` : `${s.reps} повт`)).join(', ')
     lines.push(`${w.exercises?.name}: ${sets}`)
   })
   return lines.join('\n')
@@ -2700,7 +2700,7 @@ export default function App() {
                       <div style={{padding:'0 14px 14px'}}>
                         {ex.lastSession && (
                           <div style={{fontSize:12,color:thm.text35,marginBottom:10,padding:'7px 10px',background:thm.card2,borderRadius:8}}>
-                            💡 Прошлый раз: {ex.lastSession.sets?.sort((a,b)=>a.set_no-b.set_no).slice(-3).map(s=>s.time_sec>0?(s.weight>0?`${s.time_sec}s×${kgToDisplay(s.weight)}${wUnit}`:`${s.time_sec}s`):`${kgToDisplay(s.weight)}×${s.reps}`).join(' · ')}
+                            💡 Прошлый раз: {ex.lastSession.sets?.sort((a,b)=>a.set_no-b.set_no).slice(-3).map(s=>s.time_sec>0?(s.weight>0?`${s.time_sec}s×${kgToDisplay(s.weight)}${wUnit}`:`${s.time_sec}s`):(s.weight>0?`${kgToDisplay(s.weight)}×${s.reps}`:`${s.reps} повт`)).join(' · ')}
                           </div>
                         )}
                         {ex.grip !== null && ex.grip !== undefined && (
@@ -2739,6 +2739,8 @@ export default function App() {
                                         </div>
                                       </div>
                                     </>
+                                  ) : exType2 === 'bodyweight' ? (
+                                    <DropdownPicker options={REPS_OPTIONS} value={s.reps} onChange={v=>setWorkoutExercises(prev=>prev.map((e,i)=>i!==exIdx?e:{...e,sets:e.sets.map((ss,j)=>j!==si?ss:{...ss,weight:0,reps:v})}))} unit="повт" label={`Подход ${si+1} — Повт`}/>
                                   ) : (
                                     <>
                                       <DropdownPicker options={wOpts} value={s.weight} onChange={v=>setWorkoutExercises(prev=>prev.map((e,i)=>i!==exIdx?e:{...e,sets:e.sets.map((ss,j)=>j!==si?ss:{...ss,weight:v})}))} unit={settings.units==='lbs'?'':wUnit} labelFn={settings.units==='lbs'?(v=>`${kgToDisplay(v)} lbs`):null} label={`Подход ${si+1} — Вес`}/>
@@ -2894,7 +2896,7 @@ export default function App() {
                             <div className="hist-ex">{normalizeName(w.exercises?.name)}</div>
                             <button onClick={()=>deleteWorkout(w.id)} style={{background:'none',border:'none',cursor:'pointer',fontSize:16,opacity:0.4,padding:'0 4px',color:'#ff453a'}} title="Удалить упражнение">✕</button>
                           </div>
-                          <div className="chips">{w.sets?.sort((a,b)=>a.set_no-b.set_no).map((s,i) => <span key={i} className="chip">{s.time_sec>0?(s.weight>0?`${s.time_sec}s×${kgToDisplay(s.weight)}${wUnit}`:`${s.time_sec}s`):`${kgToDisplay(s.weight)}×${s.reps}`}</span>)}</div>
+                          <div className="chips">{w.sets?.sort((a,b)=>a.set_no-b.set_no).map((s,i) => <span key={i} className="chip">{s.time_sec>0?(s.weight>0?`${s.time_sec}s×${kgToDisplay(s.weight)}${wUnit}`:`${s.time_sec}s`):(s.weight>0?`${kgToDisplay(s.weight)}×${s.reps}`:`${s.reps} повт`)}</span>)}</div>
                         </div>
                       ))}
                     </div>
@@ -3029,7 +3031,7 @@ export default function App() {
               {calDayModal.workouts.map(w=>(
                 <div key={w.id} style={{padding:'12px 10px',borderRadius:12,marginBottom:6,background:thm.card2,border:`1px solid ${thm.border}`}}>
                   <div style={{fontSize:14,fontWeight:700,marginBottom:7,color:thm.text}}>{normalizeName(w.exercises?.name)}</div>
-                  <div className="chips">{w.sets?.sort((a,b)=>a.set_no-b.set_no).map((s,i)=><span key={i} className="chip">{s.time_sec>0?(s.weight>0?`${s.time_sec}s×${kgToDisplay(s.weight)}${wUnit}`:`${s.time_sec}s`):`${kgToDisplay(s.weight)}×${s.reps}`}</span>)}</div>
+                  <div className="chips">{w.sets?.sort((a,b)=>a.set_no-b.set_no).map((s,i)=><span key={i} className="chip">{s.time_sec>0?(s.weight>0?`${s.time_sec}s×${kgToDisplay(s.weight)}${wUnit}`:`${s.time_sec}s`):(s.weight>0?`${kgToDisplay(s.weight)}×${s.reps}`:`${s.reps} повт`)}</span>)}</div>
                 </div>
               ))}
             </div>
