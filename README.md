@@ -1,70 +1,39 @@
-# Getting Started with Create React App
+# Gym BRO
 
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+Дневник тренировок: планы, подходы, личные рекорды, график роста и карта нагрузки на мышцы.
+React (Create React App) + Supabase, деплой на Vercel.
 
-## Available Scripts
+## Запуск
 
-In the project directory, you can run:
+```bash
+npm install
+npm start          # http://localhost:3000
+npm run build      # сборка в build/
+npm run test:e2e   # Playwright-тесты из e2e/
+```
 
-### `npm start`
+Адрес и публичный ключ Supabase берутся из `REACT_APP_SUPABASE_URL` / `REACT_APP_SUPABASE_ANON_KEY`
+(по умолчанию — значения в `src/supabase.js`).
 
-Runs the app in the development mode.\
-Open [http://localhost:3000](http://localhost:3000) to view it in your browser.
+## Структура `src/`
 
-The page will reload when you make changes.\
-You may also see any lint errors in the console.
+| Файл | Что внутри |
+|---|---|
+| `App.js` | Состояние приложения, загрузка данных, экраны (тренировка, история, прогресс, упражнения, настройки) |
+| `supabase.js` | Клиент Supabase |
+| `data/exerciseCatalog.js` | Упражнения: тип (вес / время / повторения), картинки, группы мышц, хваты и вариации, описания, разминочные подходы, старые и английские названия (`normalizeName`) |
+| `data/plans.js` | Планы тренировок по дням |
+| `data/muscleLoad.js` | Нагрузка на мышцы: группы (фильтры) и детальная анатомия — 29 мышц, разметка каждого упражнения |
+| `data/muscleZones.js` | Зоны мышц на манекене в координатах `public/images/muscle_map.png` |
+| `data/motivation.js` | Мотивационные фразы, ранги, цитаты |
+| `utils/records.js` | Чем меряется прогресс упражнения и выбор лучшего подхода — общие для рекордов и графика |
+| `utils/db.js` | `fetchAllRows` — постраничная загрузка (Supabase отдаёт максимум 1000 строк за запрос) |
+| `utils/format.js` | Даты по местному времени и форматирование |
+| `styles/appCss.js` | Стили, тёмная и светлая темы |
+| `components/` | `LineChart`, `MuscleMap`, `DropdownPicker`, `ModalItem`, `EditModal` |
 
-### `npm test`
+## Как добавить упражнение
 
-Launches the test runner in the interactive watch mode.\
-See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information.
-
-### `npm run build`
-
-Builds the app for production to the `build` folder.\
-It correctly bundles React in production mode and optimizes the build for the best performance.
-
-The build is minified and the filenames include the hashes.\
-Your app is ready to be deployed!
-
-See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
-
-### `npm run eject`
-
-**Note: this is a one-way operation. Once you `eject`, you can't go back!**
-
-If you aren't satisfied with the build tool and configuration choices, you can `eject` at any time. This command will remove the single build dependency from your project.
-
-Instead, it will copy all the configuration files and the transitive dependencies (webpack, Babel, ESLint, etc) right into your project so you have full control over them. All of the commands except `eject` will still work, but they will point to the copied scripts so you can tweak them. At this point you're on your own.
-
-You don't have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn't feel obligated to use this feature. However we understand that this tool wouldn't be useful if you couldn't customize it when you are ready for it.
-
-## Learn More
-
-You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
-
-To learn React, check out the [React documentation](https://reactjs.org/).
-
-### Code Splitting
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/code-splitting](https://facebook.github.io/create-react-app/docs/code-splitting)
-
-### Analyzing the Bundle Size
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size](https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size)
-
-### Making a Progressive Web App
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app](https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app)
-
-### Advanced Configuration
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/advanced-configuration](https://facebook.github.io/create-react-app/docs/advanced-configuration)
-
-### Deployment
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/deployment](https://facebook.github.io/create-react-app/docs/deployment)
-
-### `npm run build` fails to minify
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify](https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify)
+1. Картинка — `public/images/<name>.webp` (высота 360 px).
+2. В `data/exerciseCatalog.js`: `EXERCISE_TYPE` (если не обычное с весом), `EXERCISE_IMAGES`, `EXERCISE_MUSCLES`, `EXERCISE_INFO`; вариации — в `GRIP_MUSCLES` и `VARIANT_EXERCISES`.
+3. В `data/muscleLoad.js`: строка в `EXERCISE_ANATOMY_SRC` (`'основные / вспомогательные'`), вариации — в `GRIP_ANATOMY_SRC`.
