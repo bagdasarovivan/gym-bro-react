@@ -1422,15 +1422,15 @@ input[type=number]::-webkit-inner-spin-button{-webkit-appearance:none}
 .auth-card{width:100%;max-width:380px;background:#1c1c1e;border-radius:24px;padding:32px 24px}
 .auth-logo{width:64px;height:64px;border-radius:16px;object-fit:cover;margin:0 auto 20px;display:block}
 .auth-logo-ph{width:64px;height:64px;border-radius:16px;background:#2c2c2e;margin:0 auto 20px;display:flex;align-items:center;justify-content:center;font-size:32px}
-.auth-title{font-size:28px;font-weight:800;text-align:center;margin-bottom:6px;letter-spacing:-0.5px}
-.auth-sub{font-size:14px;opacity:0.4;text-align:center;margin-bottom:28px}
-.auth-inp-lbl{font-size:12px;font-weight:600;opacity:0.4;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px}
+.auth-title{font-size:28px;font-weight:800;text-align:center;margin-bottom:6px;letter-spacing:-0.5px;color:#fff}
+.auth-sub{font-size:14px;color:rgba(255,255,255,0.6);text-align:center;margin-bottom:28px}
+.auth-inp-lbl{font-size:12px;font-weight:600;color:rgba(255,255,255,0.6);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px}
 .auth-inp{width:100%;background:#2c2c2e;border:none;border-radius:12px;padding:14px 16px;color:white;font-size:16px;outline:none;margin-bottom:14px}
 .auth-inp:focus{box-shadow:0 0 0 2px rgba(48,209,88,0.4)}
 .auth-btn{width:100%;padding:15px;background:#30D158;border:none;border-radius:14px;font-size:16px;font-weight:700;color:#000;cursor:pointer;margin-top:4px;transition:opacity 0.15s}
 .auth-btn:disabled{opacity:0.5}
 .auth-err{background:rgba(255,59,48,0.1);border:1px solid rgba(255,59,48,0.25);border-radius:10px;padding:10px 14px;font-size:13px;color:#FF453A;margin-bottom:14px;text-align:center}
-.auth-switch{text-align:center;margin-top:18px;font-size:14px;opacity:0.5}
+.auth-switch{text-align:center;margin-top:18px;font-size:14px;color:rgba(255,255,255,0.6)}
 .auth-switch button{background:none;border:none;color:#30D158;font-size:14px;font-weight:600;cursor:pointer;padding:0;margin-left:4px}
 .auth-user-bar{display:flex;align-items:center;gap:8px}
 .auth-signout{background:none;border:none;color:rgba(255,255,255,0.35);font-size:12px;cursor:pointer;padding:4px 8px;border-radius:8px}
@@ -1806,7 +1806,7 @@ function MuscleMap({ muscleScores, period = 7 }) {
     const level = scoreOf(muscle)?.color || 'none'
     if (level === 'none')   return 'rgba(255,255,255,0)'
     if (level === 'low')    return 'rgba(255,214,10,0.45)'
-    if (level === 'normal') return 'rgba(48,200,94,0.5)'
+    if (level === 'normal') return 'rgba(158,219,63,0.45)'
     if (level === 'good')   return 'rgba(48,209,88,0.7)'
     return 'rgba(255,69,58,0.6)' // over
   }
@@ -1814,7 +1814,7 @@ function MuscleMap({ muscleScores, period = 7 }) {
     const level = scoreOf(muscle)?.color || 'none'
     if (level === 'none')   return hovered === muscle ? 'rgba(255,255,255,0.4)' : 'rgba(255,255,255,0)'
     if (level === 'low')    return 'rgba(255,214,10,0.9)'
-    if (level === 'normal') return 'rgba(48,200,94,1)'
+    if (level === 'normal') return 'rgba(158,219,63,1)'
     if (level === 'good')   return 'rgba(48,209,88,1)'
     return 'rgba(255,69,58,1)' // over
   }
@@ -1822,7 +1822,7 @@ function MuscleMap({ muscleScores, period = 7 }) {
 
   const hoveredScore = (hovered && scoreOf(hovered)) || { load: 0, label: 'Нет', color: 'none', percent: 0 }
   const hoveredLevel = hoveredScore.color
-  const scoreColor = hoveredLevel === 'over' ? '#FF453A' : hoveredLevel === 'good' ? '#30D158' : hoveredLevel === 'normal' ? '#30C85E' : hoveredLevel === 'low' ? '#FFD60A' : 'rgba(255,255,255,0.3)'
+  const scoreColor = hoveredLevel === 'over' ? '#FF453A' : hoveredLevel === 'good' ? '#30D158' : hoveredLevel === 'normal' ? '#9EDB3F' : hoveredLevel === 'low' ? '#FFD60A' : 'rgba(255,255,255,0.3)'
 
   const handleZone = (muscle) => ({
     fill: hovered === muscle ? (hoveredScore.load > 0 ? getColor(muscle) : 'rgba(255,255,255,0.12)') : getColor(muscle),
@@ -2053,9 +2053,9 @@ export default function App() {
   const [prAlert, setPrAlert] = useState(null)
   const [streakAlert, setStreakAlert] = useState(null)
   const [workoutStarted, setWorkoutStarted] = useState(false)
-  const [workoutDate, setWorkoutDate] = useState(new Date().toISOString().split('T')[0])
-  const [showDateModal, setShowDateModal] = useState(false)
+  const [workoutDate, setWorkoutDate] = useState(() => localDateStr(new Date()))
   const [workoutExercises, setWorkoutExercises] = useState([])
+  const [loadingPlan, setLoadingPlan] = useState(false)
   const [kbHeight, setKbHeight] = useState(0)
   const historyLoaded = useRef(false)
   const [settings, setSettings] = useState(DEFAULT_SETTINGS)
@@ -2111,7 +2111,7 @@ export default function App() {
     let query = supabase.from('workouts').select('workout_date,exercises(name),sets(set_no,weight,reps,time_sec)').eq('user_id', user.id).order('workout_date', { ascending: false })
     if (period !== 'all') {
       const days = period === '7d' ? 7 : period === '30d' ? 30 : period === '3m' ? 90 : period === '6m' ? 180 : 365
-      const from = new Date(Date.now() - days * 86400000).toISOString().split('T')[0]
+      const from = localDateStr(new Date(Date.now() - days * 86400000))
       query = query.gte('workout_date', from)
     }
     const { data } = await query
@@ -2233,7 +2233,7 @@ export default function App() {
     const quotesArr = RANK_QUOTES[rankNow.name] || RANK_QUOTES['Новичок']
     setStreakMotivQuote(quotesArr[Math.floor(Math.random() * quotesArr.length)])
     if (!user) return
-    const thisM = new Date().toISOString().slice(0,7)
+    const thisM = localDateStr(new Date()).slice(0,7)
     const { data: wData } = await supabase.from('workouts').select('id,workout_date').eq('user_id', user.id)
     if (!wData) return
     const monthIds = wData.filter(w => w.workout_date.startsWith(thisM)).map(w => w.id)
@@ -2278,7 +2278,7 @@ export default function App() {
     const past3 = []
     for (let i = 1; i <= 3; i++) {
       const d = new Date(); d.setMonth(d.getMonth() - i)
-      const m = d.toISOString().slice(0,7)
+      const m = localDateStr(d).slice(0,7)
       const count = new Set(wData.filter(w => w.workout_date.startsWith(m)).map(w => w.workout_date)).size
       past3.push({ month: m, count })
     }
@@ -2355,7 +2355,7 @@ export default function App() {
   useEffect(() => {
     async function load() {
       if (!user) return
-      const thisM = new Date().toISOString().slice(0,7)
+      const thisM = localDateStr(new Date()).slice(0,7)
       const { data: wDates } = await supabase.from('workouts').select('workout_date').eq('user_id', user.id).gte('workout_date', thisM + '-01')
       if (!wDates) return
       const monthCount = new Set(wDates.map(w => w.workout_date)).size
@@ -2658,7 +2658,7 @@ export default function App() {
         }
       }
     }
-    const thisM2 = new Date().toISOString().slice(0,7)
+    const thisM2 = localDateStr(new Date()).slice(0,7)
     const { data: sessData } = await supabase.from('workouts').select('workout_date').eq('user_id', user.id).gte('workout_date', thisM2 + '-01')
     const monthCount = new Set((sessData || []).map(w => w.workout_date)).size
     setStreak(monthCount)
@@ -2727,7 +2727,7 @@ export default function App() {
   const firstDow = new Date(calYear,calMonth,1).getDay()
   const offset = firstDow === 0 ? 6 : firstDow - 1
   const daysInMonth = new Date(calYear,calMonth+1,0).getDate()
-  const todayStr = new Date().toISOString().split('T')[0]
+  const todayStr = localDateStr(new Date())
   const weightOpts = selectedEx ? getWeightOptions(selectedEx) : LIGHT_WEIGHTS
   const exType = EXERCISE_TYPE[selectedEx] || 'light'
   const isFav = favorites.includes(selectedEx)
@@ -2904,7 +2904,7 @@ export default function App() {
                 `}</style>
                 <div className="pr1"/>
                 <div className="pr1 pr2"/>
-                <button className="start-btn" onClick={()=>workoutExercises.length>0?setWorkoutStarted(true):setShowDateModal(true)} style={{
+                <button className="start-btn" onClick={()=>{ if (!workoutExercises.length) setWorkoutDate(localDateStr(new Date())); setWorkoutStarted(true) }} style={{
                   width:150,height:150,borderRadius:'50%',cursor:'pointer',zIndex:1,
                   background:'rgba(255,255,255,0.05)',border:'1px solid rgba(255,255,255,0.15)',
                   display:'flex',alignItems:'center',justifyContent:'center',
@@ -2925,9 +2925,14 @@ export default function App() {
             <>
               <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:16}}>
                 <button onClick={()=>{setWorkoutStarted(false);setSaved(false)}} className="back-btn">← Назад</button>
-                <div style={{fontSize:13,color:thm.text50,fontWeight:600}}>
+                {/* Дата тренировки — тап открывает выбор даты */}
+                <label style={{position:'relative',fontSize:13,color:thm.text70,fontWeight:600,padding:'6px 10px',borderRadius:10,background:thm.btnBg,cursor:'pointer',display:'flex',alignItems:'center',gap:6}}>
                   📅 {new Date(workoutDate+'T12:00:00').toLocaleDateString('ru',{day:'numeric',month:'long'})}
-                </div>
+                  <span style={{fontSize:11,opacity:0.6}}>▾</span>
+                  <input type="date" value={workoutDate} max={localDateStr(new Date())} onChange={e=>e.target.value && setWorkoutDate(e.target.value)}
+                    aria-label="Дата тренировки"
+                    style={{position:'absolute',inset:0,width:'100%',height:'100%',opacity:0,cursor:'pointer',colorScheme:'dark'}}/>
+                </label>
               </div>
               {workoutExercises.map((ex, exIdx) => {
                 const isOpen = ex.open
@@ -3066,7 +3071,7 @@ export default function App() {
               <button onClick={()=>setShowComingSoon(true)} style={{width:'100%',marginBottom:10,padding:'16px 20px',borderRadius:16,border:'1px solid rgba(255,255,255,0.08)',background:'rgba(255,255,255,0.05)',cursor:'pointer',display:'flex',alignItems:'center',gap:14,textAlign:'left'}}>
                 <div style={{width:44,height:44,borderRadius:12,background:'rgba(255,200,0,0.12)',display:'flex',alignItems:'center',justifyContent:'center',fontSize:20,flexShrink:0}}>🤸</div>
                 <div style={{flex:1}}>
-                  <div style={{fontSize:16,fontWeight:600,color:'rgba(255,255,255,0.5)',marginBottom:4}}>Разминка</div>
+                  <div style={{fontSize:16,fontWeight:600,color:'rgba(255,255,255,0.75)',marginBottom:4,display:'flex',alignItems:'center',gap:8}}>Разминка<span style={{fontSize:10,fontWeight:700,letterSpacing:'0.5px',textTransform:'uppercase',color:'#FF9F0A',background:'rgba(255,159,10,0.12)',borderRadius:6,padding:'2px 6px'}}>скоро</span></div>
                   <div style={{fontSize:12,color:'rgba(255,255,255,0.35)',marginTop:4}}>Подготовь тело к тренировке</div>
                 </div>
                 <span style={{color:'rgba(255,255,255,0.2)',fontSize:18}}>›</span>
@@ -3074,7 +3079,7 @@ export default function App() {
               <button onClick={()=>setShowComingSoon(true)} style={{width:'100%',marginBottom:16,padding:'16px 20px',borderRadius:16,border:'1px solid rgba(255,255,255,0.08)',background:'rgba(255,255,255,0.05)',cursor:'pointer',display:'flex',alignItems:'center',gap:14,textAlign:'left'}}>
                 <div style={{width:44,height:44,borderRadius:12,background:'rgba(100,180,255,0.1)',display:'flex',alignItems:'center',justifyContent:'center',fontSize:20,flexShrink:0}}>🧘</div>
                 <div style={{flex:1}}>
-                  <div style={{fontSize:16,fontWeight:600,color:'rgba(255,255,255,0.5)',marginBottom:4}}>Растяжка</div>
+                  <div style={{fontSize:16,fontWeight:600,color:'rgba(255,255,255,0.75)',marginBottom:4,display:'flex',alignItems:'center',gap:8}}>Растяжка<span style={{fontSize:10,fontWeight:700,letterSpacing:'0.5px',textTransform:'uppercase',color:'#FF9F0A',background:'rgba(255,159,10,0.12)',borderRadius:6,padding:'2px 6px'}}>скоро</span></div>
                   <div style={{fontSize:12,color:'rgba(255,255,255,0.35)',marginTop:4}}>Восстановление после нагрузки</div>
                 </div>
                 <span style={{color:'rgba(255,255,255,0.2)',fontSize:18}}>›</span>
@@ -3164,7 +3169,7 @@ export default function App() {
 
       {tab === 'progress' && (() => {
         // Compute muscle scores
-        const daysAgoDate = new Date(Date.now() - musclePeriod*24*60*60*1000).toISOString().split('T')[0]
+        const daysAgoDate = localDateStr(new Date(Date.now() - musclePeriod*24*60*60*1000))
         const recentHistory = history.filter(w => w.workout_date >= daysAgoDate)
         const muscleScores = calcAnatomyLoad(recentHistory, musclePeriod)
         return (
@@ -3189,7 +3194,7 @@ export default function App() {
             </div>
             <MuscleMap muscleScores={muscleScores} period={musclePeriod}/>
             <div style={{display:'flex',justifyContent:'center',gap:14,marginTop:12}}>
-              {[['#3A3A3C','Нет'],['#FFD60A','Мало'],['#30C85E','Норма'],['#30D158','Отлично'],['#FF453A','Перегрузка']].map(([color,label])=>(
+              {[['#3A3A3C','Нет'],['#FFD60A','Мало'],['#9EDB3F','Норма'],['#30D158','Отлично'],['#FF453A','Перегрузка']].map(([color,label])=>(
                 <div key={label} style={{display:'flex',alignItems:'center',gap:5}}>
                   <div style={{width:10,height:10,borderRadius:3,background:color,flexShrink:0}}/>
                   <span style={{fontSize:11,color:'rgba(255,255,255,0.4)',fontWeight:500}}>{label}</span>
@@ -3507,31 +3512,6 @@ export default function App() {
       })()}
 
       {/* Timer Modal */}
-      {showDateModal && (
-        <div style={{position:'fixed',inset:0,background:'rgba(0,0,0,0.7)',zIndex:200,display:'flex',alignItems:'center',justifyContent:'center',backdropFilter:'blur(8px)'}}
-          onClick={e=>{if(e.target===e.currentTarget)setShowDateModal(false)}}>
-          <div style={{background:thm.overlayCard,borderRadius:20,padding:'28px 24px',width:'calc(100% - 48px)',maxWidth:320,border:`1px solid ${thm.border}`}}>
-            <div style={{fontSize:17,fontWeight:700,color:thm.text,marginBottom:20,textAlign:'center'}}>📅 Выбери дату тренировки</div>
-            <div style={{position:'relative',marginBottom:16}}>
-              <div style={{background:thm.btnBg,border:`1px solid ${thm.btnBorder}`,
-                borderRadius:12,padding:'14px 16px',color:thm.text,fontSize:16,fontWeight:600,
-                display:'flex',alignItems:'center',justifyContent:'space-between'}}>
-                <span>{new Date(workoutDate+'T12:00:00').toLocaleDateString('ru',{day:'numeric',month:'long',year:'numeric'})}</span>
-                <span style={{fontSize:18}}>📅</span>
-              </div>
-              <input type="date" value={workoutDate} onChange={e=>setWorkoutDate(e.target.value)}
-                style={{position:'absolute',top:0,left:0,width:'100%',height:'100%',opacity:0,cursor:'pointer',zIndex:2,colorScheme:'dark'}}/>
-            </div>
-            <button onClick={()=>{setShowDateModal(false);setWorkoutStarted(true)}}
-              style={{width:'100%',padding:'15px',borderRadius:14,border:'none',cursor:'pointer',
-              background:'#30D158',color:'#000',fontSize:15,fontWeight:700}}>
-              ✅ Начать тренировку
-            </button>
-          </div>
-        </div>
-      )}
-
-
       {/* PR Alert Toast */}
       {prAlert && (
         <div className="alert-toast" style={{borderColor:'rgba(255,200,0,0.3)'}}>
@@ -3852,32 +3832,37 @@ export default function App() {
                           </div>
                         )
                       })}
-                      <button onClick={async ()=>{
-                        setShowDayPreview(null)
-                        const newExercises = []
-                        for (const ex of dayDef.exercises) {
-                          const key = `${plan.id}:${ex.name}`
-                          let pw = planWeights[key]
-                          if (!pw) {
-                            const { data: inserted } = await supabase.from('plan_weights').insert({
-                              user_id: user.id, plan_id: plan.id, exercise_name: ex.name,
-                              working_weight: 0, target_reps: ex.reps, target_sets: ex.sets
-                            }).select().single()
-                            pw = inserted
-                            if (pw) setPlanWeights(prev => ({...prev, [key]: pw}))
-                          }
-                          const wt = pw?.working_weight || 0
-                          const sets = Array.from({length: ex.sets}, () => ({weight: wt, reps: ex.reps, done: false}))
-                          const grip = getDefaultVariant(ex.name)
-                          newExercises.push({name: ex.name, grip, open: true, lastSession: null, sets, planId: plan.id, isBase: ex.isBase})
+                      <button disabled={loadingPlan} onClick={async ()=>{
+                        setLoadingPlan(true)
+                        try {
+                          // веса плана для всех упражнений запрашиваются параллельно, а не по очереди
+                          const newExercises = await Promise.all(dayDef.exercises.map(async ex => {
+                            const key = `${plan.id}:${ex.name}`
+                            let pw = planWeights[key]
+                            if (!pw) {
+                              const { data: inserted } = await supabase.from('plan_weights').insert({
+                                user_id: user.id, plan_id: plan.id, exercise_name: ex.name,
+                                working_weight: 0, target_reps: ex.reps, target_sets: ex.sets
+                              }).select().single()
+                              pw = inserted
+                              if (pw) setPlanWeights(prev => ({...prev, [key]: pw}))
+                            }
+                            const wt = pw?.working_weight || 0
+                            const sets = Array.from({length: ex.sets}, () => ({weight: wt, reps: ex.reps, done: false}))
+                            return {name: ex.name, grip: getDefaultVariant(ex.name), open: true, lastSession: null, sets, planId: plan.id, isBase: ex.isBase}
+                          }))
+                          setWorkoutExercises(prev => {
+                            const existing = prev.filter(e => !newExercises.some(n => n.name === e.name))
+                            return [...existing, ...newExercises]
+                          })
+                          if (!workoutStarted) setWorkoutStarted(true)
+                          window.scrollTo({ top: 0, behavior: 'smooth' })
+                        } finally {
+                          setLoadingPlan(false)
+                          setShowDayPreview(null)
                         }
-                        setWorkoutExercises(prev => {
-                          const existing = prev.filter(e => !newExercises.some(n => n.name === e.name))
-                          return [...existing, ...newExercises]
-                        })
-                        if (!workoutStarted) setWorkoutStarted(true)
-                      }} style={{width:'100%',marginTop:16,padding:'14px',borderRadius:14,background:'#30D158',color:'#fff',fontSize:16,fontWeight:700,border:'none',cursor:'pointer'}}>
-                        Загрузить в тренировку
+                      }} style={{width:'100%',marginTop:16,padding:'14px',borderRadius:14,background:'#30D158',color:'#000',fontSize:16,fontWeight:700,border:'none',cursor:loadingPlan?'default':'pointer',opacity:loadingPlan?0.7:1}}>
+                        {loadingPlan ? 'Загружаю упражнения…' : 'Загрузить в тренировку'}
                       </button>
                       <button onClick={()=>setShowDayPreview(null)} style={{width:'100%',marginTop:8,padding:'12px',borderRadius:14,border:'none',background:'transparent',color:'rgba(255,255,255,0.4)',fontSize:14,cursor:'pointer'}}>
                         ← Закрыть
@@ -3928,7 +3913,7 @@ export default function App() {
 
       <div className="nav-bar">
         {[{id:'add',icon:'➕',label:'Тренировка'},{id:'history',icon:'📜',label:'История'},{id:'progress',icon:'📈',label:'Прогресс'},{id:'exercises',icon:'📋',label:'Упражнения'}].map(t=>(
-          <div key={t.id} className="nav-item" style={{opacity:tab===t.id?1:0.38}} onClick={()=>{setTab(t.id);if(t.id!=='add'){setWorkoutStarted(false);setSelectedEx(null)}}}>
+          <div key={t.id} className="nav-item" style={{opacity:tab===t.id?1:0.62}} onClick={()=>{setTab(t.id);if(t.id!=='add'){setWorkoutStarted(false);setSelectedEx(null)}}}>
             <span className="nav-icon">{t.icon}</span>
             <span className="nav-lbl" style={{color:tab===t.id?'#00C853':'white'}}>{t.label}</span>
           </div>
