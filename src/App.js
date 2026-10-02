@@ -1448,11 +1448,8 @@ function LineChart({ data, period, setPeriod, unit = 'кг' }) {
           const fullDate = tooltip.date
             ? new Date(tooltip.date+'T12:00:00').toLocaleDateString('ru',{day:'numeric',month:'long',year:'numeric'})
             : tooltip.label
-          const setLine = tooltip.bestTimeSec > 0
-            ? `${tooltip.bestTimeSec} сек`
-            : (tooltip.bestWeight > 0 && tooltip.bestReps > 0)
-              ? `${tooltip.bestWeight} ${unit} × ${tooltip.bestReps} повт`
-              : null
+          // Значение точки — уже сам вес / время / повторения, поэтому вторая строка — только повторения
+          const setLine = (tooltip.metric === 'weight' && tooltip.bestReps > 0) ? `× ${tooltip.bestReps} повт` : null
           return (
             <div style={{
               position:'absolute',
@@ -1469,7 +1466,7 @@ function LineChart({ data, period, setPeriod, unit = 'кг' }) {
               textAlign:'center',
               whiteSpace:'nowrap',
             }}>
-              <div style={{fontSize:18,fontWeight:700,color:'#30D158',lineHeight:1.2}}>~{tooltip.val} {unit}</div>
+              <div style={{fontSize:18,fontWeight:700,color:'#30D158',lineHeight:1.2}}>{tooltip.val} {unit}</div>
               {setLine && <div style={{fontSize:13,fontWeight:600,color:'rgba(255,255,255,0.9)',marginTop:3}}>{setLine}</div>}
               <div style={{fontSize:11,color:'rgba(255,255,255,0.4)',marginTop:3}}>{fullDate}</div>
             </div>
@@ -2225,17 +2222,21 @@ export default function App() {
       const enName = Object.entries(EN_TO_RU).find(([,v])=>v===chartEx)?.[0] || chartEx
       const matchName = (n) => !n ? false : (normalizeName(n) === chartEx || normalizeName(n).replace(/\s*\([^)]*\)\s*$/, '').trim() === chartEx || n === chartEx || n === enName || ruName(n) === chartEx || n.startsWith(chartEx + ' (') || n.startsWith(enName + ' ('))
       const byDate = {}
+      // Что показывает график: для обычных упражнений — максимальный вес за тренировку
+      // (раньше был расчётный 1ПМ = вес×(1+повт/30), из-за чего 70×15 и 100×5 стояли на одном уровне),
+      // для упражнений на время — лучшее время, для упражнений без веса — лучшее число повторений.
+      const exType = EXERCISE_TYPE[chartEx] || 'light'
+      const metric = exType === 'timed' ? 'time' : exType === 'bodyweight' ? 'reps' : 'weight'
+      const valueOf = (s) => metric === 'time' ? (s.time_sec || 0) : metric === 'reps' ? (s.reps || 0) : (s.weight > 0 && s.reps > 0 ? s.weight : 0)
       const findBestSet = (sets) => {
-        let best = null, bestOrm = -1
+        let best = null, bestVal = 0
         ;(sets||[]).forEach(s => {
-          if (s.time_sec > 0) {
-            if (!best || s.time_sec > (best.time_sec || 0)) best = s
-          } else if (s.weight > 0 && s.reps > 0) {
-            const orm = s.weight * (1 + s.reps / 30)
-            if (orm > bestOrm) { bestOrm = orm; best = s }
-          }
+          const v = valueOf(s)
+          if (v <= 0) return
+          // при равном весе лучше подход с бо́льшим числом повторений
+          if (v > bestVal || (v === bestVal && best && (s.reps || 0) > (best.reps || 0))) { bestVal = v; best = s }
         })
-        return { best, orm: bestOrm }
+        return { best, orm: bestVal }
       }
       // Всегда грузим из базы ВСЮ историю этого упражнения (раньше брали из вкладки
       // «История», урезанной до 200 записей, — поэтому на графике было ~8 точек).
@@ -2269,6 +2270,7 @@ export default function App() {
       if (cancelled) return
       const pts = Object.entries(byDate).sort(([a],[b])=>a.localeCompare(b)).map(([date,{orm,best}])=>({
         val: parseFloat(orm.toFixed(1)),
+        metric,
         date,
         label: new Date(date+'T12:00:00').toLocaleDateString('ru',{day:'numeric',month:'short'}),
         bestWeight: best.weight || 0,
@@ -3043,9 +3045,10 @@ export default function App() {
                 const cutoffStr = cutoff.toISOString().split('T')[0]
                 return chartData.filter(p => p.date >= cutoffStr)
               })()
-              if (settings.units === 'lbs') return base.map(p => ({...p, val: Math.round(p.val * 2.20462 * 10) / 10}))
+              if (settings.units === 'lbs' && base[0]?.metric === 'weight') return base.map(p => ({...p, val: Math.round(p.val * 2.20462 * 10) / 10}))
               return base
-            })()} period={chartPeriod} setPeriod={setChartPeriod} unit={wUnit}/>
+            })()} period={chartPeriod} setPeriod={setChartPeriod}
+              unit={chartData[0]?.metric === 'time' ? 'сек' : chartData[0]?.metric === 'reps' ? 'повт' : wUnit}/>
           </div>
         </div>
         )
