@@ -17,11 +17,11 @@ const EXERCISE_TYPE = {
   'Жим над головой':'heavy','Жим ногами':'heavy','Тяга штанги в наклоне':'heavy','Тяга вертикального блока':'heavy',
   'Тяга горизонтального блока':'heavy','Жим гантелей наклон':'light','Жим гантелей лёжа':'light',
   'Разводка гантелей':'light','Выпады':'light','Сгибание ног':'machine',
-  'Разгибание ног':'machine','Отжимания':'light','Подтягивания':'light','Скручивания':'light',
-  'Гиперэкстензия':'light','Планка':'timed',
+  'Разгибание ног':'machine','Отжимания':'bodyweight_plus','Подтягивания':'bodyweight_plus','Скручивания':'bodyweight_plus',
+  'Гиперэкстензия':'bodyweight_plus','Планка':'timed',
   'Жим Арнольда':'light','Кроссовер':'light','Болгарские выпады':'light',
   'Молотки':'light','Французский жим':'light','Тяга к лицу':'light',
-  'Ягодичный мост':'heavy','Шраги':'heavy','Отжимания на брусьях':'light','Тяга Т-штанги':'heavy',
+  'Ягодичный мост':'heavy','Шраги':'heavy','Отжимания на брусьях':'bodyweight_plus','Тяга Т-штанги':'heavy',
   'Подъём гантелей на бицепс':'light','Изолированные сгибания на бицепс':'light',
   'Разгибание из-за головы на трицепс':'light','Разводка гантелей стоя':'light','Разведение гантелей стоя':'light',
   'Молотки лёжа':'light','Тяга гантели в наклоне':'light',
@@ -29,6 +29,8 @@ const EXERCISE_TYPE = {
   'Подъём на икры сидя':'light','Жим в тренажёре на грудь':'light',
   'Обратная разводка':'light','Махи гирей':'heavy',
   'Колесо для пресса':'bodyweight',
+  // Собственный вес + отягощение по желанию: подход сохраняется и с 0 кг
+  'Подъём ног в висе на пресс':'bodyweight_plus','Русские скручивания':'bodyweight_plus',
 }
 
 const EXERCISE_IMAGES = {
@@ -516,9 +518,11 @@ const DEFAULT_FAVORITES = ['Жим лёжа','Приседания','Стано�
 // Название без вариации: «Жим лёжа (Узкий)» → «Жим лёжа»
 const baseExName = (name) => (name || '').replace(/\s*\([^)]*\)\s*$/, '').trim()
 // Чем меряется прогресс: вес / время / повторения (для упражнений без веса)
+// bodyweight — только повторения (колесо); bodyweight_plus — повторения + дополнительный вес по желанию
+const isRepsType = (t) => t === 'bodyweight' || t === 'bodyweight_plus'
 function exMetric(name) {
   const t = EXERCISE_TYPE[baseExName(name)] || EXERCISE_TYPE[name] || 'light'
-  return t === 'timed' ? 'time' : t === 'bodyweight' ? 'reps' : 'weight'
+  return t === 'timed' ? 'time' : isRepsType(t) ? 'reps' : 'weight'
 }
 function setValue(s, metric) {
   if (metric === 'time') return s.time_sec || 0
@@ -1662,7 +1666,8 @@ function LineChart({ data, period, setPeriod, unit = 'кг', totalPoints = 0 }) 
             ? new Date(tooltip.date+'T12:00:00').toLocaleDateString('ru',{day:'numeric',month:'long',year:'numeric'})
             : tooltip.label
           // Значение точки — уже сам вес / время / повторения, поэтому вторая строка — только повторения
-          const setLine = (tooltip.metric === 'weight' && tooltip.bestReps > 0) ? `× ${tooltip.bestReps} повт` : null
+          const setLine = (tooltip.metric === 'weight' && tooltip.bestReps > 0) ? `× ${tooltip.bestReps} повт`
+            : (tooltip.metric === 'reps' && tooltip.bestWeight > 0) ? `доп. вес ${tooltip.bestWeight} кг` : null
           return (
             <div style={{
               position:'absolute',
@@ -2056,6 +2061,8 @@ export default function App() {
   const [workoutDate, setWorkoutDate] = useState(new Date().toISOString().split('T')[0])
   const [showDateModal, setShowDateModal] = useState(false)
   const [workoutExercises, setWorkoutExercises] = useState([])
+  const [draftRestored, setDraftRestored] = useState(false)
+  const draftReadyRef = useRef(false)
   const [kbHeight, setKbHeight] = useState(0)
   const historyLoaded = useRef(false)
   const [settings, setSettings] = useState(DEFAULT_SETTINGS)
@@ -2301,6 +2308,36 @@ export default function App() {
     vv.addEventListener('scroll', update)
     return () => { vv.removeEventListener('resize', update); vv.removeEventListener('scroll', update) }
   }, [])
+
+
+  // ── Черновик тренировки ────────────────────────────────────────────────────
+  // Незавершённая тренировка хранится на устройстве: если вкладку выгрузило или страница
+  // перезагрузилась, подходы не теряются. После сохранения тренировки черновик удаляется.
+  useEffect(() => {
+    draftReadyRef.current = false
+    if (!user) return
+    try {
+      const raw = localStorage.getItem('gymBroDraft_' + user.id)
+      const draft = raw ? JSON.parse(raw) : null
+      if (draft && Array.isArray(draft.exercises) && draft.exercises.length) {
+        setWorkoutExercises(draft.exercises)
+        if (draft.date) setWorkoutDate(draft.date)
+        setWorkoutStarted(true)
+        setDraftRestored(true)
+        setTimeout(() => setDraftRestored(false), 3500)
+      }
+    } catch {}
+    draftReadyRef.current = true
+  }, [user])
+
+  useEffect(() => {
+    if (!user || !draftReadyRef.current) return
+    try {
+      const key = 'gymBroDraft_' + user.id
+      if (workoutExercises.length) localStorage.setItem(key, JSON.stringify({ date: workoutDate, exercises: workoutExercises, savedAt: Date.now() }))
+      else localStorage.removeItem(key)
+    } catch {}
+  }, [workoutExercises, workoutDate, user])
 
   // Auth listener. Supabase fires several events on start (INITIAL_SESSION, TOKEN_REFRESHED…)
   // with a new user object each time — keep the same object while the user id is unchanged,
@@ -2629,7 +2666,7 @@ export default function App() {
     for (const exItem of workoutExercises) {
       const exType = EXERCISE_TYPE[exItem.name] || 'light'
       const exIsTimed = exType === 'timed'
-      const filled = exItem.sets.filter(s => exIsTimed ? s.weight > 0 : exType === 'bodyweight' ? s.reps > 0 : (s.weight > 0 && s.reps > 0))
+      const filled = exItem.sets.filter(s => exIsTimed ? s.weight > 0 : isRepsType(exType) ? s.reps > 0 : (s.weight > 0 && s.reps > 0))
       if (!filled.length) continue
       const saveName = (exItem.grip && exItem.grip !== getDefaultVariant(exItem.name)) ? `${exItem.name} (${exItem.grip})` : exItem.name
       let { data: ex } = await supabase.from('exercises').select('id').eq('name', saveName).single()
@@ -2945,7 +2982,7 @@ export default function App() {
                         <span style={{fontSize:15,fontWeight:700,color:thm.text85}}>{ex.name}</span>
                         {ex.grip && ex.grip !== getDefaultVariant(ex.name) && <span style={{fontSize:11,color:'rgba(255,159,10,0.8)',marginLeft:6,fontWeight:600}}>({ex.grip})</span>}
                       </div>
-                      <span style={{fontSize:12,color:thm.text30,marginRight:4}}>{ex.sets.filter(s=>exType2==='bodyweight'?s.reps>0:(s.weight>0&&s.reps>0)).length} подх.</span>
+                      <span style={{fontSize:12,color:thm.text30,marginRight:4}}>{ex.sets.filter(s=>isRepsType(exType2)?s.reps>0:(s.weight>0&&s.reps>0)).length} подх.</span>
                       <button onClick={e=>{e.stopPropagation();setWorkoutExercises(prev=>prev.filter((_,i)=>i!==exIdx))}}
                         style={{background:'rgba(255,59,48,0.1)',border:'none',borderRadius:8,padding:'4px 8px',color:'#FF453A',cursor:'pointer',fontSize:12,fontWeight:700,marginRight:4}}>✕</button>
                       <span style={{color:thm.text40,fontSize:20,display:'inline-block',transform:isOpen?'rotate(180deg)':'none',transition:'transform 0.2s',padding:'2px 8px',minWidth:32,textAlign:'center'}}>▼</span>
@@ -2997,7 +3034,7 @@ export default function App() {
                                     <DropdownPicker options={REPS_OPTIONS} value={s.reps} onChange={v=>setWorkoutExercises(prev=>prev.map((e,i)=>i!==exIdx?e:{...e,sets:e.sets.map((ss,j)=>j!==si?ss:{...ss,weight:0,reps:v})}))} unit="повт" label={`Подход ${si+1} — Повт`}/>
                                   ) : (
                                     <>
-                                      <DropdownPicker options={wOpts} value={s.weight} onChange={v=>setWorkoutExercises(prev=>prev.map((e,i)=>i!==exIdx?e:{...e,sets:e.sets.map((ss,j)=>j!==si?ss:{...ss,weight:v})}))} unit={settings.units==='lbs'?'':wUnit} labelFn={settings.units==='lbs'?(v=>`${kgToDisplay(v)} lbs`):null} label={`Подход ${si+1} — Вес`}/>
+                                      <DropdownPicker options={wOpts} value={s.weight} onChange={v=>setWorkoutExercises(prev=>prev.map((e,i)=>i!==exIdx?e:{...e,sets:e.sets.map((ss,j)=>j!==si?ss:{...ss,weight:v})}))} unit={settings.units==='lbs'?'':wUnit} labelFn={settings.units==='lbs'?(v=>`${kgToDisplay(v)} lbs`):null} label={exType2==='bodyweight_plus' ? `Подход ${si+1} — +вес` : `Подход ${si+1} — Вес`}/>
                                       <span className="set-sep">×</span>
                                       <DropdownPicker options={REPS_OPTIONS} value={s.reps} onChange={v=>setWorkoutExercises(prev=>prev.map((e,i)=>i!==exIdx?e:{...e,sets:e.sets.map((ss,j)=>j!==si?ss:{...ss,reps:v})}))} unit="повт" label={`Подход ${si+1} — Повт`}/>
                                     </>
@@ -3231,11 +3268,11 @@ export default function App() {
                 <button style={{width:'100%',background:'none',border:'none',cursor:'pointer',padding:'11px 16px',display:'flex',alignItems:'center',gap:10,textAlign:'left'}} onClick={()=>setOpenPrs(p=>({...p,[name]:!p[name]}))}>
                   {img ? <img src={img} alt={name} loading="lazy" decoding="async" style={{width:32,height:32,borderRadius:7,objectFit:'cover',flexShrink:0}} onError={e=>e.target.style.display='none'}/> : <div style={{width:32,height:32,borderRadius:7,background:thm.btnBg,display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0,fontSize:16}}>🏋️</div>}
                   <span style={{flex:1,color:thm.text85,fontSize:14,fontWeight:600}}>{normalizeName(name)}</span>
-                  <span style={{color:'#30D158',fontSize:14,fontWeight:700,marginRight:8}}>{pr.metric==='time' ? `${pr.time_sec} сек` : pr.metric==='reps' ? `${pr.reps} повт` : `${kgToDisplay(pr.weight)} ${wUnit}`}</span>
+                  <span style={{color:'#30D158',fontSize:14,fontWeight:700,marginRight:8}}>{pr.metric==='time' ? `${pr.time_sec} сек` : pr.metric==='reps' ? `${pr.reps} повт${pr.weight>0?` +${kgToDisplay(pr.weight)}`:''}` : `${kgToDisplay(pr.weight)} ${wUnit}`}</span>
                   <span style={{color:thm.text25,fontSize:11,display:'inline-block',transition:'transform 0.2s',transform:isOpen?'rotate(180deg)':'none'}}>▼</span>
                 </button>
                 {isOpen && <div style={{padding:'2px 16px 12px 58px',display:'flex',gap:16,flexWrap:'wrap',alignItems:'center'}}>
-                  <span style={{fontSize:13,color:thm.text50,fontWeight:600}}>{pr.metric==='time' ? `${pr.time_sec} сек${pr.weight>0?` × ${kgToDisplay(pr.weight)} ${wUnit}`:''}` : pr.metric==='reps' ? `${pr.reps} повт` : `${kgToDisplay(pr.weight)} ${wUnit} × ${pr.reps} повт`}</span>
+                  <span style={{fontSize:13,color:thm.text50,fontWeight:600}}>{pr.metric==='time' ? `${pr.time_sec} сек${pr.weight>0?` × ${kgToDisplay(pr.weight)} ${wUnit}`:''}` : pr.metric==='reps' ? `${pr.reps} повт${pr.weight>0?` с доп. весом ${kgToDisplay(pr.weight)} ${wUnit}`:''}` : `${kgToDisplay(pr.weight)} ${wUnit} × ${pr.reps} повт`}</span>
                   <span style={{fontSize:12,color:thm.text30}}>{new Date(pr.date).toLocaleDateString('ru',{day:'numeric',month:'short',year:'numeric'})}</span>
                 </div>}
               </div>
@@ -3545,6 +3582,15 @@ export default function App() {
       )}
 
       {/* Motivational Toast */}
+      {draftRestored && (
+        <div className="alert-toast" style={{borderColor:'rgba(48,209,88,0.3)',pointerEvents:'none'}}>
+          <div className="alert-toast-icon">💾</div>
+          <div>
+            <div className="alert-toast-title">Тренировка восстановлена</div>
+            <div className="alert-toast-sub">Все введённые подходы на месте</div>
+          </div>
+        </div>
+      )}
       {streakAlert && streakAlert.type === 'month' && (
         <div className="alert-toast" style={{borderColor:'rgba(48,209,88,0.3)'}}>
           <div className="alert-toast-icon">
