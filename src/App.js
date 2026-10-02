@@ -513,6 +513,41 @@ const EXERCISES = [...new Set([
 
 const DEFAULT_FAVORITES = ['Жим лёжа','Приседания','Становая тяга']
 
+// Название без вариации: «Жим лёжа (Узкий)» → «Жим лёжа»
+const baseExName = (name) => (name || '').replace(/\s*\([^)]*\)\s*$/, '').trim()
+// Чем меряется прогресс: вес / время / повторения (для упражнений без веса)
+function exMetric(name) {
+  const t = EXERCISE_TYPE[baseExName(name)] || EXERCISE_TYPE[name] || 'light'
+  return t === 'timed' ? 'time' : t === 'bodyweight' ? 'reps' : 'weight'
+}
+function setValue(s, metric) {
+  if (metric === 'time') return s.time_sec || 0
+  if (metric === 'reps') return s.reps || 0
+  return (s.weight > 0 && s.reps > 0) ? s.weight : 0
+}
+// Лучший подход: максимальный вес (при равном весе — больше повторений), время или повторения
+function bestSet(sets, metric) {
+  let best = null, bestVal = 0
+  ;(sets || []).forEach(s => {
+    const v = setValue(s, metric)
+    if (v <= 0) return
+    if (v > bestVal || (v === bestVal && best && (s.reps || 0) > (best.reps || 0))) { bestVal = v; best = s }
+  })
+  return { best, value: bestVal }
+}
+// Все строки запроса Supabase (он отдаёт максимум 1000 за раз)
+async function fetchAllRows(buildQuery) {
+  const PAGE = 1000, all = []
+  for (let from = 0; ; from += PAGE) {
+    const { data, error } = await buildQuery().range(from, from + PAGE - 1)
+    if (error || !data) break
+    all.push(...data)
+    if (data.length < PAGE) break
+  }
+  return all
+}
+const localDateStr = (d) => `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`
+
 function getWeightOptions(exName) {
   const t = EXERCISE_TYPE[exName] || 'light'
   return t === 'heavy' ? HEAVY_WEIGHTS : t === 'timed' ? TIME_OPTIONS : t === 'machine' ? MACHINE_WEIGHTS : LIGHT_WEIGHTS
@@ -1511,7 +1546,7 @@ body{background:#f2f2f7}
 
 const CSS_ALL = CSS + LIGHT_CSS
 
-function LineChart({ data, period, setPeriod, unit = 'кг' }) {
+function LineChart({ data, period, setPeriod, unit = 'кг', totalPoints = 0 }) {
   const [tooltip, setTooltip] = useState(null)
 
   const periods = [{ id:'1M', label:'1 мес' }, { id:'3M', label:'3 мес' }, { id:'ALL', label:'Всё' }]
@@ -1529,8 +1564,12 @@ function LineChart({ data, period, setPeriod, unit = 'кг' }) {
       </div>
       <div style={{textAlign:'center',padding:'28px 0'}}>
         <div style={{fontSize:36,marginBottom:8}}>📊</div>
-        <div style={{fontSize:14,fontWeight:600,opacity:0.5,marginBottom:4}}>Нужно минимум 2 тренировки</div>
-        <div style={{fontSize:12,opacity:0.3}}>для отображения графика</div>
+        <div style={{fontSize:14,fontWeight:600,opacity:0.5,marginBottom:4}}>
+          {period !== 'ALL' && totalPoints >= 2 ? `За ${period === '1M' ? 'месяц' : '3 месяца'} меньше 2 тренировок` : 'Нужно минимум 2 тренировки'}
+        </div>
+        <div style={{fontSize:12,opacity:0.3}}>
+          {period !== 'ALL' && totalPoints >= 2 ? 'выбери период подлиннее' : 'для отображения графика'}
+        </div>
       </div>
     </div>
   )
@@ -1543,8 +1582,11 @@ function LineChart({ data, period, setPeriod, unit = 'кг' }) {
   const range = maxV - minV || 1
   const W = 400; const H = 140; const padL = 36; const padR = 10; const padT = 14; const padB = 22
 
+  // Ось X пропорциональна датам: перерыв в тренировках виден как промежуток
+  const tOf = (d) => new Date(d.date + 'T12:00:00').getTime()
+  const t0 = tOf(data[0]), t1 = tOf(data[data.length - 1]), span = (t1 - t0) || 1
   const pts = data.map((d, i) => ({
-    x: padL + (i / (data.length - 1)) * (W - padL - padR),
+    x: padL + (t1 > t0 ? (tOf(d) - t0) / span : i / (data.length - 1)) * (W - padL - padR),
     y: padT + (1 - (d.val - minV) / range) * (H - padT - padB),
     ...d
   }))
@@ -2368,35 +2410,37 @@ export default function App() {
   useEffect(() => {
     if (tab !== 'progress' || !user) return
     async function load() {
-      const { data: wData } = await supabase.from('workouts').select('id,workout_date').eq('user_id', user.id)
-      const totalW = new Set(wData?.map(w => w.workout_date)).size
-      const thisM = new Date().toISOString().slice(0,7)
-      const monthW = new Set(wData?.filter(w => w.workout_date.startsWith(thisM)).map(w => w.workout_date)).size
-      const monthIds = (wData||[]).filter(w=>w.workout_date.startsWith(thisM)).map(w=>w.id).filter(Boolean)
+      const wData = await fetchAllRows(() => supabase.from('workouts').select('id,workout_date').eq('user_id', user.id).order('id'))
+      const totalW = new Set(wData.map(w => w.workout_date)).size
+      const thisM = localDateStr(new Date()).slice(0,7)
+      const monthW = new Set(wData.filter(w => w.workout_date.startsWith(thisM)).map(w => w.workout_date)).size
+      const monthIds = wData.filter(w=>w.workout_date.startsWith(thisM)).map(w=>w.id).filter(Boolean)
       let monthKg = 0
       if (monthIds.length > 0) {
         const { data: sData } = await supabase.from('sets').select('weight,reps,workout_id').gt('weight',0).gt('reps',0).in('workout_id', monthIds)
         monthKg = (sData||[]).reduce((s,r)=>s+r.weight*r.reps, 0)
       }
       setStats({ totalW, monthW, monthKg })
-      const { data: pData } = await supabase.from('workouts').select('workout_date,exercises(name),sets(weight,reps)').eq('user_id', user.id)
+      // Рекорды по всей истории. Каждая вариация («Жим лёжа (Узкий)») — отдельный рекорд, как и на графике.
+      // Рекорд = максимальный вес (при равном весе — больше повторений); для планки — время, для колеса — повторения.
+      const pData = await fetchAllRows(() => supabase.from('workouts').select('id,workout_date,exercises(name),sets(weight,reps,time_sec)').eq('user_id', user.id).order('id'))
       const map = {}
-      pData?.forEach(w => {
-        const rawName = w.exercises?.name; if (!rawName) return
-        const name = normalizeName(rawName)
-        w.sets?.forEach(s => {
-          if (s.weight>0&&s.reps>0) {
-            const est=s.weight*(1+s.reps/30)
-            if (!map[name]||est>map[name].est) map[name]={est:parseFloat(est.toFixed(1)),weight:s.weight,reps:s.reps,date:w.workout_date}
-          } else if (s.time_sec>0) {
-            if (!map[name]||s.time_sec>map[name].time_sec) map[name]={est:null,weight:0,reps:0,time_sec:s.time_sec,date:w.workout_date}
-          }
-        })
+      pData.forEach(w => {
+        const name = normalizeName(w.exercises?.name); if (!name) return
+        const metric = exMetric(name)
+        const { best, value } = bestSet(w.sets, metric)
+        if (!best) return
+        const cur = map[name]
+        const better = !cur || value > cur.value || (value === cur.value && (best.reps || 0) > (cur.reps || 0))
+        if (better) map[name] = { metric, value, weight: best.weight || 0, reps: best.reps || 0, time_sec: best.time_sec || 0, date: w.workout_date }
       })
-      setPrs(Object.entries(map).sort((a,b) => (b[1].est ?? -Infinity) - (a[1].est ?? -Infinity)))
+      const order = { weight: 0, reps: 1, time: 2 }
+      if (!cancelled) setPrs(Object.entries(map).sort((a,b) => (order[a[1].metric] - order[b[1].metric]) || (b[1].value - a[1].value)))
     }
+    let cancelled = false
     load()
-  }, [tab, user])
+    return () => { cancelled = true }
+  }, [tab, user, saved])
 
   useEffect(() => {
     if (tab !== 'progress' || !user) return
@@ -2414,53 +2458,21 @@ export default function App() {
   useEffect(() => {
     if (!chartEx || tab !== 'progress' || !user) return
     async function load() {
-      const enName = Object.entries(EN_TO_RU).find(([,v])=>v===chartEx)?.[0] || chartEx
-      const matchName = (n) => !n ? false : (normalizeName(n) === chartEx || normalizeName(n).replace(/\s*\([^)]*\)\s*$/, '').trim() === chartEx || n === chartEx || n === enName || ruName(n) === chartEx || n.startsWith(chartEx + ' (') || n.startsWith(enName + ' ('))
+      // График строится ровно по выбранному упражнению, как и рекорд: «Жим лёжа» и «Жим лёжа (Узкий)» — разные.
+      // Старые и английские названия в базе распознаются через normalizeName.
+      const metric = exMetric(chartEx)
       const byDate = {}
-      // Что показывает график: для обычных упражнений — максимальный вес за тренировку
-      // (раньше был расчётный 1ПМ = вес×(1+повт/30), из-за чего 70×15 и 100×5 стояли на одном уровне),
-      // для упражнений на время — лучшее время, для упражнений без веса — лучшее число повторений.
-      const exType = EXERCISE_TYPE[chartEx] || 'light'
-      const metric = exType === 'timed' ? 'time' : exType === 'bodyweight' ? 'reps' : 'weight'
-      const valueOf = (s) => metric === 'time' ? (s.time_sec || 0) : metric === 'reps' ? (s.reps || 0) : (s.weight > 0 && s.reps > 0 ? s.weight : 0)
-      const findBestSet = (sets) => {
-        let best = null, bestVal = 0
-        ;(sets||[]).forEach(s => {
-          const v = valueOf(s)
-          if (v <= 0) return
-          // при равном весе лучше подход с бо́льшим числом повторений
-          if (v > bestVal || (v === bestVal && best && (s.reps || 0) > (best.reps || 0))) { bestVal = v; best = s }
-        })
-        return { best, orm: bestVal }
-      }
-      // Всегда грузим из базы ВСЮ историю этого упражнения (раньше брали из вкладки
-      // «История», урезанной до 200 записей, — поэтому на графике было ~8 точек).
-      // Имена-кандидаты: русское, английское и старые названия, которые маппятся в это упражнение.
-      const candidates = [...new Set([
-        chartEx, enName,
-        ...Object.entries(LEGACY_NAMES).filter(([,v]) => v === chartEx).map(([k]) => k),
-        ...Object.entries(EN_TO_RU).filter(([,v]) => v === chartEx).map(([k]) => k),
-      ])]
-      const exRes = await Promise.all(candidates.flatMap(n => [
-        supabase.from('exercises').select('id,name').eq('name', n),
-        supabase.from('exercises').select('id,name').ilike('name', `${n} (%)`),
-      ]))
-      const exIds = [...new Set(exRes.flatMap(r => r.data || []).filter(e => matchName(e.name)).map(e => e.id))]
+      const allEx = await fetchAllRows(() => supabase.from('exercises').select('id,name').order('id'))
+      const exIds = allEx.filter(e => normalizeName(e.name) === chartEx).map(e => e.id)
       if (exIds.length) {
-        const PAGE = 1000
-        for (let from = 0; ; from += PAGE) {
-          const { data, error } = await supabase.from('workouts').select('workout_date,sets(weight,reps,time_sec)')
-            .in('exercise_id', exIds).eq('user_id', user.id)
-            .order('workout_date', { ascending: true }).range(from, from + PAGE - 1)
-          if (error || !data) break
-          data.forEach(w => {
-            const { best, orm } = findBestSet(w.sets)
-            if (!best) return
-            const cur = byDate[w.workout_date]
-            if (!cur || orm > cur.orm) byDate[w.workout_date] = { orm, best }
-          })
-          if (data.length < PAGE) break
-        }
+        const rows = await fetchAllRows(() => supabase.from('workouts').select('id,workout_date,sets(weight,reps,time_sec)')
+          .in('exercise_id', exIds).eq('user_id', user.id).order('id'))
+        rows.forEach(w => {
+          const { best, value } = bestSet(w.sets, metric)
+          if (!best) return
+          const cur = byDate[w.workout_date]
+          if (!cur || value > cur.orm) byDate[w.workout_date] = { orm: value, best }
+        })
       }
       if (cancelled) return
       const pts = Object.entries(byDate).sort(([a],[b])=>a.localeCompare(b)).map(([date,{orm,best}])=>({
@@ -3219,11 +3231,11 @@ export default function App() {
                 <button style={{width:'100%',background:'none',border:'none',cursor:'pointer',padding:'11px 16px',display:'flex',alignItems:'center',gap:10,textAlign:'left'}} onClick={()=>setOpenPrs(p=>({...p,[name]:!p[name]}))}>
                   {img ? <img src={img} alt={name} loading="lazy" decoding="async" style={{width:32,height:32,borderRadius:7,objectFit:'cover',flexShrink:0}} onError={e=>e.target.style.display='none'}/> : <div style={{width:32,height:32,borderRadius:7,background:thm.btnBg,display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0,fontSize:16}}>🏋️</div>}
                   <span style={{flex:1,color:thm.text85,fontSize:14,fontWeight:600}}>{normalizeName(name)}</span>
-                  <span style={{color:'#30D158',fontSize:14,fontWeight:700,marginRight:8}}>{pr.time_sec>0 ? `${pr.time_sec}с` : `~${kgToDisplay(pr.est)} ${wUnit}`}</span>
+                  <span style={{color:'#30D158',fontSize:14,fontWeight:700,marginRight:8}}>{pr.metric==='time' ? `${pr.time_sec} сек` : pr.metric==='reps' ? `${pr.reps} повт` : `${kgToDisplay(pr.weight)} ${wUnit}`}</span>
                   <span style={{color:thm.text25,fontSize:11,display:'inline-block',transition:'transform 0.2s',transform:isOpen?'rotate(180deg)':'none'}}>▼</span>
                 </button>
                 {isOpen && <div style={{padding:'2px 16px 12px 58px',display:'flex',gap:16,flexWrap:'wrap',alignItems:'center'}}>
-                  <span style={{fontSize:13,color:thm.text50,fontWeight:600}}>{pr.time_sec>0 ? `${pr.time_sec}с` : `${kgToDisplay(pr.weight)} ${wUnit} × ${pr.reps} повт`}</span>
+                  <span style={{fontSize:13,color:thm.text50,fontWeight:600}}>{pr.metric==='time' ? `${pr.time_sec} сек${pr.weight>0?` × ${kgToDisplay(pr.weight)} ${wUnit}`:''}` : pr.metric==='reps' ? `${pr.reps} повт` : `${kgToDisplay(pr.weight)} ${wUnit} × ${pr.reps} повт`}</span>
                   <span style={{fontSize:12,color:thm.text30}}>{new Date(pr.date).toLocaleDateString('ru',{day:'numeric',month:'short',year:'numeric'})}</span>
                 </div>}
               </div>
@@ -3237,12 +3249,12 @@ export default function App() {
               const base = chartPeriod === 'ALL' ? chartData : (() => {
                 const months = chartPeriod === '1M' ? 1 : 3
                 const cutoff = new Date(); cutoff.setMonth(cutoff.getMonth() - months)
-                const cutoffStr = cutoff.toISOString().split('T')[0]
+                const cutoffStr = localDateStr(cutoff)
                 return chartData.filter(p => p.date >= cutoffStr)
               })()
               if (settings.units === 'lbs' && base[0]?.metric === 'weight') return base.map(p => ({...p, val: Math.round(p.val * 2.20462 * 10) / 10}))
               return base
-            })()} period={chartPeriod} setPeriod={setChartPeriod}
+            })()} period={chartPeriod} setPeriod={setChartPeriod} totalPoints={chartData.length}
               unit={chartData[0]?.metric === 'time' ? 'сек' : chartData[0]?.metric === 'reps' ? 'повт' : wUnit}/>
           </div>
         </div>
