@@ -3,6 +3,7 @@ import { useState, useEffect, useRef, useCallback, useMemo, memo } from 'react'
 import { supabase } from './supabase'
 import { DropdownPicker } from './components/DropdownPicker'
 import { EditModal } from './components/EditModal'
+import { ProfileCard } from './components/ProfileCard'
 import { LineChart } from './components/LineChart'
 import { ModalItem } from './components/ModalItem'
 import { MuscleMap } from './components/MuscleMap'
@@ -120,10 +121,16 @@ export default function App() {
     setSettings(DEFAULT_SETTINGS)
   }
 
-  const saveSettings = (newSettings) => {
+  // Settings are stored in the account (Supabase auth user_metadata), so they are the same on
+  // every device and are not lost when the browser clears site data; localStorage is a local cache.
+  const saveSettings = async (newSettings) => {
     setSettings(newSettings)
-    if (user) localStorage.setItem('gymBroSettings_' + user.id, JSON.stringify(newSettings))
+    if (!user) return false
+    try { localStorage.setItem('gymBroSettings_' + user.id, JSON.stringify(newSettings)) } catch {}
+    const { error } = await supabase.auth.updateUser({ data: { settings: newSettings } })
+    return !error
   }
+  const saveProfile = (profile) => saveSettings({ ...settings, ...profile })
 
   const exportWorkouts = async (period) => {
     setShowExportModal(false)
@@ -389,11 +396,19 @@ export default function App() {
     const key = 'gbOnboarded_' + user.id
     if (!localStorage.getItem(key)) setShowOnboard(true)
 
-    // Load user-scoped settings
-    try {
-      const saved = localStorage.getItem('gymBroSettings_' + user.id)
-      setSettings(saved ? JSON.parse(saved) : DEFAULT_SETTINGS)
-    } catch { setSettings(DEFAULT_SETTINGS) }
+    // Load settings: account first, then the local cache. Settings that exist only locally
+    // (saved by older versions) are uploaded to the account once.
+    let local = null
+    try { local = JSON.parse(localStorage.getItem('gymBroSettings_' + user.id) || 'null') } catch {}
+    const remote = user.user_metadata?.settings
+    if (remote) {
+      setSettings({ ...DEFAULT_SETTINGS, ...remote })
+    } else if (local) {
+      setSettings({ ...DEFAULT_SETTINGS, ...local })
+      supabase.auth.updateUser({ data: { settings: { ...DEFAULT_SETTINGS, ...local } } })
+    } else {
+      setSettings(DEFAULT_SETTINGS)
+    }
   }, [user])
 
   useEffect(() => {
@@ -1354,27 +1369,8 @@ export default function App() {
         <div className="section">
           <div style={{fontSize:20,fontWeight:700,marginBottom:20,letterSpacing:'-0.3px'}}>⚙️ Настройки</div>
 
-          {/* Профиль */}
-          <div className="settings-card">
-            <div className="settings-section-title">👤 Профиль</div>
-            <div style={{marginBottom:12}}>
-              <div style={{fontSize:12,opacity:0.45,marginBottom:6,fontWeight:500}}>Имя пользователя</div>
-              <input className="settings-inp" placeholder="Введи имя" value={settings.username}
-                onChange={e=>saveSettings({...settings,username:e.target.value})}/>
-            </div>
-            <div style={{display:'flex',gap:10}}>
-              <div style={{flex:1}}>
-                <div style={{fontSize:12,opacity:0.45,marginBottom:6,fontWeight:500}}>Вес (кг)</div>
-                <input className="settings-inp" type="number" placeholder="70" value={settings.weight}
-                  onChange={e=>saveSettings({...settings,weight:e.target.value})}/>
-              </div>
-              <div style={{flex:1}}>
-                <div style={{fontSize:12,opacity:0.45,marginBottom:6,fontWeight:500}}>Рост (см)</div>
-                <input className="settings-inp" type="number" placeholder="175" value={settings.height}
-                  onChange={e=>saveSettings({...settings,height:e.target.value})}/>
-              </div>
-            </div>
-          </div>
+          {/* Profile */}
+          <ProfileCard settings={settings} onSave={saveProfile}/>
 
           {/* Тренировки */}
           <div className="settings-card">
