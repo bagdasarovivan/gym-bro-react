@@ -64,15 +64,24 @@ export function LineChart({ data, period, setPeriod, unit = 'кг', totalPoints 
     y: padT + (1 - t) * (H - padT - padB)
   }))
 
-  // "Start" is the first workout of the period; "Now" is the best of the last 3 workouts, so a single
-  // light day at the end does not turn real progress into "+0" or a fake drop.
-  const k = Math.min(3, vals.length)
+  // Summary shows both directions: progress = record vs start, decline = last workout vs record.
+  // A light last session therefore shows a drop without hiding the gain made over the period.
   const round1 = (v) => +v.toFixed(1)
   const first = round1(vals[0])
-  const last = round1(Math.max(...vals.slice(-k)))
+  const last = round1(vals[vals.length - 1])
   const record = round1(Math.max(...vals))
-  const diff = round1(last - first)
-  const pct = first > 0 ? ((diff / first) * 100).toFixed(1) : 0
+  const gain = round1(record - first)
+  const gainPct = first > 0 ? round1((gain / first) * 100) : 0
+  const fromRecord = round1(last - record)
+  const signed = (v) => (v > 0 ? '+' : v < 0 ? '−' : '+') + Math.abs(v)
+  const ORANGE = '#FF9F0A', RED = '#FF453A', MUTED = 'rgba(255,255,255,0.5)'
+  const tiles = [
+    { label: 'Старт', value: `${first} ${unit}` },
+    { label: 'Рекорд', value: `${record} ${unit}`,
+      sub: gain > 0 ? `${signed(gain)} ${unit} · ${signed(gainPct)}%` : 'без роста', subColor: gain > 0 ? ORANGE : MUTED },
+    { label: 'Сейчас', value: `${last} ${unit}`, valueColor: fromRecord < 0 ? RED : 'white',
+      sub: fromRecord < 0 ? `${signed(fromRecord)} ${unit} от рекорда` : '🔥 на рекорде', subColor: fromRecord < 0 ? RED : ORANGE },
+  ]
 
   return (
     <div>
@@ -149,17 +158,13 @@ export function LineChart({ data, period, setPeriod, unit = 'кг', totalPoints 
         })()}
       </div>
       <div style={{display:'flex',justifyContent:'space-between',marginTop:14,background:'rgba(255,255,255,0.04)',borderRadius:12,padding:'10px 14px'}}>
-        {[['Старт', first+' '+unit, null], ['Сейчас', last+' '+unit, null],
-          ['Прирост', (diff>=0?'+':'')+diff+' '+unit, (Number(pct)>=0?'+':'')+pct+'%'], ['Рекорд', record+' '+unit, null]].map(([lbl,val,sub],i) => (
-          <div key={i} style={{textAlign:'center'}}>
-            <div style={{fontSize:14,fontWeight:700,color: i===2 ? (diff>0?'#FF9F0A':diff<0?'#FF453A':'white') : 'white'}}>{val}</div>
-            {sub && <div style={{fontSize:10,fontWeight:700,color: diff>0?'#FF9F0A':diff<0?'#FF453A':'rgba(255,255,255,0.5)'}}>{sub}</div>}
-            <div style={{fontSize:9,opacity:0.35,marginTop:2,textTransform:'uppercase',letterSpacing:'0.5px'}}>{lbl}</div>
+        {tiles.map(t => (
+          <div key={t.label} style={{textAlign:'center',flex:1}}>
+            <div style={{fontSize:14,fontWeight:700,color:t.valueColor || 'white'}}>{t.value}</div>
+            {t.sub && <div style={{fontSize:10,fontWeight:700,color:t.subColor,marginTop:1}}>{t.sub}</div>}
+            <div style={{fontSize:9,opacity:0.35,marginTop:2,textTransform:'uppercase',letterSpacing:'0.5px'}}>{t.label}</div>
           </div>
         ))}
-      </div>
-      <div style={{display:'flex',justifyContent:'space-between',gap:8,marginTop:8,fontSize:10,opacity:0.35,lineHeight:1.4}}>
-        <span>{k > 1 ? `Старт — первая тренировка, Сейчас — лучшая из ${k} последних` : 'Старт — первая тренировка, Сейчас — последняя'}</span>
       </div>
     </div>
   )
