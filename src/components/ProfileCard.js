@@ -17,7 +17,9 @@ function validate(p) {
   return errors
 }
 
-export function ProfileCard({ settings, onSave }) {
+// When the body weight log is available (onOpenWeights), weight is shown from the latest weigh-in
+// and edited through the ⚖️ sheet instead of a plain field.
+export function ProfileCard({ settings, onSave, latestWeight = null, onOpenWeights = null }) {
   const [editing, setEditing] = useState(false)
   const [draft, setDraft] = useState({ username: '', weight: '', height: '' })
   const [errors, setErrors] = useState({})
@@ -71,7 +73,15 @@ export function ProfileCard({ settings, onSave }) {
           <div style={{ display: 'flex', gap: 10 }}>
             <div style={{ flex: 1 }}>
               <div style={label}>Вес</div>
-              <div style={value}>{settings.weight ? `${settings.weight} кг` : empty}</div>
+              {onOpenWeights ? (
+                <button onClick={onOpenWeights} style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer', color: 'inherit', textAlign: 'left' }}>
+                  <div style={value}>{latestWeight ? `${String(latestWeight.weight).replace('.', ',')} кг` : (settings.weight ? `${settings.weight} кг` : empty)}
+                    <span style={{ fontSize: 12, color: '#FF9F0A', marginLeft: 8, fontWeight: 700 }}>⚖️ история</span></div>
+                  {latestWeight && <div style={{ fontSize: 11, opacity: 0.4, marginTop: 2 }}>{new Date(latestWeight.measured_on + 'T12:00:00').toLocaleDateString('ru', { day: 'numeric', month: 'long' })}</div>}
+                </button>
+              ) : (
+                <div style={value}>{settings.weight ? `${settings.weight} кг` : empty}</div>
+              )}
             </div>
             <div style={{ flex: 1 }}>
               <div style={label}>Рост</div>
@@ -89,12 +99,14 @@ export function ProfileCard({ settings, onSave }) {
             {errors.username && <div style={err}>{errors.username}</div>}
           </div>
           <div style={{ display: 'flex', gap: 10, marginBottom: 14 }}>
+            {!onOpenWeights && (
             <div style={{ flex: 1 }}>
               <div style={label}>Вес (кг)</div>
               <input className="settings-inp" type="text" inputMode="decimal" placeholder="70" value={draft.weight}
                 onChange={e => setDraft(d => ({ ...d, weight: e.target.value }))} />
               {errors.weight && <div style={err}>{errors.weight}</div>}
             </div>
+            )}
             <div style={{ flex: 1 }}>
               <div style={label}>Рост (см)</div>
               <input className="settings-inp" type="text" inputMode="numeric" placeholder="175" value={draft.height}
