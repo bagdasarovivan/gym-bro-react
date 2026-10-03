@@ -5,7 +5,7 @@ import { DropdownPicker } from './components/DropdownPicker'
 import { EditModal } from './components/EditModal'
 import { ProfileCard } from './components/ProfileCard'
 import { WeightModal } from './components/WeightModal'
-import { BodyWeightChart } from './components/BodyWeightChart'
+import { ScaleIcon } from './components/ScaleIcon'
 import { LineChart } from './components/LineChart'
 import { ModalItem } from './components/ModalItem'
 import { MuscleMap } from './components/MuscleMap'
@@ -152,27 +152,20 @@ export default function App() {
     })()
     return () => { cancelled = true }
   }, [user])
-  // The latest weigh-in is also kept as the profile weight (used in settings and reports)
-  const syncProfileWeight = (list) => {
-    const latest = [...list].sort((a, b) => b.measured_on.localeCompare(a.measured_on))[0]
-    const w = latest ? String(latest.weight) : ''
-    if (w !== String(settings.weight || '')) saveSettings({ ...settings, weight: w })
-  }
   const addWeighIn = async (measured_on, weight) => {
     const { error } = await supabase.from('body_weights').upsert({ user_id: user.id, measured_on, weight }, { onConflict: 'user_id,measured_on' })
     if (error) { if (isMissingTable(error)) setWeightsStatus('missing'); return false }
     const next = [...bodyWeights.filter(e => e.measured_on !== measured_on), { measured_on, weight }].sort((a, b) => a.measured_on.localeCompare(b.measured_on))
-    setBodyWeights(next); setWeightsStatus('ok'); syncProfileWeight(next)
+    setBodyWeights(next); setWeightsStatus('ok')
     return true
   }
   const deleteWeighIn = async (measured_on) => {
     const { error } = await supabase.from('body_weights').delete().eq('user_id', user.id).eq('measured_on', measured_on)
     if (error) return false
     const next = bodyWeights.filter(e => e.measured_on !== measured_on)
-    setBodyWeights(next); syncProfileWeight(next)
+    setBodyWeights(next)
     return true
   }
-  const latestWeighIn = bodyWeights.length ? bodyWeights[bodyWeights.length - 1] : null
 
   const exportWorkouts = async (period) => {
     setShowExportModal(false)
@@ -933,7 +926,7 @@ export default function App() {
             border: showWeightModal ? '1.5px solid #FF9F0A' : `1px solid ${thm.btnBorder}`,
             borderRadius:10,padding:'0',width:36,height:36,cursor:'pointer',color:thm.text70,
             fontSize:18,display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0
-          }}>⚖️</button>
+          }}><ScaleIcon size={20}/></button>
           <button onClick={() => { const isOpen=timerSecs!==null||stopwatchRunning||timerMode==='stopwatch'; if(isOpen){setTimerSecs(null);setTimerPaused(false);setStopwatchRunning(false);setStopwatchSecs(0);setTimerMode('countdown')}else{setTimerSecs(timerDuration);setTimerPaused(true)} }} style={{
             background: (timerSecs!==null||stopwatchRunning||timerMode==='stopwatch') ? 'rgba(255,159,10,0.08)' : thm.btnBg,
             border: (timerSecs!==null||stopwatchRunning||timerMode==='stopwatch') ? '1.5px solid #FF9F0A' : `1px solid ${thm.btnBorder}`,
@@ -1377,15 +1370,6 @@ export default function App() {
             })()} period={chartPeriod} setPeriod={setChartPeriod} totalPoints={chartData.length}
               unit={chartData[0]?.metric === 'time' ? 'сек' : chartData[0]?.metric === 'reps' ? 'повт' : wUnit}/>
           </div>
-          <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginTop:8}}>
-            <div className="prog-title" style={{marginBottom:0}}>⚖️ Вес тела</div>
-            <button onClick={()=>setShowWeightModal(true)} style={{background:'rgba(255,159,10,0.12)',border:'1px solid rgba(255,159,10,0.35)',borderRadius:10,color:'#FF9F0A',fontSize:13,fontWeight:700,padding:'6px 12px',cursor:'pointer'}}>+ Взвешивание</button>
-          </div>
-          <div className="chart-wrap" style={{marginTop:12}}>
-            {weightsStatus === 'missing'
-              ? <div style={{fontSize:13,opacity:0.6,padding:'8px 0'}}>История веса ещё не настроена в базе — открой ⚖️ в шапке, там инструкция.</div>
-              : <BodyWeightChart entries={bodyWeights}/>}
-          </div>
         </div>
         )
       })()}
@@ -1430,7 +1414,7 @@ export default function App() {
           <div style={{fontSize:20,fontWeight:700,marginBottom:20,letterSpacing:'-0.3px'}}>⚙️ Настройки</div>
 
           {/* Profile */}
-          <ProfileCard settings={settings} onSave={saveProfile} latestWeight={weightsStatus === 'ok' ? latestWeighIn : null} onOpenWeights={weightsStatus === 'missing' ? null : () => setShowWeightModal(true)}/>
+          <ProfileCard settings={settings} onSave={saveProfile}/>
 
           {/* Тренировки */}
           <div className="settings-card">

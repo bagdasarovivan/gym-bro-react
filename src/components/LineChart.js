@@ -73,16 +73,6 @@ export function LineChart({ data, period, setPeriod, unit = 'кг', totalPoints 
   const record = round1(Math.max(...vals))
   const diff = round1(last - first)
   const pct = first > 0 ? ((diff / first) * 100).toFixed(1) : 0
-  // Running best ("best result to date") as a dashed step line: it only goes up, so the trend is obvious
-  let best = -Infinity
-  const bestPath = pts.map((p, i) => {
-    const prevBest = best
-    best = Math.max(best, p.val)
-    const y = padT + (1 - (best - minV) / range) * (H - padT - padB)
-    if (i === 0) return `M${p.x},${y}`
-    const prevY = padT + (1 - (prevBest - minV) / range) * (H - padT - padB)
-    return `L${p.x},${prevY} L${p.x},${y}`
-  }).join(' ') + ` L${W - padR},${padT + (1 - (best - minV) / range) * (H - padT - padB)}`
 
   return (
     <div>
@@ -110,7 +100,6 @@ export function LineChart({ data, period, setPeriod, unit = 'кг', totalPoints 
             </g>
           ))}
           <path d={area} fill="url(#cg2)"/>
-          <path d={bestPath} fill="none" stroke="rgba(255,255,255,0.45)" strokeWidth="1.2" strokeDasharray="4 4"/>
           <path d={path} fill="none" stroke="#FF9F0A" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>
           {(() => {
             // Много точек — уменьшаем кружки и зону касания, чтобы не слипались
@@ -171,7 +160,6 @@ export function LineChart({ data, period, setPeriod, unit = 'кг', totalPoints 
       </div>
       <div style={{display:'flex',justifyContent:'space-between',gap:8,marginTop:8,fontSize:10,opacity:0.35,lineHeight:1.4}}>
         <span>{k > 1 ? `Старт — первая тренировка, Сейчас — лучшая из ${k} последних` : 'Старт — первая тренировка, Сейчас — последняя'}</span>
-        <span style={{whiteSpace:'nowrap'}}>┄ лучший на дату</span>
       </div>
     </div>
   )

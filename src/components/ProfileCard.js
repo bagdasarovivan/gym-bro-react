@@ -1,14 +1,14 @@
 import { useState } from 'react'
 
-// Profile (name / body weight / height) with an explicit edit → save flow.
-// Text inputs with a numeric keyboard: iOS with a Russian layout types a comma, which type=number rejects.
+// Profile (name / height) with an explicit edit → save flow. Body weight lives in the scale button sheet in the header.
+// Text input with a numeric keyboard: iOS with a Russian layout types a comma, which type=number rejects.
 // View mode shows the saved values; "Изменить" switches to inputs, "Сохранить" validates and saves.
-const LIMITS = { weight: [30, 300], height: [100, 250] }
+const LIMITS = { height: [100, 250] }
 
 function validate(p) {
   const errors = {}
   if (p.username.trim().length > 30) errors.username = 'Не длиннее 30 символов'
-  for (const key of ['weight', 'height']) {
+  for (const key of ['height']) {
     if (p[key] === '') continue
     const v = Number(String(p[key]).replace(',', '.'))
     const [min, max] = LIMITS[key]
@@ -17,16 +17,14 @@ function validate(p) {
   return errors
 }
 
-// When the body weight log is available (onOpenWeights), weight is shown from the latest weigh-in
-// and edited through the ⚖️ sheet instead of a plain field.
-export function ProfileCard({ settings, onSave, latestWeight = null, onOpenWeights = null }) {
+export function ProfileCard({ settings, onSave }) {
   const [editing, setEditing] = useState(false)
-  const [draft, setDraft] = useState({ username: '', weight: '', height: '' })
+  const [draft, setDraft] = useState({ username: '', height: '' })
   const [errors, setErrors] = useState({})
   const [status, setStatus] = useState(null) // null | 'saving' | 'saved' | 'error'
 
   const startEdit = () => {
-    setDraft({ username: settings.username || '', weight: settings.weight ?? '', height: settings.height ?? '' })
+    setDraft({ username: settings.username || '', height: settings.height ?? '' })
     setErrors({}); setStatus(null); setEditing(true)
   }
   const save = async () => {
@@ -35,7 +33,6 @@ export function ProfileCard({ settings, onSave, latestWeight = null, onOpenWeigh
     if (Object.keys(errs).length) return
     const clean = {
       username: draft.username.trim(),
-      weight: draft.weight === '' ? '' : String(Number(String(draft.weight).replace(',', '.'))),
       height: draft.height === '' ? '' : String(Math.round(Number(String(draft.height).replace(',', '.')))),
     }
     setStatus('saving')
@@ -72,18 +69,6 @@ export function ProfileCard({ settings, onSave, latestWeight = null, onOpenWeigh
           </div>
           <div style={{ display: 'flex', gap: 10 }}>
             <div style={{ flex: 1 }}>
-              <div style={label}>Вес</div>
-              {onOpenWeights ? (
-                <button onClick={onOpenWeights} style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer', color: 'inherit', textAlign: 'left' }}>
-                  <div style={value}>{latestWeight ? `${String(latestWeight.weight).replace('.', ',')} кг` : (settings.weight ? `${settings.weight} кг` : empty)}
-                    <span style={{ fontSize: 12, color: '#FF9F0A', marginLeft: 8, fontWeight: 700 }}>⚖️ история</span></div>
-                  {latestWeight && <div style={{ fontSize: 11, opacity: 0.4, marginTop: 2 }}>{new Date(latestWeight.measured_on + 'T12:00:00').toLocaleDateString('ru', { day: 'numeric', month: 'long' })}</div>}
-                </button>
-              ) : (
-                <div style={value}>{settings.weight ? `${settings.weight} кг` : empty}</div>
-              )}
-            </div>
-            <div style={{ flex: 1 }}>
               <div style={label}>Рост</div>
               <div style={value}>{settings.height ? `${settings.height} см` : empty}</div>
             </div>
@@ -99,14 +84,6 @@ export function ProfileCard({ settings, onSave, latestWeight = null, onOpenWeigh
             {errors.username && <div style={err}>{errors.username}</div>}
           </div>
           <div style={{ display: 'flex', gap: 10, marginBottom: 14 }}>
-            {!onOpenWeights && (
-            <div style={{ flex: 1 }}>
-              <div style={label}>Вес (кг)</div>
-              <input className="settings-inp" type="text" inputMode="decimal" placeholder="70" value={draft.weight}
-                onChange={e => setDraft(d => ({ ...d, weight: e.target.value }))} />
-              {errors.weight && <div style={err}>{errors.weight}</div>}
-            </div>
-            )}
             <div style={{ flex: 1 }}>
               <div style={label}>Рост (см)</div>
               <input className="settings-inp" type="text" inputMode="numeric" placeholder="175" value={draft.height}
