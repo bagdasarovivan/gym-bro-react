@@ -4,6 +4,7 @@ import { supabase } from './supabase'
 import { DropdownPicker } from './components/DropdownPicker'
 import { EditModal } from './components/EditModal'
 import { WeightModal } from './components/WeightModal'
+import { WarmupModal } from './components/WarmupModal'
 import { LineChart } from './components/LineChart'
 import { ModalItem } from './components/ModalItem'
 import { MuscleMap } from './components/MuscleMap'
@@ -82,6 +83,7 @@ export default function App() {
   const [bodyWeights, setBodyWeights] = useState([])
   const [weightsStatus, setWeightsStatus] = useState('loading')
   const [showWeightModal, setShowWeightModal] = useState(false)
+  const [showWarmup, setShowWarmup] = useState(false)
   const [settings, setSettings] = useState(DEFAULT_SETTINGS)
   const [showExportModal, setShowExportModal] = useState(false)
   const [exportPeriod, setExportPeriod] = useState('all')
@@ -953,6 +955,9 @@ export default function App() {
           }}>⚙️</button>
         </div>
       </div>
+      {showWarmup && (
+        <WarmupModal workoutExercises={workoutExercises} onClose={() => setShowWarmup(false)}/>
+      )}
       {showWeightModal && (
         <WeightModal entries={bodyWeights} status={weightsStatus} onAdd={addWeighIn} onDelete={deleteWeighIn} onClose={() => setShowWeightModal(false)}/>
       )}
@@ -1134,6 +1139,14 @@ export default function App() {
                   </div>
                 )
               })}
+              <button onClick={()=>setShowExModal(true)} style={{width:'100%',marginBottom:10,padding:'16px 20px',borderRadius:16,border:'1px solid rgba(255,255,255,0.09)',background:'rgba(255,255,255,0.06)',cursor:'pointer',display:'flex',alignItems:'center',gap:14,textAlign:'left'}}>
+                <div style={{width:44,height:44,borderRadius:12,background:'rgba(255,255,255,0.08)',display:'flex',alignItems:'center',justifyContent:'center',fontSize:20,flexShrink:0}}>＋</div>
+                <div style={{flex:1}}>
+                  <div style={{fontSize:16,fontWeight:600,color:'#fff',marginBottom:4}}>Добавить упражнение</div>
+                  <div style={{fontSize:12,color:'rgba(255,255,255,0.35)',marginTop:4}}>Выбрать вручную</div>
+                </div>
+                <span style={{color:'rgba(255,255,255,0.2)',fontSize:18}}>›</span>
+              </button>
               {/* Plan cards — only shown when no exercises added yet */}
               {workoutExercises.length === 0 && <div style={{marginBottom:12}}>
                 {activePlans.map(plan => {
@@ -1172,23 +1185,15 @@ export default function App() {
                   </button>
                 )}
               </div>}
-              <button onClick={()=>setShowExModal(true)} style={{width:'100%',marginBottom:10,padding:'16px 20px',borderRadius:16,border:'1px solid rgba(255,255,255,0.09)',background:'rgba(255,255,255,0.06)',cursor:'pointer',display:'flex',alignItems:'center',gap:14,textAlign:'left'}}>
-                <div style={{width:44,height:44,borderRadius:12,background:'rgba(255,255,255,0.08)',display:'flex',alignItems:'center',justifyContent:'center',fontSize:20,flexShrink:0}}>＋</div>
+              <button onClick={()=>setShowWarmup(true)} style={{width:'100%',marginBottom:10,padding:'16px 20px',borderRadius:16,border:'1px solid rgba(255,159,10,0.25)',background:'rgba(255,159,10,0.06)',cursor:'pointer',display:'flex',alignItems:'center',gap:14,textAlign:'left'}}>
+                <div style={{width:44,height:44,borderRadius:12,background:'rgba(255,159,10,0.14)',display:'flex',alignItems:'center',justifyContent:'center',fontSize:20,flexShrink:0}}>🤸</div>
                 <div style={{flex:1}}>
-                  <div style={{fontSize:16,fontWeight:600,color:'#fff',marginBottom:4}}>Добавить упражнение</div>
-                  <div style={{fontSize:12,color:'rgba(255,255,255,0.35)',marginTop:4}}>Выбрать вручную</div>
+                  <div style={{fontSize:16,fontWeight:600,color:'#fff',marginBottom:4}}>Разминка</div>
+                  <div style={{fontSize:12,color:'rgba(255,255,255,0.45)',marginTop:4}}>{workoutExercises.length ? 'Подобрана под твою тренировку' : 'Подготовь тело к тренировке'}</div>
                 </div>
-                <span style={{color:'rgba(255,255,255,0.2)',fontSize:18}}>›</span>
+                <span style={{color:'#FF9F0A',fontSize:18}}>›</span>
               </button>
               {workoutExercises.length === 0 && (<>
-              <button onClick={()=>setShowComingSoon(true)} style={{width:'100%',marginBottom:10,padding:'16px 20px',borderRadius:16,border:'1px solid rgba(255,255,255,0.08)',background:'rgba(255,255,255,0.05)',cursor:'pointer',display:'flex',alignItems:'center',gap:14,textAlign:'left'}}>
-                <div style={{width:44,height:44,borderRadius:12,background:'rgba(255,200,0,0.12)',display:'flex',alignItems:'center',justifyContent:'center',fontSize:20,flexShrink:0}}>🤸</div>
-                <div style={{flex:1}}>
-                  <div style={{fontSize:16,fontWeight:600,color:'rgba(255,255,255,0.75)',marginBottom:4,display:'flex',alignItems:'center',gap:8}}>Разминка<span style={{fontSize:10,fontWeight:700,letterSpacing:'0.5px',textTransform:'uppercase',color:'#FF9F0A',background:'rgba(255,159,10,0.12)',borderRadius:6,padding:'2px 6px'}}>скоро</span></div>
-                  <div style={{fontSize:12,color:'rgba(255,255,255,0.35)',marginTop:4}}>Подготовь тело к тренировке</div>
-                </div>
-                <span style={{color:'rgba(255,255,255,0.2)',fontSize:18}}>›</span>
-              </button>
               <button onClick={()=>setShowComingSoon(true)} style={{width:'100%',marginBottom:16,padding:'16px 20px',borderRadius:16,border:'1px solid rgba(255,255,255,0.08)',background:'rgba(255,255,255,0.05)',cursor:'pointer',display:'flex',alignItems:'center',gap:14,textAlign:'left'}}>
                 <div style={{width:44,height:44,borderRadius:12,background:'rgba(100,180,255,0.1)',display:'flex',alignItems:'center',justifyContent:'center',fontSize:20,flexShrink:0}}>🧘</div>
                 <div style={{flex:1}}>
