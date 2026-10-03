@@ -23,3 +23,7 @@ test-results/
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
+
+# Playwright output (reports contain the values typed into forms, including passwords)
+/e2e/report/
+/playwright-report/
