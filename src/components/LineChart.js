@@ -167,9 +167,6 @@ export function LineChart({ data, period, setPeriod, unit = 'кг', totalPoints 
           </div>
         ))}
       </div>
-      {data[0]?.metric === 'e1rm' && (
-        <div style={{fontSize:10,opacity:0.35,marginTop:8,lineHeight:1.4}}>1ПМ — расчётный максимум на 1 раз: вес × (1 + повторы / 30). 100×5 ≈ 117 кг, 100×1 = 100 кг</div>
-      )}
     </div>
   )
 }
