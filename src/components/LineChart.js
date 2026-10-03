@@ -132,7 +132,8 @@ export function LineChart({ data, period, setPeriod, unit = 'кг', totalPoints 
             ? new Date(tooltip.date+'T12:00:00').toLocaleDateString('ru',{day:'numeric',month:'long',year:'numeric'})
             : tooltip.label
           // Значение точки — уже сам вес / время / повторения, поэтому вторая строка — только повторения
-          const setLine = (tooltip.metric === 'weight' && tooltip.bestReps > 0) ? `× ${tooltip.bestReps} повт`
+          const setLine = (tooltip.metric === 'e1rm' && tooltip.bestReps > 0) ? `${tooltip.bestWeight} кг × ${tooltip.bestReps} повт`
+            : (tooltip.metric === 'weight' && tooltip.bestReps > 0) ? `× ${tooltip.bestReps} повт`
             : (tooltip.metric === 'reps' && tooltip.bestWeight > 0) ? `доп. вес ${tooltip.bestWeight} кг` : null
           return (
             <div style={{
@@ -150,7 +151,7 @@ export function LineChart({ data, period, setPeriod, unit = 'кг', totalPoints 
               textAlign:'center',
               whiteSpace:'nowrap',
             }}>
-              <div style={{fontSize:18,fontWeight:700,color:'#FF9F0A',lineHeight:1.2}}>{tooltip.val} {unit}</div>
+              <div style={{fontSize:18,fontWeight:700,color:'#FF9F0A',lineHeight:1.2}}>{tooltip.metric === 'e1rm' ? '≈' : ''}{tooltip.val} {unit}{tooltip.metric === 'e1rm' && <span style={{fontSize:11,opacity:0.7,marginLeft:4}}>1ПМ</span>}</div>
               {setLine && <div style={{fontSize:13,fontWeight:600,color:'rgba(255,255,255,0.9)',marginTop:3}}>{setLine}</div>}
               <div style={{fontSize:11,color:'rgba(255,255,255,0.4)',marginTop:3}}>{fullDate}</div>
             </div>
@@ -166,6 +167,9 @@ export function LineChart({ data, period, setPeriod, unit = 'кг', totalPoints 
           </div>
         ))}
       </div>
+      {data[0]?.metric === 'e1rm' && (
+        <div style={{fontSize:10,opacity:0.35,marginTop:8,lineHeight:1.4}}>1ПМ — расчётный максимум на 1 раз: вес × (1 + повторы / 30). 100×5 ≈ 117 кг, 100×1 = 100 кг</div>
+      )}
     </div>
   )
 }

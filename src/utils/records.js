@@ -14,7 +14,12 @@ export function exMetric(name) {
   return t === 'timed' ? 'time' : isRepsType(t) ? 'reps' : 'weight'
 }
 
+// Estimated one-rep max (Epley): weight × (1 + reps / 30); a single rep is the weight itself.
+// It tells 100×1 from 100×5 — plain "max weight" shows both as 100 kg.
+export const e1rm = (weight, reps) => (reps <= 1 ? weight : weight * (1 + reps / 30))
+
 export function setValue(s, metric) {
+  if (metric === 'e1rm') return (s.weight > 0 && s.reps > 0) ? e1rm(s.weight, s.reps) : 0
   if (metric === 'time') return s.time_sec || 0
   if (metric === 'reps') return s.reps || 0
   return (s.weight > 0 && s.reps > 0) ? s.weight : 0
