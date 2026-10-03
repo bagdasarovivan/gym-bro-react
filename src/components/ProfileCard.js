@@ -1,6 +1,6 @@
 import { useState } from 'react'
 
-// Profile (name / height) with an explicit edit → save flow. Body weight lives in the scale button sheet in the header.
+// Profile (name / height) with an explicit edit → save flow. Body weight lives in the 🧍 sheet in the header.
 // Text input with a numeric keyboard: iOS with a Russian layout types a comma, which type=number rejects.
 // View mode shows the saved values; "Изменить" switches to inputs, "Сохранить" validates and saves.
 const LIMITS = { height: [100, 250] }
