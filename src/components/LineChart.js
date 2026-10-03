@@ -12,7 +12,7 @@ export function LineChart({ data, period, setPeriod, unit = 'кг', totalPoints 
         {periods.map(p => (
           <button key={p.id} onClick={() => setPeriod(p.id)} style={{
             padding:'6px 14px',borderRadius:99,fontSize:12,fontWeight:700,cursor:'pointer',border:'none',
-            background: period===p.id ? '#30D158' : '#2c2c2e',
+            background: period===p.id ? '#FF9F0A' : '#2c2c2e',
             color: period===p.id ? '#000' : 'rgba(255,255,255,0.5)',
           }}>{p.label}</button>
         ))}
@@ -74,7 +74,7 @@ export function LineChart({ data, period, setPeriod, unit = 'кг', totalPoints 
         {periods.map(p => (
           <button key={p.id} onClick={() => setPeriod(p.id)} style={{
             padding:'6px 14px',borderRadius:99,fontSize:12,fontWeight:700,cursor:'pointer',border:'none',
-            background: period===p.id ? '#30D158' : '#2c2c2e',
+            background: period===p.id ? '#FF9F0A' : '#2c2c2e',
             color: period===p.id ? '#000' : 'rgba(255,255,255,0.5)',
           }}>{p.label}</button>
         ))}
@@ -83,8 +83,8 @@ export function LineChart({ data, period, setPeriod, unit = 'кг', totalPoints 
         <svg viewBox={`0 0 ${W} ${H}`} style={{width:'100%',height:H,overflow:'visible',display:'block'}}>
           <defs>
             <linearGradient id="cg2" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%" stopColor="#30D158" stopOpacity="0.2"/>
-              <stop offset="100%" stopColor="#30D158" stopOpacity="0"/>
+              <stop offset="0%" stopColor="#FF9F0A" stopOpacity="0.2"/>
+              <stop offset="100%" stopColor="#FF9F0A" stopOpacity="0"/>
             </linearGradient>
           </defs>
           {gridLines.map((g,i) => (
@@ -94,7 +94,7 @@ export function LineChart({ data, period, setPeriod, unit = 'кг', totalPoints 
             </g>
           ))}
           <path d={area} fill="url(#cg2)"/>
-          <path d={path} fill="none" stroke="#30D158" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>
+          <path d={path} fill="none" stroke="#FF9F0A" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>
           {(() => {
             // Много точек — уменьшаем кружки и зону касания, чтобы не слипались
             const step = (W - padL - padR) / Math.max(pts.length - 1, 1)
@@ -105,7 +105,7 @@ export function LineChart({ data, period, setPeriod, unit = 'кг', totalPoints 
                 onMouseEnter={()=>setTooltip(p)} onMouseLeave={()=>setTooltip(null)}
                 onTouchStart={e=>{e.preventDefault();setTooltip(p)}} onTouchEnd={()=>setTimeout(()=>setTooltip(null),1200)}>
                 <circle cx={p.x} cy={p.y} r={hitR} fill="transparent"/>
-                <circle cx={p.x} cy={p.y} r={tooltip?.date===p.date ? (dense?4:6) : (dense?2:4)} fill="#30D158" stroke="#000" strokeWidth={dense?1:2}/>
+                <circle cx={p.x} cy={p.y} r={tooltip?.date===p.date ? (dense?4:6) : (dense?2:4)} fill="#FF9F0A" stroke="#000" strokeWidth={dense?1:2}/>
               </g>
             ))
           })()}
@@ -126,7 +126,7 @@ export function LineChart({ data, period, setPeriod, unit = 'кг', totalPoints 
               top:topPx,
               transform:'translate(-50%, -110%)',
               background:'#2c2c2e',
-              border:'1px solid rgba(48,209,88,0.4)',
+              border:'1px solid rgba(255,159,10,0.4)',
               borderRadius:10,
               padding:'10px 14px',
               boxShadow:'0 4px 12px rgba(0,0,0,0.4)',
@@ -135,7 +135,7 @@ export function LineChart({ data, period, setPeriod, unit = 'кг', totalPoints 
               textAlign:'center',
               whiteSpace:'nowrap',
             }}>
-              <div style={{fontSize:18,fontWeight:700,color:'#30D158',lineHeight:1.2}}>{tooltip.val} {unit}</div>
+              <div style={{fontSize:18,fontWeight:700,color:'#FF9F0A',lineHeight:1.2}}>{tooltip.val} {unit}</div>
               {setLine && <div style={{fontSize:13,fontWeight:600,color:'rgba(255,255,255,0.9)',marginTop:3}}>{setLine}</div>}
               <div style={{fontSize:11,color:'rgba(255,255,255,0.4)',marginTop:3}}>{fullDate}</div>
             </div>
@@ -145,7 +145,7 @@ export function LineChart({ data, period, setPeriod, unit = 'кг', totalPoints 
       <div style={{display:'flex',justifyContent:'space-between',marginTop:14,background:'rgba(255,255,255,0.04)',borderRadius:12,padding:'10px 14px'}}>
         {[['Старт', first+' '+unit], ['Прирост', (diff>=0?'+':'')+diff+' '+unit], ['Рост', (Number(pct)>=0?'+':'')+pct+'%'], ['Сейчас', last+' '+unit]].map(([lbl,val],i) => (
           <div key={i} style={{textAlign:'center'}}>
-            <div style={{fontSize:14,fontWeight:700,color: i===1||i===2 ? (diff>=0?'#30D158':'#FF453A') : 'white'}}>{val}</div>
+            <div style={{fontSize:14,fontWeight:700,color: i===1||i===2 ? (diff>=0?'#FF9F0A':'#FF453A') : 'white'}}>{val}</div>
             <div style={{fontSize:9,opacity:0.35,marginTop:2,textTransform:'uppercase',letterSpacing:'0.5px'}}>{lbl}</div>
           </div>
         ))}

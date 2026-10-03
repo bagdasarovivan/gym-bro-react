@@ -47,7 +47,7 @@ export function ProfileCard({ settings, onSave }) {
   const err = { fontSize: 11, color: '#FF453A', marginTop: 4 }
   const btn = (primary) => ({
     flex: 1, padding: '11px 14px', borderRadius: 12, border: 'none', cursor: 'pointer', fontSize: 14, fontWeight: 700,
-    background: primary ? '#30D158' : 'rgba(255,255,255,0.08)', color: primary ? '#000' : 'inherit',
+    background: primary ? '#FF9F0A' : 'rgba(255,255,255,0.08)', color: primary ? '#000' : 'inherit',
   })
   const empty = <span style={{ opacity: 0.35, fontWeight: 500 }}>не указано</span>
 
@@ -56,7 +56,7 @@ export function ProfileCard({ settings, onSave }) {
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>
         <div className="settings-section-title" style={{ marginBottom: 0 }}>👤 Профиль</div>
         {!editing && (
-          <button onClick={startEdit} style={{ background: 'none', border: 'none', color: '#30D158', fontSize: 14, fontWeight: 700, cursor: 'pointer', padding: '2px 4px' }}>
+          <button onClick={startEdit} style={{ background: 'none', border: 'none', color: '#FF9F0A', fontSize: 14, fontWeight: 700, cursor: 'pointer', padding: '2px 4px' }}>
             ✏️ Изменить
           </button>
         )}
@@ -78,7 +78,7 @@ export function ProfileCard({ settings, onSave }) {
               <div style={value}>{settings.height ? `${settings.height} см` : empty}</div>
             </div>
           </div>
-          {status === 'saved' && <div style={{ fontSize: 12, color: '#30D158', marginTop: 12, fontWeight: 600 }}>✓ Сохранено в аккаунте</div>}
+          {status === 'saved' && <div style={{ fontSize: 12, color: '#FF9F0A', marginTop: 12, fontWeight: 600 }}>✓ Сохранено в аккаунте</div>}
         </>
       ) : (
         <>
