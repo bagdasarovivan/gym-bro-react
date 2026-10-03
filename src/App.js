@@ -15,7 +15,7 @@ import { PLAN_DAYS, PLAN_ICONS, PLAN_NAMES } from './data/plans'
 import { CSS_ALL } from './styles/appCss'
 import { fetchAllRows } from './utils/db'
 import { buildCopyText, formatDateShort, formatMonth, localDateStr } from './utils/format'
-import { bestSet, exMetric, isRepsType } from './utils/records'
+import { bestSet, e1rm, exMetric, isRepsType } from './utils/records'
 
 const DEFAULT_SETTINGS = { username: '', weight: '', height: '', units: 'kg', theme: 'dark', language: 'ru' }
 
@@ -56,6 +56,8 @@ export default function App() {
   const [chartEx, setChartEx] = useState('')
   const [chartData, setChartData] = useState([])
   const [chartPeriod, setChartPeriod] = useState('1M')
+  // Weight exercises: chart by estimated 1RM (default) or by the heaviest weight
+  const [chartMode, setChartMode] = useState('1RM')
   const [musclePeriod, setMusclePeriod] = useState(30)
   const [timerSecs, setTimerSecs] = useState(null)
   const [timerDuration, setTimerDuration] = useState(90)
@@ -520,13 +522,13 @@ export default function App() {
       }
       setStats({ totalW, monthW, monthKg })
       // Рекорды по всей истории. Каждая вариация («Жим лёжа (Узкий)») — отдельный рекорд, как и на графике.
-      // Рекорд = максимальный вес (при равном весе — больше повторений); для планки — время, для колеса — повторения.
+      // Record for weight exercises = best estimated 1RM (100×5 beats 100×1); plank — time, ab wheel — reps.
       const pData = await fetchAllRows(() => supabase.from('workouts').select('id,workout_date,exercises(name),sets(weight,reps,time_sec)').eq('user_id', user.id).order('id'))
       const map = {}
       pData.forEach(w => {
         const name = normalizeName(w.exercises?.name); if (!name) return
         const metric = exMetric(name)
-        const { best, value } = bestSet(w.sets, metric)
+        const { best, value } = bestSet(w.sets, metric === 'weight' ? 'e1rm' : metric)
         if (!best) return
         const cur = map[name]
         const better = !cur || value > cur.value || (value === cur.value && (best.reps || 0) > (cur.reps || 0))
@@ -569,12 +571,20 @@ export default function App() {
           const { best, value } = bestSet(w.sets, metric)
           if (!best) return
           const cur = byDate[w.workout_date]
-          if (!cur || value > cur.orm) byDate[w.workout_date] = { orm: value, best }
+          if (!cur || value > cur.orm) byDate[w.workout_date] = { ...cur, orm: value, best }
+          if (metric === 'weight') {
+            const r = bestSet(w.sets, 'e1rm')
+            const c = byDate[w.workout_date]
+            if (r.best && (!c.e1 || r.value > c.e1)) byDate[w.workout_date] = { ...c, e1: r.value, e1best: r.best }
+          }
         })
       }
       if (cancelled) return
-      const pts = Object.entries(byDate).sort(([a],[b])=>a.localeCompare(b)).map(([date,{orm,best}])=>({
+      const pts = Object.entries(byDate).sort(([a],[b])=>a.localeCompare(b)).map(([date,{orm,best,e1,e1best}])=>({
         val: parseFloat(orm.toFixed(1)),
+        e1rm: e1 ? parseFloat(e1.toFixed(1)) : null,
+        e1Weight: e1best?.weight || 0,
+        e1Reps: e1best?.reps || 0,
         metric,
         date,
         label: new Date(date+'T12:00:00').toLocaleDateString('ru',{day:'numeric',month:'short'}),
@@ -1343,11 +1353,11 @@ export default function App() {
                 <button style={{width:'100%',background:'none',border:'none',cursor:'pointer',padding:'11px 16px',display:'flex',alignItems:'center',gap:10,textAlign:'left'}} onClick={()=>setOpenPrs(p=>({...p,[name]:!p[name]}))}>
                   {img ? <img src={img} alt={name} loading="lazy" decoding="async" style={{width:32,height:32,borderRadius:7,objectFit:'cover',flexShrink:0}} onError={e=>e.target.style.display='none'}/> : <div style={{width:32,height:32,borderRadius:7,background:thm.btnBg,display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0,fontSize:16}}>🏋️</div>}
                   <span style={{flex:1,color:thm.text85,fontSize:14,fontWeight:600}}>{normalizeName(name)}</span>
-                  <span style={{color:'#FF9F0A',fontSize:14,fontWeight:700,marginRight:8}}>{pr.metric==='time' ? `${pr.time_sec} сек` : pr.metric==='reps' ? `${pr.reps} повт${pr.weight>0?` +${kgToDisplay(pr.weight)}`:''}` : `${kgToDisplay(pr.weight)} ${wUnit}`}</span>
+                  <span style={{color:'#FF9F0A',fontSize:14,fontWeight:700,marginRight:8}}>{pr.metric==='time' ? `${pr.time_sec} сек` : pr.metric==='reps' ? `${pr.reps} повт${pr.weight>0?` +${kgToDisplay(pr.weight)}`:''}` : `${kgToDisplay(pr.weight)} × ${pr.reps}`}</span>
                   <span style={{color:thm.text25,fontSize:11,display:'inline-block',transition:'transform 0.2s',transform:isOpen?'rotate(180deg)':'none'}}>▼</span>
                 </button>
                 {isOpen && <div style={{padding:'2px 16px 12px 58px',display:'flex',gap:16,flexWrap:'wrap',alignItems:'center'}}>
-                  <span style={{fontSize:13,color:thm.text50,fontWeight:600}}>{pr.metric==='time' ? `${pr.time_sec} сек${pr.weight>0?` × ${kgToDisplay(pr.weight)} ${wUnit}`:''}` : pr.metric==='reps' ? `${pr.reps} повт${pr.weight>0?` с доп. весом ${kgToDisplay(pr.weight)} ${wUnit}`:''}` : `${kgToDisplay(pr.weight)} ${wUnit} × ${pr.reps} повт`}</span>
+                  <span style={{fontSize:13,color:thm.text50,fontWeight:600}}>{pr.metric==='time' ? `${pr.time_sec} сек${pr.weight>0?` × ${kgToDisplay(pr.weight)} ${wUnit}`:''}` : pr.metric==='reps' ? `${pr.reps} повт${pr.weight>0?` с доп. весом ${kgToDisplay(pr.weight)} ${wUnit}`:''}` : `${kgToDisplay(pr.weight)} ${wUnit} × ${pr.reps} повт · 1ПМ ≈ ${kgToDisplay(Math.round(pr.value*10)/10)} ${wUnit}`}</span>
                   <span style={{fontSize:12,color:thm.text30}}>{new Date(pr.date).toLocaleDateString('ru',{day:'numeric',month:'short',year:'numeric'})}</span>
                 </div>}
               </div>
@@ -1357,14 +1367,24 @@ export default function App() {
           <div className="prog-title">📊 График роста</div>
           <div className="chart-wrap">
             <select className="chart-ex-select" value={chartEx} onChange={e=>setChartEx(e.target.value)}>{prs.map(([name])=><option key={name} value={name}>{ruName(name)}</option>)}</select>
+            {chartData[0]?.metric === 'weight' && (
+              <div className="settings-toggle" style={{display:'inline-flex',marginBottom:12}}>
+                {[['1RM','1ПМ'],['W','Макс. вес']].map(([id,label]) => (
+                  <button key={id} className={`settings-toggle-btn${chartMode===id?' active':''}`} onClick={()=>setChartMode(id)}>{label}</button>
+                ))}
+              </div>
+            )}
             <LineChart data={(() => {
-              const base = chartPeriod === 'ALL' ? chartData : (() => {
+              const byMode = chartMode === '1RM' && chartData[0]?.metric === 'weight'
+                ? chartData.map(p => ({ ...p, val: p.e1rm ?? p.val, metric: 'e1rm', bestWeight: p.e1Weight, bestReps: p.e1Reps }))
+                : chartData
+              const base = chartPeriod === 'ALL' ? byMode : (() => {
                 const months = chartPeriod === '1M' ? 1 : 3
                 const cutoff = new Date(); cutoff.setMonth(cutoff.getMonth() - months)
                 const cutoffStr = localDateStr(cutoff)
-                return chartData.filter(p => p.date >= cutoffStr)
+                return byMode.filter(p => p.date >= cutoffStr)
               })()
-              if (settings.units === 'lbs' && base[0]?.metric === 'weight') return base.map(p => ({...p, val: Math.round(p.val * 2.20462 * 10) / 10}))
+              if (settings.units === 'lbs' && (base[0]?.metric === 'weight' || base[0]?.metric === 'e1rm')) return base.map(p => ({...p, val: Math.round(p.val * 2.20462 * 10) / 10}))
               return base
             })()} period={chartPeriod} setPeriod={setChartPeriod} totalPoints={chartData.length}
               unit={chartData[0]?.metric === 'time' ? 'сек' : chartData[0]?.metric === 'reps' ? 'повт' : wUnit}/>
