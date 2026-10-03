@@ -15,9 +15,12 @@ import { PLAN_DAYS, PLAN_ICONS, PLAN_NAMES } from './data/plans'
 import { CSS_ALL } from './styles/appCss'
 import { fetchAllRows } from './utils/db'
 import { buildCopyText, formatDateShort, formatMonth, localDateStr } from './utils/format'
-import { bestSet, e1rm, exMetric, isRepsType } from './utils/records'
+import { bestSet, e1rm, exMetric, isRepsType, recordMetric, setValue, uiSetToStored } from './utils/records'
 
 const DEFAULT_SETTINGS = { username: '', weight: '', height: '', units: 'kg', theme: 'dark', language: 'ru' }
+
+// Name an exercise is saved under: «Жим лёжа (Узкий)» for a non-default variant
+const exSaveName = (ex) => (ex.grip && ex.grip !== getDefaultVariant(ex.name)) ? `${ex.name} (${ex.grip})` : ex.name
 
 export default function App() {
   const [user, setUser] = useState(undefined) // undefined = loading, null = not logged in
@@ -519,6 +522,17 @@ export default function App() {
         monthKg = (sData||[]).reduce((s,r)=>s+r.weight*r.reps, 0)
       }
       setStats({ totalW, monthW, monthKg })
+    }
+    let cancelled = false
+    load()
+    return () => { cancelled = true }
+  }, [tab, user, saved])
+
+  // All-time records. Loaded on sign-in (not only on Progress) so the workout screen can spot a new record live.
+  useEffect(() => {
+    if (!user) return
+    let cancelled = false
+    async function load() {
       // Рекорды по всей истории. Каждая вариация («Жим лёжа (Узкий)») — отдельный рекорд, как и на графике.
       // Record for weight exercises = best estimated 1RM (100×5 beats 100×1); plank — time, ab wheel — reps.
       const pData = await fetchAllRows(() => supabase.from('workouts').select('id,workout_date,exercises(name),sets(weight,reps,time_sec)').eq('user_id', user.id).order('id'))
@@ -535,10 +549,9 @@ export default function App() {
       const order = { weight: 0, reps: 1, time: 2 }
       if (!cancelled) setPrs(Object.entries(map).sort((a,b) => (order[a[1].metric] - order[b[1].metric]) || (b[1].value - a[1].value)))
     }
-    let cancelled = false
     load()
     return () => { cancelled = true }
-  }, [tab, user, saved])
+  }, [user, saved])
 
   useEffect(() => {
     if (tab !== 'progress' || !user) return
@@ -727,6 +740,36 @@ export default function App() {
     await supabase.from('workout_plans').update({ current_day: nextDay, workout_count: plan.workout_count + 1 }).eq('id', plan.id)
   }
 
+  // ── Live personal records ─────────────────────────────────────────────
+  const prMap = useMemo(() => Object.fromEntries(prs), [prs])
+  // Record for a workout exercise, its metric and the stored-shape sets
+  const exRecordInfo = (ex) => {
+    const key = normalizeName(exSaveName(ex))
+    const type = EXERCISE_TYPE[ex.name] || 'light'
+    return { key, pr: prMap[key], metric: recordMetric(key), stored: ex.sets.map(s => uiSetToStored(s, type)) }
+  }
+  const celebratedRef = useRef({})
+  const prAlertTimer = useRef(null)
+  // A second after the last change, celebrate a set that beats the all-time record (once per new best).
+  useEffect(() => {
+    if (!workoutExercises.length) { celebratedRef.current = {}; return }
+    const t = setTimeout(() => {
+      for (const ex of workoutExercises) {
+        const { key, pr, metric, stored } = exRecordInfo(ex)
+        if (!pr) continue // first time doing it — nothing to beat yet
+        const { best, value } = bestSet(stored, metric)
+        if (!best || value <= pr.value + 1e-6 || value <= (celebratedRef.current[key] || 0)) continue
+        celebratedRef.current[key] = value
+        setPrAlert({ name: key, metric, best, value, pr })
+        if (navigator.vibrate) navigator.vibrate([100, 50, 100, 50, 300])
+        clearTimeout(prAlertTimer.current)
+        prAlertTimer.current = setTimeout(() => setPrAlert(null), 4500)
+        break
+      }
+    }, 1000)
+    return () => clearTimeout(t)
+  }, [workoutExercises, prMap]) // eslint-disable-line react-hooks/exhaustive-deps
+
   const saveWorkout = async () => {
     if (!workoutExercises.length) return
     if (savingRef.current) return
@@ -737,7 +780,7 @@ export default function App() {
       const exIsTimed = exType === 'timed'
       const filled = exItem.sets.filter(s => exIsTimed ? s.weight > 0 : isRepsType(exType) ? s.reps > 0 : (s.weight > 0 && s.reps > 0))
       if (!filled.length) continue
-      const saveName = (exItem.grip && exItem.grip !== getDefaultVariant(exItem.name)) ? `${exItem.name} (${exItem.grip})` : exItem.name
+      const saveName = exSaveName(exItem)
       let { data: ex } = await supabase.from('exercises').select('id').eq('name', saveName).single()
       if (!ex) {
         const { data: inserted } = await supabase.from('exercises').insert({ name: saveName }).select().single()
@@ -752,17 +795,6 @@ export default function App() {
         reps: exIsTimed ? 0 : (s.reps||0),
         time_sec: exIsTimed ? (s.weight||0) : null
       })))
-      const maxSaved = Math.max(...filled.map(s => s.weight))
-      const repsSaved = filled.find(s => s.weight === maxSaved)?.reps || 0
-      const existingPr = prs.find(([name]) => name === exItem.name)
-      if (existingPr) {
-        const [,pr] = existingPr
-        if (maxSaved > pr.weight) {
-          setPrAlert({ name: exItem.name, weight: maxSaved, reps: repsSaved, prev: pr.weight })
-          if (navigator.vibrate) navigator.vibrate([100,50,100,50,300])
-          setTimeout(() => setPrAlert(null), 4000)
-        }
-      }
     }
     const thisM2 = localDateStr(new Date()).slice(0,7)
     const { data: sessData } = await supabase.from('workouts').select('workout_date').eq('user_id', user.id).gte('workout_date', thisM2 + '-01')
@@ -841,6 +873,10 @@ export default function App() {
   // kg/lbs helpers
   const kgToDisplay = (kg) => settings.units === 'lbs' ? Math.round(kg * 2.20462 * 10) / 10 : kg
   const wUnit = settings.units === 'lbs' ? 'lbs' : 'кг'
+  // "100 кг × 5 (≈117 кг)", "12 повт", "90 сек"
+  const fmtRecordSet = (metric, s, value) => metric === 'time' ? `${s.time_sec} сек`
+    : metric === 'reps' ? `${s.reps} повт${s.weight > 0 ? ` +${kgToDisplay(s.weight)} ${wUnit}` : ''}`
+    : `${kgToDisplay(s.weight)} ${wUnit} × ${s.reps}${s.reps > 1 ? ` (≈${kgToDisplay(Math.round(value))} ${wUnit})` : ''}`
 
   // Theme helpers
   const isDark = settings.theme !== 'light'
@@ -1056,6 +1092,8 @@ export default function App() {
                 const isOpen = ex.open
                 const exType2 = EXERCISE_TYPE[ex.name] || 'light'
                 const wOpts = getWeightOptions(ex.name)
+                const rec = exRecordInfo(ex)
+                const beats = rec.pr ? rec.stored.map(st => setValue(st, rec.metric) > rec.pr.value + 1e-6) : []
                 return (
                   <div key={exIdx} style={{background:thm.card2,borderRadius:16,border:`1px solid ${thm.border}`,marginBottom:10}}>
                     <button onClick={()=>setWorkoutExercises(prev=>prev.map((e,i)=>i===exIdx?{...e,open:!e.open}:e))}
@@ -1080,6 +1118,11 @@ export default function App() {
                             💡 Прошлый раз: {ex.lastSession.sets?.sort((a,b)=>a.set_no-b.set_no).slice(-3).map(s=>s.time_sec>0?(s.weight>0?`${s.time_sec}s×${kgToDisplay(s.weight)}${wUnit}`:`${s.time_sec}s`):(s.weight>0?`${kgToDisplay(s.weight)}×${s.reps}`:`${s.reps} повт`)).join(' · ')}
                           </div>
                         )}
+                        {rec.pr && (
+                          <div style={{fontSize:12,color:thm.text35,marginTop:ex.lastSession?-4:0,marginBottom:10,padding:'0 10px'}}>
+                            🏆 Рекорд: {fmtRecordSet(rec.metric, rec.pr, rec.pr.value)}
+                          </div>
+                        )}
                         {ex.grip !== null && ex.grip !== undefined && (
                           <div style={{marginBottom:12}}>
                             <div style={{fontSize:11,opacity:0.4,textTransform:'uppercase',letterSpacing:'0.5px',marginBottom:6}}>{VARIANT_EXERCISES.has(ex.name) ? 'Вариация' : 'Хват'}</div>
@@ -1102,7 +1145,9 @@ export default function App() {
                             <>
                               {ex.sets.map((s,si) => (
                                 <div key={si} className="set-row">
-                                  <span className="set-num">{si+1}</span>
+                                  {beats[si]
+                                    ? <span className="set-num" title="Новый рекорд" style={{opacity:1,fontSize:14}}>🏆</span>
+                                    : <span className="set-num">{si+1}</span>}
                                   {exType2 === 'timed' ? (
                                     <>
                                       <DropdownPicker options={TIME_OPTIONS} value={s.weight} onChange={v=>setWorkoutExercises(prev=>prev.map((e,i)=>i!==exIdx?e:{...e,sets:e.sets.map((ss,j)=>j!==si?ss:{...ss,weight:v})}))} unit="s" label={`Подход ${si+1}`}/>
@@ -1615,12 +1660,12 @@ export default function App() {
       {/* Timer Modal */}
       {/* PR Alert Toast */}
       {prAlert && (
-        <div className="alert-toast" style={{borderColor:'rgba(255,200,0,0.3)'}}>
-          <div className="alert-toast-icon">🥇</div>
+        <div className="alert-toast" onClick={()=>setPrAlert(null)} style={{borderColor:'rgba(255,200,0,0.3)',cursor:'pointer'}}>
+          <div className="alert-toast-icon">🏆</div>
           <div>
             <div className="alert-toast-title">Новый рекорд!</div>
-            <div className="alert-toast-sub">{prAlert.name}: {prAlert.weight} кг × {prAlert.reps} повт</div>
-            <div style={{fontSize:11,color:'#FF9F0A',marginTop:2}}>Было: {prAlert.prev} кг</div>
+            <div className="alert-toast-sub" style={{opacity:0.75}}>{prAlert.name}: {fmtRecordSet(prAlert.metric, prAlert.best, prAlert.value)}</div>
+            <div style={{fontSize:11,color:'#FF9F0A',marginTop:2}}>Было: {fmtRecordSet(prAlert.metric, prAlert.pr, prAlert.pr.value)}</div>
           </div>
         </div>
       )}

@@ -25,6 +25,17 @@ export function setValue(s, metric) {
   return (s.weight > 0 && s.reps > 0) ? s.weight : 0
 }
 
+// Metric a record is ranked by: estimated 1RM for weight exercises, otherwise time or reps
+export const recordMetric = (name) => { const m = exMetric(name); return m === 'weight' ? 'e1rm' : m }
+
+// A set as edited on the workout screen → the stored shape ({weight, reps, time_sec}).
+// Timed exercises keep seconds in `weight` and the optional extra load in `timedWeight`.
+export function uiSetToStored(s, exType) {
+  if (exType === 'timed') return { weight: s.timedWeight || 0, reps: 0, time_sec: s.weight || 0 }
+  if (exType === 'bodyweight') return { weight: 0, reps: s.reps || 0, time_sec: 0 }
+  return { weight: s.weight || 0, reps: s.reps || 0, time_sec: 0 }
+}
+
 // Лучший подход: максимальный вес (при равном весе — больше повторений), время или повторения
 export function bestSet(sets, metric) {
   let best = null, bestVal = 0
