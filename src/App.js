@@ -3,7 +3,6 @@ import { useState, useEffect, useRef, useCallback, useMemo, memo } from 'react'
 import { supabase } from './supabase'
 import { DropdownPicker } from './components/DropdownPicker'
 import { EditModal } from './components/EditModal'
-import { ProfileCard } from './components/ProfileCard'
 import { WeightModal } from './components/WeightModal'
 import { LineChart } from './components/LineChart'
 import { ModalItem } from './components/ModalItem'
@@ -137,7 +136,6 @@ export default function App() {
     const { error } = await supabase.auth.updateUser({ data: { settings: newSettings } })
     return !error
   }
-  const saveProfile = (profile) => saveSettings({ ...settings, ...profile })
 
   // ── Body weight log ────────────────────────────────────────────────────────
   const isMissingTable = (error) => !!error && (error.code === '42P01' || error.code === 'PGRST205' || (/body_weights/.test(error.message || '') && /not find|does not exist/i.test(error.message || '')))
@@ -1432,8 +1430,6 @@ export default function App() {
         <div className="section">
           <div style={{fontSize:20,fontWeight:700,marginBottom:20,letterSpacing:'-0.3px'}}>⚙️ Настройки</div>
 
-          {/* Profile */}
-          <ProfileCard settings={settings} onSave={saveProfile}/>
 
           {/* Тренировки */}
           <div className="settings-card">
