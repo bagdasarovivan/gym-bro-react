@@ -64,9 +64,25 @@ export function LineChart({ data, period, setPeriod, unit = 'кг', totalPoints 
     y: padT + (1 - t) * (H - padT - padB)
   }))
 
-  const first = vals[0]; const last = vals[vals.length-1]
-  const diff = +(last - first).toFixed(1)
+  // "Start" is the first workout of the period; "Now" is the best of the last 3 workouts, so a single
+  // light day at the end does not turn real progress into "+0" or a fake drop.
+  const k = Math.min(3, vals.length)
+  const round1 = (v) => +v.toFixed(1)
+  const first = round1(vals[0])
+  const last = round1(Math.max(...vals.slice(-k)))
+  const record = round1(Math.max(...vals))
+  const diff = round1(last - first)
   const pct = first > 0 ? ((diff / first) * 100).toFixed(1) : 0
+  // Running best ("best result to date") as a dashed step line: it only goes up, so the trend is obvious
+  let best = -Infinity
+  const bestPath = pts.map((p, i) => {
+    const prevBest = best
+    best = Math.max(best, p.val)
+    const y = padT + (1 - (best - minV) / range) * (H - padT - padB)
+    if (i === 0) return `M${p.x},${y}`
+    const prevY = padT + (1 - (prevBest - minV) / range) * (H - padT - padB)
+    return `L${p.x},${prevY} L${p.x},${y}`
+  }).join(' ') + ` L${W - padR},${padT + (1 - (best - minV) / range) * (H - padT - padB)}`
 
   return (
     <div>
@@ -94,6 +110,7 @@ export function LineChart({ data, period, setPeriod, unit = 'кг', totalPoints 
             </g>
           ))}
           <path d={area} fill="url(#cg2)"/>
+          <path d={bestPath} fill="none" stroke="rgba(255,255,255,0.45)" strokeWidth="1.2" strokeDasharray="4 4"/>
           <path d={path} fill="none" stroke="#FF9F0A" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>
           {(() => {
             // Много точек — уменьшаем кружки и зону касания, чтобы не слипались
@@ -143,12 +160,18 @@ export function LineChart({ data, period, setPeriod, unit = 'кг', totalPoints 
         })()}
       </div>
       <div style={{display:'flex',justifyContent:'space-between',marginTop:14,background:'rgba(255,255,255,0.04)',borderRadius:12,padding:'10px 14px'}}>
-        {[['Старт', first+' '+unit], ['Прирост', (diff>=0?'+':'')+diff+' '+unit], ['Рост', (Number(pct)>=0?'+':'')+pct+'%'], ['Сейчас', last+' '+unit]].map(([lbl,val],i) => (
+        {[['Старт', first+' '+unit, null], ['Сейчас', last+' '+unit, null],
+          ['Прирост', (diff>=0?'+':'')+diff+' '+unit, (Number(pct)>=0?'+':'')+pct+'%'], ['Рекорд', record+' '+unit, null]].map(([lbl,val,sub],i) => (
           <div key={i} style={{textAlign:'center'}}>
-            <div style={{fontSize:14,fontWeight:700,color: i===1||i===2 ? (diff>=0?'#FF9F0A':'#FF453A') : 'white'}}>{val}</div>
+            <div style={{fontSize:14,fontWeight:700,color: i===2 ? (diff>0?'#FF9F0A':diff<0?'#FF453A':'white') : 'white'}}>{val}</div>
+            {sub && <div style={{fontSize:10,fontWeight:700,color: diff>0?'#FF9F0A':diff<0?'#FF453A':'rgba(255,255,255,0.5)'}}>{sub}</div>}
             <div style={{fontSize:9,opacity:0.35,marginTop:2,textTransform:'uppercase',letterSpacing:'0.5px'}}>{lbl}</div>
           </div>
         ))}
+      </div>
+      <div style={{display:'flex',justifyContent:'space-between',gap:8,marginTop:8,fontSize:10,opacity:0.35,lineHeight:1.4}}>
+        <span>{k > 1 ? `Старт — первая тренировка, Сейчас — лучшая из ${k} последних` : 'Старт — первая тренировка, Сейчас — последняя'}</span>
+        <span style={{whiteSpace:'nowrap'}}>┄ лучший на дату</span>
       </div>
     </div>
   )
