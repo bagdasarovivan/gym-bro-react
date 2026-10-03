@@ -1,7 +1,7 @@
 // Warm-up library and a builder that adapts the warm-up to today's workout.
 // Images: put /images/warmup/<id>.webp; until a picture exists the emoji is shown.
 import { getAnatomy } from './muscleLoad'
-import { getDefaultVariant, getWarmupSets } from './exerciseCatalog'
+import { getDefaultVariant } from './exerciseCatalog'
 
 // sec — timed step; reps — repetitions (the user taps «Готово»)
 export const WARMUP_MOVES = {
@@ -61,7 +61,7 @@ export function workoutFocus(exerciseNames) {
   return Object.entries(score).sort((a, b) => b[1] - a[1]).filter(([, v]) => v >= 2).map(([f]) => f).slice(0, 3)
 }
 
-// Builds the warm-up: pulse → joints → activation for today's focus → working-weight ramp-up sets
+// Builds the body warm-up: pulse → joints → activation for today's focus (no weighted ramp-up sets)
 export function buildWarmup(workoutExercises = []) {
   const names = workoutExercises.map(e => (e.grip && e.grip !== getDefaultVariant(e.name) ? `${e.name} (${e.grip})` : e.name))
   let focus = workoutFocus(names)
@@ -81,16 +81,7 @@ export function buildWarmup(workoutExercises = []) {
     { title: 'Активация', subtitle: general ? 'Всё тело' : `Под тренировку: ${focus.map(f => FOCUS_LABELS[f]).join(', ')}`, moves: activation },
   ]
 
-  // Ramp-up sets for the first exercises that have a working weight
-  const rampUps = []
-  for (const e of workoutExercises) {
-    const w = e.sets?.[0]?.weight || 0
-    const sets = w > 0 ? getWarmupSets(e.name, w) : []
-    if (sets.length) rampUps.push({ name: e.name, working: w, sets })
-    if (rampUps.length >= 2) break
-  }
-
   const steps = blocks.flatMap(b => b.moves.map(id => ({ id, block: b.title, ...WARMUP_MOVES[id] })))
   const totalSec = steps.reduce((s, m) => s + (m.sec || m.reps * 3), 0)
-  return { blocks, steps, rampUps, focus: general ? [] : focus, totalMin: Math.max(1, Math.round(totalSec / 60)) }
+  return { blocks, steps, focus: general ? [] : focus, totalMin: Math.max(1, Math.round(totalSec / 60)) }
 }

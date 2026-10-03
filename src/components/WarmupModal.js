@@ -30,7 +30,7 @@ function Ring({ progress, children }) {
 }
 
 // Guided warm-up built for today's workout: overview → step-by-step player → done.
-export function WarmupModal({ workoutExercises, onClose, wUnit = 'кг', kgToDisplay = (v) => v }) {
+export function WarmupModal({ workoutExercises, onClose }) {
   const plan = useMemo(() => buildWarmup(workoutExercises), [workoutExercises])
   const [phase, setPhase] = useState('overview') // overview | run | done
   const [idx, setIdx] = useState(0)
@@ -69,17 +69,6 @@ export function WarmupModal({ workoutExercises, onClose, wUnit = 'кг', kgToDis
     background: primary ? ORANGE : 'rgba(255,255,255,0.08)', color: primary ? '#000' : 'rgba(255,255,255,0.85)',
   })
 
-  const RampUps = () => plan.rampUps.length > 0 && (
-    <div style={{ background: 'rgba(255,159,10,0.07)', border: '1px solid rgba(255,159,10,0.25)', borderRadius: 14, padding: '12px 14px', marginTop: 14 }}>
-      <div style={{ fontSize: 13, fontWeight: 700, marginBottom: 6 }}>🏋️ Разминочные подходы</div>
-      {plan.rampUps.map(r => (
-        <div key={r.name} style={{ fontSize: 13, opacity: 0.85, marginTop: 4, lineHeight: 1.5 }}>
-          <b>{r.name}</b>: {r.sets.map(s => `${kgToDisplay(s.w)}×${s.r}`).join(' → ')} → <span style={{ color: ORANGE, fontWeight: 700 }}>{kgToDisplay(r.working)} {wUnit} рабочий</span>
-        </div>
-      ))}
-    </div>
-  )
-
   return (
     <div className="timer-modal-overlay" onClick={e => { if (e.target === e.currentTarget && phase !== 'run') onClose() }}>
       <div className="timer-modal" style={{ padding: '18px 20px 34px', maxHeight: '92vh', overflowY: 'auto' }}>
@@ -111,7 +100,6 @@ export function WarmupModal({ workoutExercises, onClose, wUnit = 'кг', kgToDis
                 })}
               </div>
             ))}
-            <RampUps />
             <button onClick={() => { setIdx(0); setPhase('run') }} style={{ ...btn(true), width: '100%', marginTop: 18, fontSize: 16 }}>▶ Начать разминку</button>
           </>
         )}
@@ -156,7 +144,6 @@ export function WarmupModal({ workoutExercises, onClose, wUnit = 'кг', kgToDis
             <div style={{ fontSize: 56 }}>🔥</div>
             <div style={{ fontSize: 22, fontWeight: 800, margin: '8px 0 6px' }}>Разминка завершена</div>
             <div style={{ fontSize: 14, opacity: 0.6 }}>Тело готово. Теперь можно работать.</div>
-            <div style={{ textAlign: 'left' }}><RampUps /></div>
             <button onClick={onClose} style={{ ...btn(true), width: '100%', marginTop: 18, fontSize: 16 }}>К тренировке</button>
           </div>
         )}

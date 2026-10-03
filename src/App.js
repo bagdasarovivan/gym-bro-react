@@ -956,7 +956,7 @@ export default function App() {
         </div>
       </div>
       {showWarmup && (
-        <WarmupModal workoutExercises={workoutExercises} onClose={() => setShowWarmup(false)} wUnit={wUnit} kgToDisplay={kgToDisplay}/>
+        <WarmupModal workoutExercises={workoutExercises} onClose={() => setShowWarmup(false)}/>
       )}
       {showWeightModal && (
         <WeightModal entries={bodyWeights} status={weightsStatus} onAdd={addWeighIn} onDelete={deleteWeighIn} onClose={() => setShowWeightModal(false)}/>
