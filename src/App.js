@@ -55,8 +55,6 @@ export default function App() {
   const [chartEx, setChartEx] = useState('')
   const [chartData, setChartData] = useState([])
   const [chartPeriod, setChartPeriod] = useState('1M')
-  // Weight exercises: chart by estimated 1RM (default) or by the heaviest weight
-  const [chartMode, setChartMode] = useState('1RM')
   const [musclePeriod, setMusclePeriod] = useState(30)
   const [timerSecs, setTimerSecs] = useState(null)
   const [timerDuration, setTimerDuration] = useState(90)
@@ -1365,15 +1363,9 @@ export default function App() {
           <div className="prog-title">📊 График роста</div>
           <div className="chart-wrap">
             <select className="chart-ex-select" value={chartEx} onChange={e=>setChartEx(e.target.value)}>{prs.map(([name])=><option key={name} value={name}>{ruName(name)}</option>)}</select>
-            {chartData[0]?.metric === 'weight' && (
-              <div className="settings-toggle" style={{display:'inline-flex',marginBottom:12}}>
-                {[['1RM','1ПМ'],['W','Макс. вес']].map(([id,label]) => (
-                  <button key={id} className={`settings-toggle-btn${chartMode===id?' active':''}`} onClick={()=>setChartMode(id)}>{label}</button>
-                ))}
-              </div>
-            )}
             <LineChart data={(() => {
-              const byMode = chartMode === '1RM' && chartData[0]?.metric === 'weight'
+              // Weight exercises are always charted by estimated 1RM; the tooltip shows the real set behind it
+              const byMode = chartData[0]?.metric === 'weight'
                 ? chartData.map(p => ({ ...p, val: p.e1rm ?? p.val, metric: 'e1rm', bestWeight: p.e1Weight, bestReps: p.e1Reps }))
                 : chartData
               const base = chartPeriod === 'ALL' ? byMode : (() => {
