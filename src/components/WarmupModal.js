@@ -9,10 +9,11 @@ function MoveImage({ move, size }) {
   useEffect(() => setFailed(false), [move.id])
   const src = move.img ? `/images/${move.img}.webp` : `/images/warmup/${move.id}.webp`
   if (failed) {
-    return <div style={{ width: size, height: size * 0.66, borderRadius: 18, background: 'rgba(255,159,10,0.08)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: size * 0.3 }}>{move.emoji}</div>
+    return <div style={{ width: size, height: size, borderRadius: 20, background: 'rgba(255,159,10,0.08)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: size * 0.3 }}>{move.emoji}</div>
   }
+  // Square, like exercise pictures elsewhere in the app
   return <img src={src} alt={move.name} onError={() => setFailed(true)}
-    style={{ width: size, height: size * 0.66, borderRadius: 18, objectFit: 'cover', background: '#fff' }} />
+    style={{ width: size, height: size, borderRadius: 20, objectFit: 'cover', background: '#fff' }} />
 }
 
 function Ring({ progress, children }) {
@@ -113,7 +114,7 @@ export function WarmupModal({ workoutExercises, onClose }) {
             </div>
             <div style={{ fontSize: 12, fontWeight: 800, color: ORANGE, textTransform: 'uppercase', letterSpacing: '0.8px' }}>{step.block} · {idx + 1}/{plan.steps.length}</div>
             <div style={{ fontSize: 24, fontWeight: 800, margin: '4px 0 14px' }}>{step.name}</div>
-            <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 14 }}><MoveImage move={step} size={300} /></div>
+            <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 14 }}><MoveImage move={step} size={240} /></div>
             <div style={{ fontSize: 14, opacity: 0.75, lineHeight: 1.5, marginBottom: 18, textAlign: 'center' }}>{step.cue}</div>
             <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 18 }}>
               {step.sec ? (

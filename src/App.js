@@ -1185,13 +1185,13 @@ export default function App() {
                   </button>
                 )}
               </div>}
-              <button onClick={()=>setShowWarmup(true)} style={{width:'100%',marginBottom:10,padding:'16px 20px',borderRadius:16,border:'1px solid rgba(255,159,10,0.25)',background:'rgba(255,159,10,0.06)',cursor:'pointer',display:'flex',alignItems:'center',gap:14,textAlign:'left'}}>
-                <div style={{width:44,height:44,borderRadius:12,background:'rgba(255,159,10,0.14)',display:'flex',alignItems:'center',justifyContent:'center',fontSize:20,flexShrink:0}}>🤸</div>
+              <button onClick={()=>setShowWarmup(true)} style={{width:'100%',marginBottom:10,padding:'16px 20px',borderRadius:16,border:'1px solid rgba(255,255,255,0.09)',background:'rgba(255,255,255,0.06)',cursor:'pointer',display:'flex',alignItems:'center',gap:14,textAlign:'left'}}>
+                <div style={{width:44,height:44,borderRadius:12,background:'rgba(255,200,0,0.12)',display:'flex',alignItems:'center',justifyContent:'center',fontSize:20,flexShrink:0}}>🤸</div>
                 <div style={{flex:1}}>
                   <div style={{fontSize:16,fontWeight:600,color:'#fff',marginBottom:4}}>Разминка</div>
-                  <div style={{fontSize:12,color:'rgba(255,255,255,0.45)',marginTop:4}}>{workoutExercises.length ? 'Подобрана под твою тренировку' : 'Подготовь тело к тренировке'}</div>
+                  <div style={{fontSize:12,color:'rgba(255,255,255,0.35)',marginTop:4}}>{workoutExercises.length ? 'Подобрана под твою тренировку' : 'Подготовь тело к тренировке'}</div>
                 </div>
-                <span style={{color:'#FF9F0A',fontSize:18}}>›</span>
+                <span style={{color:'rgba(255,255,255,0.2)',fontSize:18}}>›</span>
               </button>
               {workoutExercises.length === 0 && (<>
               <button onClick={()=>setShowComingSoon(true)} style={{width:'100%',marginBottom:16,padding:'16px 20px',borderRadius:16,border:'1px solid rgba(255,255,255,0.08)',background:'rgba(255,255,255,0.05)',cursor:'pointer',display:'flex',alignItems:'center',gap:14,textAlign:'left'}}>
