@@ -175,7 +175,7 @@ export default function App() {
         const setLines = validSets.map((s, i) => {
           const label = s.time_sec > 0
             ? (s.weight > 0 ? `Подход ${i+1}: ${s.time_sec} сек × ${kgToDisplay(s.weight)} ${wUnit}` : `Подход ${i+1}: ${s.time_sec} сек`)
-            : `Подход ${i+1}: ${s.weight} кг × ${s.reps}`
+            : s.weight > 0 ? `Подход ${i+1}: ${s.weight} кг × ${s.reps}` : `Подход ${i+1}: ${s.reps} повт`
           return `<div style="padding:2px 0;color:rgba(255,255,255,0.6);font-size:11px;">${label}</div>`
         }).join('')
         return `<div style="margin-bottom:12px;"><div style="font-size:12px;font-weight:700;color:#ffffff;margin-bottom:4px;">${ruExName}</div>${setLines}</div>`

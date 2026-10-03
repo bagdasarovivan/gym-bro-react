@@ -14,13 +14,23 @@ export function formatDateShort(d) {
   return new Date(d).toLocaleDateString('ru', { day:'numeric', month:'long' })
 }
 
+// Sets as one line. Reps-only sets without weight (ab wheel, push-ups…):
+// all equal → "4×6" (sets × reps), different → "6, 6, 8 повт".
+export function formatSetsText(sets) {
+  const sorted = [...(sets || [])].sort((a, b) => a.set_no - b.set_no)
+  const repsOnly = sorted.length > 0 && sorted.every(s => !(s.weight > 0) && !(s.time_sec > 0) && s.reps > 0)
+  if (repsOnly) {
+    const reps = sorted.map(s => s.reps)
+    return reps.every(r => r === reps[0]) ? `${reps.length}×${reps[0]}` : `${reps.join(', ')} повт`
+  }
+  return sorted.map(s => s.time_sec > 0 ? (s.weight > 0 ? `${s.time_sec}s×${s.weight}кг` : `${s.time_sec}s`) : (s.weight > 0 ? `${s.weight}×${s.reps}` : `${s.reps} повт`)).join(', ')
+}
+
 export function buildCopyText(date, workouts) {
   const lines = [`📅 ${date} · ${workouts.length} упр.`]
   const reversed = [...workouts].reverse()
   reversed.forEach(w => {
-    const sets = w.sets?.sort((a,b) => a.set_no-b.set_no)
-      .map(s => s.time_sec > 0 ? (s.weight > 0 ? `${s.time_sec}s×${s.weight}кг` : `${s.time_sec}s`) : (s.weight > 0 ? `${s.weight}×${s.reps}` : `${s.reps} повт`)).join(', ')
-    lines.push(`${w.exercises?.name}: ${sets}`)
+    lines.push(`${w.exercises?.name}: ${formatSetsText(w.sets)}`)
   })
   return lines.join('\n')
 }
