@@ -1,8 +1,9 @@
 import { useState } from 'react'
 import { BodyWeightChart } from './BodyWeightChart'
 import { localDateStr } from '../utils/format'
+import { ScaleIcon } from './ScaleIcon'
 
-// Bottom sheet opened from the ⚖️ header button: add today's (or another day's) body weight,
+// Bottom sheet opened from the scale button in the header: add today's (or another day's) body weight,
 // see how it changes and remove a wrong entry. One entry per day — saving the same date replaces it.
 export function WeightModal({ entries, status, onAdd, onDelete, onClose }) {
   const sorted = [...entries].sort((a, b) => b.measured_on.localeCompare(a.measured_on))
@@ -30,7 +31,7 @@ export function WeightModal({ entries, status, onAdd, onDelete, onClose }) {
     <div className="timer-modal-overlay" onClick={e => { if (e.target === e.currentTarget) onClose() }}>
       <div className="timer-modal" style={{ padding: '20px 20px 36px', maxHeight: '88vh', overflowY: 'auto' }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
-          <div style={{ fontSize: 18, fontWeight: 700 }}>⚖️ Вес тела</div>
+          <div style={{ fontSize: 18, fontWeight: 700, display: 'flex', alignItems: 'center', gap: 8 }}><span style={{ color: '#FF9F0A', display: 'flex' }}><ScaleIcon size={22}/></span>Вес тела</div>
           <button onClick={onClose} style={{ background: 'none', border: 'none', color: 'rgba(255,255,255,0.5)', fontSize: 22, cursor: 'pointer', lineHeight: 1 }}>✕</button>
         </div>
 
