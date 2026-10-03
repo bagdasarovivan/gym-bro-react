@@ -9,10 +9,11 @@ function MoveImage({ move, size }) {
   useEffect(() => setFailed(false), [move.id])
   const src = move.img ? `/images/${move.img}.webp` : `/images/warmup/${move.id}.webp`
   if (failed) {
-    return <div style={{ width: size, height: size * 0.66, borderRadius: 18, background: 'rgba(255,159,10,0.08)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: size * 0.3 }}>{move.emoji}</div>
+    return <div style={{ width: size, height: size * 0.75, borderRadius: 18, background: 'rgba(255,159,10,0.08)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: size * 0.3 }}>{move.emoji}</div>
   }
+  // contain: pictures may be square or 3:2 — never crop hands and feet
   return <img src={src} alt={move.name} onError={() => setFailed(true)}
-    style={{ width: size, height: size * 0.66, borderRadius: 18, objectFit: 'cover', background: '#fff' }} />
+    style={{ width: size, height: size * 0.75, borderRadius: 18, objectFit: 'contain', background: '#fff' }} />
 }
 
 function Ring({ progress, children }) {
