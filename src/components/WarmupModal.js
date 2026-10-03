@@ -4,16 +4,20 @@ import { buildWarmup } from '../data/warmup'
 const ORANGE = '#FF9F0A'
 
 // Picture for a warm-up move: /images/warmup/<id>.webp, an existing exercise image, or the emoji.
-function MoveImage({ move, size }) {
+// `thumb` — small list icon: falls back to the bare emoji instead of a tinted tile.
+function MoveImage({ move, size, thumb = false }) {
   const [failed, setFailed] = useState(false)
   useEffect(() => setFailed(false), [move.id])
   const src = move.img ? `/images/${move.img}.webp` : `/images/warmup/${move.id}.webp`
+  const radius = thumb ? 8 : 20
   if (failed) {
-    return <div style={{ width: size, height: size, borderRadius: 20, background: 'rgba(255,159,10,0.08)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: size * 0.3 }}>{move.emoji}</div>
+    return thumb
+      ? <div style={{ width: size, height: size, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 20, flexShrink: 0 }}>{move.emoji}</div>
+      : <div style={{ width: size, height: size, borderRadius: radius, background: 'rgba(255,159,10,0.08)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: size * 0.3 }}>{move.emoji}</div>
   }
   // Square, like exercise pictures elsewhere in the app
-  return <img src={src} alt={move.name} onError={() => setFailed(true)}
-    style={{ width: size, height: size, borderRadius: 20, objectFit: 'cover', background: '#fff' }} />
+  return <img src={src} alt={move.name} onError={() => setFailed(true)} loading={thumb ? 'lazy' : undefined}
+    style={{ width: size, height: size, borderRadius: radius, objectFit: 'cover', background: '#fff', flexShrink: 0 }} />
 }
 
 function Ring({ progress, children }) {
@@ -93,7 +97,7 @@ export function WarmupModal({ onClose }) {
                   const m = plan.steps.find(s => s.id === id)
                   return (
                     <div key={id} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '8px 0', borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
-                      <span style={{ fontSize: 20, width: 28, textAlign: 'center' }}>{m.emoji}</span>
+                      <MoveImage move={m} size={40} thumb />
                       <span style={{ flex: 1, fontSize: 15, fontWeight: 600 }}>{m.name}</span>
                       <span style={{ fontSize: 13, opacity: 0.55, fontWeight: 600 }}>{m.sec ? `${m.sec} сек` : `×${m.reps}`}</span>
                     </div>
