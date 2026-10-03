@@ -54,7 +54,7 @@ export default function App() {
   const [calDayModal, setCalDayModal] = useState(null)
   const [chartEx, setChartEx] = useState('')
   const [chartData, setChartData] = useState([])
-  const [chartPeriod, setChartPeriod] = useState('ALL')
+  const [chartPeriod, setChartPeriod] = useState('1M')
   const [musclePeriod, setMusclePeriod] = useState(30)
   const [timerSecs, setTimerSecs] = useState(null)
   const [timerDuration, setTimerDuration] = useState(90)
@@ -194,7 +194,7 @@ export default function App() {
       return `
         <div style="margin-bottom:24px;">
           <div style="display:flex;justify-content:space-between;align-items:baseline;padding:6px 0 4px;">
-            <div style="color:#22a84a;font-size:13px;font-weight:700;">${dateStr}</div>
+            <div style="color:#FF9F0A;font-size:13px;font-weight:700;">${dateStr}</div>
             <div style="color:rgba(255,255,255,0.5);font-size:11px;">Итого: ${dayKgStr}</div>
           </div>
           <div style="border-bottom:1px solid rgba(255,255,255,0.1);margin-bottom:10px;"></div>
@@ -208,18 +208,18 @@ export default function App() {
     const html = `
       <div style="font-family:'Helvetica Neue',Arial,sans-serif;background:#1a1a1a;color:#ffffff;padding:28px 28px 20px;min-height:100%;">
         <div style="margin-bottom:16px;">
-          <div style="color:#22a84a;font-size:38px;font-weight:800;letter-spacing:-1px;line-height:1;">GYM BRO</div>
+          <div style="color:#FF9F0A;font-size:38px;font-weight:800;letter-spacing:-1px;line-height:1;">GYM BRO</div>
           <div style="color:rgba(255,255,255,0.85);font-size:14px;font-weight:600;margin-top:6px;">Отчёт за ${periodLabel}</div>
           <div style="color:rgba(255,255,255,0.4);font-size:11px;margin-top:2px;">Отчёт за ${genDate}</div>
         </div>
         <div style="border-bottom:1px solid rgba(255,255,255,0.1);margin-bottom:16px;"></div>
         <div style="margin-bottom:16px;">
-          <div style="color:#22a84a;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.8px;margin-bottom:8px;">Статистика</div>
+          <div style="color:#FF9F0A;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.8px;margin-bottom:8px;">Статистика</div>
           <div style="font-size:12px;margin-bottom:4px;color:rgba(255,255,255,0.8);">Всего тренировок: <b style="color:#ffffff;">${workoutDatesAll.length}</b></div>
           <div style="font-size:12px;color:rgba(255,255,255,0.8);">Поднято за период: <b style="color:#ffffff;">${totalKgK} кг</b></div>
         </div>
         <div style="border-bottom:1px solid rgba(255,255,255,0.1);margin-bottom:16px;"></div>
-        <div style="color:#22a84a;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.8px;margin-bottom:14px;">Тренировки</div>
+        <div style="color:#FF9F0A;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.8px;margin-bottom:14px;">Тренировки</div>
         ${workoutRows}
         <div style="border-top:1px solid rgba(255,255,255,0.1);margin-top:20px;padding-top:8px;text-align:center;color:rgba(255,255,255,0.25);font-size:10px;">
           Gym BRO — Твой личный тренировочный журнал
@@ -887,8 +887,8 @@ export default function App() {
         </div>
         <div style={{display:'flex',alignItems:'center',gap:8}}>
           <button onClick={() => { const isOpen=timerSecs!==null||stopwatchRunning||timerMode==='stopwatch'; if(isOpen){setTimerSecs(null);setTimerPaused(false);setStopwatchRunning(false);setStopwatchSecs(0);setTimerMode('countdown')}else{setTimerSecs(timerDuration);setTimerPaused(true)} }} style={{
-            background: (timerSecs!==null||stopwatchRunning||timerMode==='stopwatch') ? 'rgba(48,209,88,0.08)' : thm.btnBg,
-            border: (timerSecs!==null||stopwatchRunning||timerMode==='stopwatch') ? '1.5px solid #30D158' : `1px solid ${thm.btnBorder}`,
+            background: (timerSecs!==null||stopwatchRunning||timerMode==='stopwatch') ? 'rgba(255,159,10,0.08)' : thm.btnBg,
+            border: (timerSecs!==null||stopwatchRunning||timerMode==='stopwatch') ? '1.5px solid #FF9F0A' : `1px solid ${thm.btnBorder}`,
             borderRadius:10,padding:'0',width:36,height:36,cursor:'pointer',
             color: (timerSecs!==null||stopwatchRunning||timerMode==='stopwatch') ? 'rgba(255,255,255,0.8)' : thm.text70,
             fontSize:18,display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0
@@ -899,8 +899,8 @@ export default function App() {
             fontSize:13,fontWeight:700,color:'#FF6400',display:'flex',alignItems:'center',flexShrink:0,whiteSpace:'nowrap'
           }}>{streak}🔥</button>}
           <button onClick={() => setTab(t => t === 'settings' ? 'add' : 'settings')} style={{
-            background: tab==='settings' ? 'rgba(48,209,88,0.08)' : thm.btnBg,
-            border: tab==='settings' ? '1.5px solid #30D158' : `1px solid ${thm.btnBorder}`,
+            background: tab==='settings' ? 'rgba(255,159,10,0.08)' : thm.btnBg,
+            border: tab==='settings' ? '1.5px solid #FF9F0A' : `1px solid ${thm.btnBorder}`,
             borderRadius:10,padding:'0',width:36,height:36,cursor:'pointer',
             color: tab==='settings' ? 'rgba(255,255,255,0.8)' : thm.text50,fontSize:18,
             display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0
@@ -912,10 +912,10 @@ export default function App() {
         <div className="section">
 
           {(timerSecs !== null || stopwatchRunning || timerMode === 'stopwatch') && (
-            <div style={{background: timerMode==='stopwatch' ? 'linear-gradient(135deg,rgba(48,209,88,0.1),rgba(48,209,88,0.05))' : 'linear-gradient(135deg,rgba(255,159,10,0.1),rgba(255,159,10,0.05))',border: timerMode==='stopwatch' ? '1px solid rgba(48,209,88,0.2)' : '1px solid rgba(255,159,10,0.2)',borderRadius:20,padding:'16px 18px',marginBottom:16}}>
+            <div style={{background: timerMode==='stopwatch' ? 'linear-gradient(135deg,rgba(255,159,10,0.1),rgba(255,159,10,0.05))' : 'linear-gradient(135deg,rgba(255,159,10,0.1),rgba(255,159,10,0.05))',border: timerMode==='stopwatch' ? '1px solid rgba(255,159,10,0.2)' : '1px solid rgba(255,159,10,0.2)',borderRadius:20,padding:'16px 18px',marginBottom:16}}>
               <div style={{display:'flex',gap:8,marginBottom:12}}>
                 <button onClick={()=>{setTimerMode('countdown');setStopwatchRunning(false);setStopwatchSecs(0);if(timerSecs===null){setTimerSecs(timerDuration);setTimerPaused(true)}}} style={{flex:1,padding:'7px 0',borderRadius:10,border:'none',cursor:'pointer',fontSize:13,fontWeight:700,background:timerMode==='countdown'?'rgba(255,159,10,0.2)':'rgba(255,255,255,0.06)',color:timerMode==='countdown'?'#FF9F0A':'rgba(255,255,255,0.4)'}}>⏱ Таймер</button>
-                <button onClick={()=>{setTimerMode('stopwatch');setTimerSecs(null);setTimerPaused(false)}} style={{flex:1,padding:'7px 0',borderRadius:10,border:'none',cursor:'pointer',fontSize:13,fontWeight:700,background:timerMode==='stopwatch'?'rgba(48,209,88,0.2)':'rgba(255,255,255,0.06)',color:timerMode==='stopwatch'?'#30D158':'rgba(255,255,255,0.4)'}}>⏲ Секундомер</button>
+                <button onClick={()=>{setTimerMode('stopwatch');setTimerSecs(null);setTimerPaused(false)}} style={{flex:1,padding:'7px 0',borderRadius:10,border:'none',cursor:'pointer',fontSize:13,fontWeight:700,background:timerMode==='stopwatch'?'rgba(255,159,10,0.2)':'rgba(255,255,255,0.06)',color:timerMode==='stopwatch'?'#FF9F0A':'rgba(255,255,255,0.4)'}}>⏲ Секундомер</button>
                 <button onClick={()=>{setTimerSecs(null);setTimerPaused(false);setStopwatchRunning(false);setStopwatchSecs(0);setTimerMode('countdown')}} style={{width:32,height:32,borderRadius:10,border:'none',cursor:'pointer',background:'rgba(255,255,255,0.06)',color:'rgba(255,255,255,0.35)',fontSize:13,display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0}}>✕</button>
               </div>
               {timerMode === 'countdown' ? (<>
@@ -926,7 +926,7 @@ export default function App() {
                   {timerPaused && <span style={{fontSize:13,color:'rgba(255,159,10,0.5)',fontWeight:600}}>пауза</span>}
                 </div>
                 <div style={{display:'flex',gap:8,marginBottom:12}}>
-                  <button onClick={()=>setTimerPaused(p=>!p)} style={{flex:1,padding:'9px 0',borderRadius:12,border:'none',cursor:'pointer',fontWeight:700,fontSize:14,background:timerPaused?'#30D158':'rgba(255,159,10,0.15)',color:timerPaused?'#000':'#FF9F0A'}}>
+                  <button onClick={()=>setTimerPaused(p=>!p)} style={{flex:1,padding:'9px 0',borderRadius:12,border:'none',cursor:'pointer',fontWeight:700,fontSize:14,background:timerPaused?'#FF9F0A':'rgba(255,159,10,0.15)',color:timerPaused?'#000':'#FF9F0A'}}>
                     {timerPaused ? '▶ Продолжить' : '⏸ Пауза'}
                   </button>
                   <button onClick={()=>{setTimerSecs(timerDuration);setTimerPaused(true)}} style={{flex:1,padding:'9px 0',borderRadius:12,border:'none',cursor:'pointer',fontWeight:700,fontSize:14,background:'rgba(255,255,255,0.07)',color:'rgba(255,255,255,0.7)'}}>↺ Заново</button>
@@ -936,12 +936,12 @@ export default function App() {
                 <DropdownPicker options={Array.from({length:50},(_,i)=>(i+1)*5)} value={timerDuration} onChange={v=>{setTimerDuration(v);setTimerSecs(v);setTimerPaused(true)}} unit="сек" label=""/>
               </>) : (<>
                 <div style={{display:'flex',alignItems:'baseline',gap:8,marginBottom:12}}>
-                  <span style={{fontSize:48,fontWeight:800,color:stopwatchRunning?'#30D158':'rgba(255,255,255,0.85)',fontVariantNumeric:'tabular-nums',letterSpacing:'-2px'}}>
+                  <span style={{fontSize:48,fontWeight:800,color:stopwatchRunning?'#FF9F0A':'rgba(255,255,255,0.85)',fontVariantNumeric:'tabular-nums',letterSpacing:'-2px'}}>
                     {`${Math.floor(stopwatchSecs/60)}:${String(stopwatchSecs%60).padStart(2,'0')}`}
                   </span>
                 </div>
                 <div style={{display:'flex',gap:8,marginBottom:4}}>
-                  <button onClick={()=>setStopwatchRunning(r=>!r)} style={{flex:1,padding:'9px 0',borderRadius:12,border:'none',cursor:'pointer',fontWeight:700,fontSize:14,background:stopwatchRunning?'rgba(255,59,48,0.15)':'#30D158',color:stopwatchRunning?'#FF453A':'#000'}}>
+                  <button onClick={()=>setStopwatchRunning(r=>!r)} style={{flex:1,padding:'9px 0',borderRadius:12,border:'none',cursor:'pointer',fontWeight:700,fontSize:14,background:stopwatchRunning?'rgba(255,59,48,0.15)':'#FF9F0A',color:stopwatchRunning?'#FF453A':'#000'}}>
                     {stopwatchRunning ? '⏸ Пауза' : '▶ Старт'}
                   </button>
                   <button onClick={()=>{setStopwatchSecs(0);setStopwatchRunning(false)}} style={{flex:1,padding:'9px 0',borderRadius:12,border:'none',cursor:'pointer',fontWeight:700,fontSize:14,background:'rgba(255,255,255,0.07)',color:'rgba(255,255,255,0.7)'}}>↺ Сброс</button>
@@ -1104,7 +1104,7 @@ export default function App() {
                 })}
                 {activePlans.length === 0 && (
                   <button onClick={()=>setShowPlanModal(true)} style={{width:'100%',marginBottom:10,padding:'16px 20px',borderRadius:16,border:'1px solid rgba(255,255,255,0.09)',background:'rgba(255,255,255,0.06)',cursor:'pointer',display:'flex',alignItems:'center',gap:14,textAlign:'left'}}>
-                    <div style={{width:44,height:44,borderRadius:12,background:'rgba(48,209,88,0.15)',display:'flex',alignItems:'center',justifyContent:'center',fontSize:20,flexShrink:0}}>📋</div>
+                    <div style={{width:44,height:44,borderRadius:12,background:'rgba(255,159,10,0.15)',display:'flex',alignItems:'center',justifyContent:'center',fontSize:20,flexShrink:0}}>📋</div>
                     <div style={{flex:1}}>
                       <div style={{fontSize:16,fontWeight:600,color:'#fff',marginBottom:4}}>Выбрать план тренировок</div>
                       <div style={{fontSize:12,color:'rgba(255,255,255,0.35)',marginTop:4}}>Тренируйся по программе</div>
@@ -1188,7 +1188,7 @@ export default function App() {
                     />
                   </div>
                   <div style={{background:'#1c1c1e',borderRadius:12,padding:'10px 14px',textAlign:'center',flexShrink:0,minWidth:72}}>
-                    <div style={{fontSize:22,fontWeight:800,color:'#30D158'}}>{workoutDaysCount}</div>
+                    <div style={{fontSize:22,fontWeight:800,color:'#FF9F0A'}}>{workoutDaysCount}</div>
                     <div style={{fontSize:10,opacity:0.4,marginTop:2,textTransform:'uppercase',letterSpacing:'0.5px'}}>трен.</div>
                   </div>
                 </div>
@@ -1242,7 +1242,7 @@ export default function App() {
             <div className="stats-row">
               <div className="stat-card"><div className="stat-val">{stats.monthW}</div><div className="stat-lbl">{new Date().toLocaleDateString('ru',{month:'long'})}</div></div>
               <div className="stat-card"><div className="stat-val">{stats.totalW}</div><div className="stat-lbl">всего</div></div>
-              <div className="stat-card"><div className="stat-val" style={{color:'#69F0AE',fontSize:18}}>{(()=>{const v=settings.units==='lbs'?Math.round(stats.monthKg*2.20462):Math.round(stats.monthKg);return v>=1000?`${(v/1000).toFixed(1)}K`:v})()}{' '}{wUnit}</div><div className="stat-lbl">поднято за месяц</div></div>
+              <div className="stat-card"><div className="stat-val" style={{color:'#FF9F0A',fontSize:18}}>{(()=>{const v=settings.units==='lbs'?Math.round(stats.monthKg*2.20462):Math.round(stats.monthKg);return v>=1000?`${(v/1000).toFixed(1)}K`:v})()}{' '}{wUnit}</div><div className="stat-lbl">поднято за месяц</div></div>
             </div>
           )}
           <div className="prog-title">💪 Нагрузка по мышцам</div>
@@ -1251,7 +1251,7 @@ export default function App() {
               {[[7,'7 дней'],[30,'30 дней']].map(([days,label]) => (
                 <button key={days} onClick={()=>setMusclePeriod(days)} style={{
                   padding:'6px 18px',borderRadius:99,fontSize:12,fontWeight:700,cursor:'pointer',border:'none',
-                  background: musclePeriod===days ? '#30D158' : '#2c2c2e',
+                  background: musclePeriod===days ? '#FF9F0A' : '#2c2c2e',
                   color: musclePeriod===days ? '#000' : 'rgba(255,255,255,0.5)',
                 }}>{label}</button>
               ))}
@@ -1300,7 +1300,7 @@ export default function App() {
                 <button style={{width:'100%',background:'none',border:'none',cursor:'pointer',padding:'11px 16px',display:'flex',alignItems:'center',gap:10,textAlign:'left'}} onClick={()=>setOpenPrs(p=>({...p,[name]:!p[name]}))}>
                   {img ? <img src={img} alt={name} loading="lazy" decoding="async" style={{width:32,height:32,borderRadius:7,objectFit:'cover',flexShrink:0}} onError={e=>e.target.style.display='none'}/> : <div style={{width:32,height:32,borderRadius:7,background:thm.btnBg,display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0,fontSize:16}}>🏋️</div>}
                   <span style={{flex:1,color:thm.text85,fontSize:14,fontWeight:600}}>{normalizeName(name)}</span>
-                  <span style={{color:'#30D158',fontSize:14,fontWeight:700,marginRight:8}}>{pr.metric==='time' ? `${pr.time_sec} сек` : pr.metric==='reps' ? `${pr.reps} повт${pr.weight>0?` +${kgToDisplay(pr.weight)}`:''}` : `${kgToDisplay(pr.weight)} ${wUnit}`}</span>
+                  <span style={{color:'#FF9F0A',fontSize:14,fontWeight:700,marginRight:8}}>{pr.metric==='time' ? `${pr.time_sec} сек` : pr.metric==='reps' ? `${pr.reps} повт${pr.weight>0?` +${kgToDisplay(pr.weight)}`:''}` : `${kgToDisplay(pr.weight)} ${wUnit}`}</span>
                   <span style={{color:thm.text25,fontSize:11,display:'inline-block',transition:'transform 0.2s',transform:isOpen?'rotate(180deg)':'none'}}>▼</span>
                 </button>
                 {isOpen && <div style={{padding:'2px 16px 12px 58px',display:'flex',gap:16,flexWrap:'wrap',alignItems:'center'}}>
@@ -1543,7 +1543,7 @@ export default function App() {
                       <div className="ex-detail-text" style={{color:thm.text70}}>{info.benefit}</div>
                     </div>
                     <div className="ex-detail-section">
-                      <div className="ex-detail-section-lbl" style={{color:'#30D158',opacity:1}}>💡 Советы</div>
+                      <div className="ex-detail-section-lbl" style={{color:'#FF9F0A',opacity:1}}>💡 Советы</div>
                       <div className="ex-detail-text" style={{color:thm.text70}}>{info.tips}</div>
                     </div>
                   </>
@@ -1571,7 +1571,7 @@ export default function App() {
 
       {/* Motivational Toast */}
       {draftRestored && (
-        <div className="alert-toast" style={{borderColor:'rgba(48,209,88,0.3)',pointerEvents:'none'}}>
+        <div className="alert-toast" style={{borderColor:'rgba(255,159,10,0.3)',pointerEvents:'none'}}>
           <div className="alert-toast-icon">💾</div>
           <div>
             <div className="alert-toast-title">Тренировка восстановлена</div>
@@ -1580,7 +1580,7 @@ export default function App() {
         </div>
       )}
       {streakAlert && streakAlert.type === 'month' && (
-        <div className="alert-toast" style={{borderColor:'rgba(48,209,88,0.3)'}}>
+        <div className="alert-toast" style={{borderColor:'rgba(255,159,10,0.3)'}}>
           <div className="alert-toast-icon">
             {streakAlert.count>=20?'👑':streakAlert.count>=10?'🏆':streakAlert.count>=5?'⚡':'🔥'}
           </div>
@@ -1600,9 +1600,9 @@ export default function App() {
             <div style={{fontSize:13,color:thm.text50,marginBottom:20,textAlign:'center'}}>Выбери период</div>
             {[['7d','Последние 7 дней'],['30d','Последние 30 дней'],['3m','Последние 3 месяца'],['6m','Последние 6 месяцев'],['1y','Последний год'],['all','Всё время']].map(([val,label])=>(
               <button key={val} onClick={()=>{setExportPeriod(val);exportWorkouts(val)}} style={{
-                width:'100%',padding:'13px 16px',borderRadius:12,border:`1px solid ${exportPeriod===val?'rgba(48,209,88,0.4)':thm.border}`,
-                background:exportPeriod===val?'rgba(48,209,88,0.1)':thm.card2,
-                color:exportPeriod===val?'#30D158':thm.text,fontSize:14,fontWeight:600,cursor:'pointer',
+                width:'100%',padding:'13px 16px',borderRadius:12,border:`1px solid ${exportPeriod===val?'rgba(255,159,10,0.4)':thm.border}`,
+                background:exportPeriod===val?'rgba(255,159,10,0.1)':thm.card2,
+                color:exportPeriod===val?'#FF9F0A':thm.text,fontSize:14,fontWeight:600,cursor:'pointer',
                 marginBottom:8,textAlign:'left',transition:'all 0.15s'
               }}>{label}</button>
             ))}
@@ -1656,12 +1656,12 @@ export default function App() {
                   {!rank.isMax && (
                     <div style={{marginBottom:16}}>
                       <div style={{height:6,background:isDark?'rgba(255,255,255,0.1)':'rgba(0,0,0,0.08)',borderRadius:99,overflow:'hidden'}}>
-                        <div style={{height:'100%',width:`${Math.round(rank.progress*100)}%`,background:'#30D158',borderRadius:99,transition:'width 0.5s ease'}}/>
+                        <div style={{height:'100%',width:`${Math.round(rank.progress*100)}%`,background:'#FF9F0A',borderRadius:99,transition:'width 0.5s ease'}}/>
                       </div>
                       <div style={{fontSize:12,color:thm.text40,marginTop:6}}>{rank.nextAt - streak} тренировок до ранга «{rank.nextName}» {RANK_LEVELS.find(r=>r.name===rank.nextName)?.icon}</div>
                     </div>
                   )}
-                  {rank.isMax && <div style={{fontSize:12,color:'#30D158',marginBottom:16,fontWeight:700}}>Максимальный ранг достигнут! 🎉</div>}
+                  {rank.isMax && <div style={{fontSize:12,color:'#FF9F0A',marginBottom:16,fontWeight:700}}>Максимальный ранг достигнут! 🎉</div>}
                   <div style={{fontSize:14,color:thm.text70,fontStyle:'italic',lineHeight:1.5,marginBottom:10}}>«{streakMotivQuote}»</div>
                   <div style={{fontSize:13,color:thm.text50,fontStyle:'italic',lineHeight:1.5,borderTop:`1px solid ${thm.border}`,paddingTop:12,marginTop:4}}>
                     «{greatQ.text}»
@@ -1686,7 +1686,7 @@ export default function App() {
                       </div>
                       <div style={{display:'flex',justifyContent:'space-between',alignItems:'center'}}>
                         <span style={{fontSize:14,color:thm.text70}}>🏆 Новых рекордов</span>
-                        <span style={{fontSize:15,fontWeight:700,color:streakModalData.monthPRs>0?'#30D158':thm.text}}>{streakModalData.monthPRs}</span>
+                        <span style={{fontSize:15,fontWeight:700,color:streakModalData.monthPRs>0?'#FF9F0A':thm.text}}>{streakModalData.monthPRs}</span>
                       </div>
                       {streakModalData.bestWorkout && (
                         <div style={{display:'flex',justifyContent:'space-between',alignItems:'center'}}>
@@ -1699,7 +1699,7 @@ export default function App() {
                       {streakModalData.bestImprovement && (
                         <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',flexWrap:'wrap',gap:4}}>
                           <span style={{fontSize:14,color:thm.text70}}>📈 Лучший прирост</span>
-                          <span style={{fontSize:14,fontWeight:600,color:'#30D158',textAlign:'right',maxWidth:'55%'}}>
+                          <span style={{fontSize:14,fontWeight:600,color:'#FF9F0A',textAlign:'right',maxWidth:'55%'}}>
                             {streakModalData.bestImprovement.name} +{settings.units==='lbs'?`${Math.round(streakModalData.bestImprovement.diff*2.20462)} lbs`:`${streakModalData.bestImprovement.diff} кг`}
                           </span>
                         </div>
@@ -1765,7 +1765,7 @@ export default function App() {
                     <button onClick={()=>{
                       setWorkoutExercises(prev=>prev.map((e,i)=>i!==editSetModal.exIdx?e:{...e,sets:e.sets.map((ss,j)=>j!==editSetModal.setIdx?ss:{...ss,weight:editSetModal.weight,reps:editSetModal.reps})}))
                       setEditSetModal(null)
-                    }} style={{width:'100%',padding:'14px',borderRadius:14,background:'#30D158',color:'#fff',fontSize:16,fontWeight:700,border:'none',cursor:'pointer'}}>
+                    }} style={{width:'100%',padding:'14px',borderRadius:14,background:'#FF9F0A',color:'#000',fontSize:16,fontWeight:700,border:'none',cursor:'pointer'}}>
                       Сохранить
                     </button>
                   </div>
@@ -1853,7 +1853,7 @@ export default function App() {
                       Возьми вес с которым сделаешь нужное количество повторений комфортно — не на максимуме.<br/><br/>
                       Gym BRO запомнит и будет считать прогрессию сам.
                     </div>
-                    <button onClick={()=>setPlanOnboarding(false)} style={{width:'100%',padding:'14px',borderRadius:14,background:'#30D158',color:'#fff',fontSize:16,fontWeight:700,border:'none',cursor:'pointer'}}>
+                    <button onClick={()=>setPlanOnboarding(false)} style={{width:'100%',padding:'14px',borderRadius:14,background:'#FF9F0A',color:'#000',fontSize:16,fontWeight:700,border:'none',cursor:'pointer'}}>
                       Понятно, начинаем!
                     </button>
                   </div>
@@ -1915,7 +1915,7 @@ export default function App() {
                           setLoadingPlan(false)
                           setShowDayPreview(null)
                         }
-                      }} style={{width:'100%',marginTop:16,padding:'14px',borderRadius:14,background:'#30D158',color:'#000',fontSize:16,fontWeight:700,border:'none',cursor:loadingPlan?'default':'pointer',opacity:loadingPlan?0.7:1}}>
+                      }} style={{width:'100%',marginTop:16,padding:'14px',borderRadius:14,background:'#FF9F0A',color:'#000',fontSize:16,fontWeight:700,border:'none',cursor:loadingPlan?'default':'pointer',opacity:loadingPlan?0.7:1}}>
                         {loadingPlan ? 'Загружаю упражнения…' : 'Загрузить в тренировку'}
                       </button>
                       <button onClick={()=>setShowDayPreview(null)} style={{width:'100%',marginTop:8,padding:'12px',borderRadius:14,border:'none',background:'transparent',color:'rgba(255,255,255,0.4)',fontSize:14,cursor:'pointer'}}>
@@ -1960,7 +1960,7 @@ export default function App() {
             <div style={{fontSize:48,marginBottom:16}}>🚧</div>
             <div style={{fontSize:20,fontWeight:700,color:'rgba(255,255,255,0.9)',marginBottom:12}}>В разработке</div>
             <div style={{fontSize:15,color:'rgba(255,255,255,0.5)',lineHeight:1.6,marginBottom:28}}>Эта функция совсем скоро появится в Gym BRO. Следи за обновлениями! 💪</div>
-            <button onClick={()=>setShowComingSoon(false)} style={{width:'100%',padding:'14px',borderRadius:14,background:'#30D158',color:'#fff',fontSize:16,fontWeight:700,border:'none',cursor:'pointer'}}>Понятно</button>
+            <button onClick={()=>setShowComingSoon(false)} style={{width:'100%',padding:'14px',borderRadius:14,background:'#FF9F0A',color:'#000',fontSize:16,fontWeight:700,border:'none',cursor:'pointer'}}>Понятно</button>
           </div>
         </div>
       )}
@@ -1969,7 +1969,7 @@ export default function App() {
         {[{id:'add',icon:'➕',label:'Тренировка'},{id:'history',icon:'📜',label:'История'},{id:'progress',icon:'📈',label:'Прогресс'},{id:'exercises',icon:'📋',label:'Упражнения'}].map(t=>(
           <div key={t.id} className="nav-item" style={{opacity:tab===t.id?1:0.62}} onClick={()=>{setTab(t.id);if(t.id!=='add'){setWorkoutStarted(false);setSelectedEx(null)}}}>
             <span className="nav-icon">{t.icon}</span>
-            <span className="nav-lbl" style={{color:tab===t.id?'#00C853':'white'}}>{t.label}</span>
+            <span className="nav-lbl" style={{color:tab===t.id?'#FF9F0A':'white'}}>{t.label}</span>
           </div>
         ))}
       </div>
