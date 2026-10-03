@@ -30,9 +30,9 @@ function Ring({ progress, children }) {
   )
 }
 
-// Guided warm-up built for today's workout: overview → step-by-step player → done.
-export function WarmupModal({ workoutExercises, onClose }) {
-  const plan = useMemo(() => buildWarmup(workoutExercises), [workoutExercises])
+// Guided universal warm-up: overview → step-by-step player → done.
+export function WarmupModal({ onClose }) {
+  const plan = useMemo(() => buildWarmup(), [])
   const [phase, setPhase] = useState('overview') // overview | run | done
   const [idx, setIdx] = useState(0)
   const [left, setLeft] = useState(0)
@@ -81,7 +81,7 @@ export function WarmupModal({ workoutExercises, onClose }) {
         {phase === 'overview' && (
           <>
             <div style={{ fontSize: 14, opacity: 0.7, marginBottom: 14 }}>
-              ~{plan.totalMin} мин · {plan.steps.length} упражнений{plan.focus.length ? ' · под сегодняшнюю тренировку' : ' · на всё тело'}
+              ~{plan.totalMin} мин · {plan.steps.length} упражнений · стоя, без инвентаря
             </div>
             {plan.blocks.map(b => (
               <div key={b.title} style={{ marginBottom: 14 }}>

@@ -956,7 +956,7 @@ export default function App() {
         </div>
       </div>
       {showWarmup && (
-        <WarmupModal workoutExercises={workoutExercises} onClose={() => setShowWarmup(false)}/>
+        <WarmupModal onClose={() => setShowWarmup(false)}/>
       )}
       {showWeightModal && (
         <WeightModal entries={bodyWeights} status={weightsStatus} onAdd={addWeighIn} onDelete={deleteWeighIn} onClose={() => setShowWeightModal(false)}/>
@@ -1189,7 +1189,7 @@ export default function App() {
                 <div style={{width:44,height:44,borderRadius:12,background:'rgba(255,200,0,0.12)',display:'flex',alignItems:'center',justifyContent:'center',fontSize:20,flexShrink:0}}>🤸</div>
                 <div style={{flex:1}}>
                   <div style={{fontSize:16,fontWeight:600,color:'#fff',marginBottom:4}}>Разминка</div>
-                  <div style={{fontSize:12,color:'rgba(255,255,255,0.35)',marginTop:4}}>{workoutExercises.length ? 'Подобрана под твою тренировку' : 'Подготовь тело к тренировке'}</div>
+                  <div style={{fontSize:12,color:'rgba(255,255,255,0.35)',marginTop:4}}>Подготовь тело к тренировке</div>
                 </div>
                 <span style={{color:'rgba(255,255,255,0.2)',fontSize:18}}>›</span>
               </button>
