@@ -5,6 +5,7 @@ import { DropdownPicker } from './components/DropdownPicker'
 import { EditModal } from './components/EditModal'
 import { WeightModal } from './components/WeightModal'
 import { WarmupModal } from './components/WarmupModal'
+import { StretchModal } from './components/StretchModal'
 import { LineChart } from './components/LineChart'
 import { ModalItem } from './components/ModalItem'
 import { MuscleMap } from './components/MuscleMap'
@@ -90,6 +91,7 @@ export default function App() {
   const [weightsStatus, setWeightsStatus] = useState('loading')
   const [showWeightModal, setShowWeightModal] = useState(false)
   const [showWarmup, setShowWarmup] = useState(false)
+  const [showStretch, setShowStretch] = useState(false)
   const [settings, setSettings] = useState(DEFAULT_SETTINGS)
   const [showExportModal, setShowExportModal] = useState(false)
   const [exportPeriod, setExportPeriod] = useState('all')
@@ -106,7 +108,6 @@ export default function App() {
   const [activePlans, setActivePlans] = useState([])
   const [planWeights, setPlanWeights] = useState({})
   const [showPlanModal, setShowPlanModal] = useState(false)
-  const [showComingSoon, setShowComingSoon] = useState(false)
   const [showDayPreview, setShowDayPreview] = useState(null) // {plan, dayIdx, dayDef}
   const [showRatingModal, setShowRatingModal] = useState(false)
   const [pendingRatingPlan, setPendingRatingPlan] = useState(null)
@@ -997,6 +998,9 @@ export default function App() {
       {showWarmup && (
         <WarmupModal onClose={() => setShowWarmup(false)}/>
       )}
+      {showStretch && (
+        <StretchModal onClose={() => setShowStretch(false)}/>
+      )}
       {showWeightModal && (
         <WeightModal entries={bodyWeights} status={weightsStatus} onAdd={addWeighIn} onDelete={deleteWeighIn} onClose={() => setShowWeightModal(false)}/>
       )}
@@ -1241,16 +1245,14 @@ export default function App() {
                 </div>
                 <span style={{color:'rgba(255,255,255,0.2)',fontSize:18}}>›</span>
               </button>
-              {workoutExercises.length === 0 && (<>
-              <button onClick={()=>setShowComingSoon(true)} style={{width:'100%',marginBottom:16,padding:'16px 20px',borderRadius:16,border:'1px solid rgba(255,255,255,0.08)',background:'rgba(255,255,255,0.05)',cursor:'pointer',display:'flex',alignItems:'center',gap:14,textAlign:'left'}}>
+              <button onClick={()=>setShowStretch(true)} style={{width:'100%',marginBottom:16,padding:'16px 20px',borderRadius:16,border:'1px solid rgba(255,255,255,0.09)',background:'rgba(255,255,255,0.06)',cursor:'pointer',display:'flex',alignItems:'center',gap:14,textAlign:'left'}}>
                 <div style={{width:44,height:44,borderRadius:12,background:'rgba(100,180,255,0.1)',display:'flex',alignItems:'center',justifyContent:'center',fontSize:20,flexShrink:0}}>🧘</div>
                 <div style={{flex:1}}>
-                  <div style={{fontSize:16,fontWeight:600,color:'rgba(255,255,255,0.75)',marginBottom:4,display:'flex',alignItems:'center',gap:8}}>Растяжка<span style={{fontSize:10,fontWeight:700,letterSpacing:'0.5px',textTransform:'uppercase',color:'#FF9F0A',background:'rgba(255,159,10,0.12)',borderRadius:6,padding:'2px 6px'}}>скоро</span></div>
+                  <div style={{fontSize:16,fontWeight:600,color:'#fff',marginBottom:4}}>Растяжка</div>
                   <div style={{fontSize:12,color:'rgba(255,255,255,0.35)',marginTop:4}}>Восстановление после нагрузки</div>
                 </div>
                 <span style={{color:'rgba(255,255,255,0.2)',fontSize:18}}>›</span>
               </button>
-              </>)}
               {workoutExercises.length > 0 && (
                 <button className={`save-btn${saved?' done':''}`} onClick={saveWorkout} disabled={saving || saved}>
                   {saved ? '✅ Сохранено!' : saving ? '⏳ Сохранение...' : `💾 Сохранить тренировку (${workoutExercises.length} упр.)`}
@@ -2058,16 +2060,6 @@ export default function App() {
                 </div>
               )}
 
-      {showComingSoon && (
-        <div onClick={()=>setShowComingSoon(false)} style={{position:'fixed',inset:0,background:'rgba(0,0,0,0.7)',backdropFilter:'blur(6px)',WebkitBackdropFilter:'blur(6px)',zIndex:1000,display:'flex',alignItems:'center',justifyContent:'center',padding:'20px'}}>
-          <div onClick={e=>e.stopPropagation()} style={{textAlign:'center',padding:'32px 24px',background:'rgba(28,28,30,0.98)',borderRadius:16,width:'100%',maxWidth:320,boxShadow:'0 20px 60px rgba(0,0,0,0.5)'}}>
-            <div style={{fontSize:48,marginBottom:16}}>🚧</div>
-            <div style={{fontSize:20,fontWeight:700,color:'rgba(255,255,255,0.9)',marginBottom:12}}>В разработке</div>
-            <div style={{fontSize:15,color:'rgba(255,255,255,0.5)',lineHeight:1.6,marginBottom:28}}>Эта функция совсем скоро появится в Gym BRO. Следи за обновлениями! 💪</div>
-            <button onClick={()=>setShowComingSoon(false)} style={{width:'100%',padding:'14px',borderRadius:14,background:'#FF9F0A',color:'#000',fontSize:16,fontWeight:700,border:'none',cursor:'pointer'}}>Понятно</button>
-          </div>
-        </div>
-      )}
 
       <div className="nav-bar">
         {[{id:'add',icon:'➕',label:'Тренировка'},{id:'history',icon:'📜',label:'История'},{id:'progress',icon:'📈',label:'Прогресс'},{id:'exercises',icon:'📋',label:'Упражнения'}].map(t=>(
