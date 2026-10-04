@@ -1,7 +1,7 @@
 import { useState } from 'react'
 
 // Body weight over time. Daily weight swings by 1–2 kg (water, food), so besides the raw points
-// the chart draws a 7-day rolling average; the summary compares those averages.
+// the chart draws a 7-day rolling average. The summary shows the actual weigh-ins.
 const PERIODS = [{ id: '1M', label: '1 мес', months: 1 }, { id: '3M', label: '3 мес', months: 3 }, { id: 'ALL', label: 'Всё' }]
 const DAY = 86400000
 const t = (d) => new Date(d + 'T12:00:00').getTime()
@@ -60,7 +60,9 @@ export function BodyWeightChart({ entries, defaultPeriod = '3M' }) {
   const rawPath = data.map((d, i) => `${i ? 'L' : 'M'}${X(d)},${Y(d.w)}`).join(' ')
   const grid = [0, 0.5, 1].map(k => ({ v: minV + range * k, y: Y(minV + range * k) }))
 
-  const start = data[0].avg, now = data[data.length - 1].avg, diff = now - start
+  // Summary uses real weigh-ins: users expect "now" to be the number they just entered
+  const start = data[0].w, now = data[data.length - 1].w, diff = now - start
+  const avgNow = data[data.length - 1].avg
   const diffColor = Math.abs(diff) < 0.05 ? 'white' : '#FF9F0A'
   const dateLabel = (d) => new Date(d + 'T12:00:00').toLocaleDateString('ru', { day: 'numeric', month: 'short' })
 
@@ -103,7 +105,7 @@ export function BodyWeightChart({ entries, defaultPeriod = '3M' }) {
           </div>
         ))}
       </div>
-      <div style={{ fontSize: 10, opacity: 0.35, marginTop: 8 }}>Оранжевая линия — среднее за 7 дней, точки — отдельные взвешивания</div>
+      <div style={{ fontSize: 10, opacity: 0.35, marginTop: 8 }}>Оранжевая линия — среднее за 7 дней{Math.abs(avgNow - now) >= 0.05 ? ` (сейчас ${fmt(avgNow)} кг)` : ''}, точки — отдельные взвешивания</div>
     </div>
   )
 }
