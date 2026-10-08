@@ -6,10 +6,11 @@ import { EditModal } from './components/EditModal'
 import { WeightModal } from './components/WeightModal'
 import { WarmupModal } from './components/WarmupModal'
 import { StretchModal } from './components/StretchModal'
+import { ChartExercisePicker } from './components/ChartExercisePicker'
 import { LineChart } from './components/LineChart'
 import { ModalItem } from './components/ModalItem'
 import { MuscleMap } from './components/MuscleMap'
-import { DEFAULT_FAVORITES, EXERCISES, EXERCISE_IMAGES, EXERCISE_INFO, EXERCISE_MUSCLES, EXERCISE_TYPE, LIGHT_WEIGHTS, MUSCLE_FILTERS_ROW1, MUSCLE_FILTERS_ROW2, MUSCLE_FILTER_MAP, MUSCLE_LABELS, REPS_OPTIONS, TIME_OPTIONS, VARIANT_EXERCISES, getDefaultVariant, getExImage, getVariantOptions, getWarmupSets, getWeightOptions, normalizeName, ruName } from './data/exerciseCatalog'
+import { DEFAULT_FAVORITES, EXERCISES, EXERCISE_IMAGES, EXERCISE_INFO, EXERCISE_MUSCLES, EXERCISE_TYPE, LIGHT_WEIGHTS, MUSCLE_FILTERS_ROW1, MUSCLE_FILTERS_ROW2, MUSCLE_FILTER_MAP, MUSCLE_LABELS, REPS_OPTIONS, TIME_OPTIONS, VARIANT_EXERCISES, getDefaultVariant, getExImage, getVariantOptions, getWarmupSets, getWeightOptions, normalizeName } from './data/exerciseCatalog'
 import { GREAT_QUOTES, RANK_LEVELS, RANK_QUOTES, getMotivation, getRank } from './data/motivation'
 import { calcAnatomyLoad } from './data/muscleLoad'
 import { PLAN_DAYS, PLAN_ICONS, PLAN_NAMES } from './data/plans'
@@ -1237,6 +1238,7 @@ export default function App() {
                   </button>
                 )}
               </div>}
+              {workoutExercises.length === 0 && (<>
               <button onClick={()=>setShowWarmup(true)} style={{width:'100%',marginBottom:10,padding:'16px 20px',borderRadius:16,border:'1px solid rgba(255,255,255,0.09)',background:'rgba(255,255,255,0.06)',cursor:'pointer',display:'flex',alignItems:'center',gap:14,textAlign:'left'}}>
                 <div style={{width:44,height:44,borderRadius:12,background:'rgba(255,200,0,0.12)',display:'flex',alignItems:'center',justifyContent:'center',fontSize:20,flexShrink:0}}>🤸</div>
                 <div style={{flex:1}}>
@@ -1253,10 +1255,20 @@ export default function App() {
                 </div>
                 <span style={{color:'rgba(255,255,255,0.2)',fontSize:18}}>›</span>
               </button>
+              </>)}
               {workoutExercises.length > 0 && (
                 <button className={`save-btn${saved?' done':''}`} onClick={saveWorkout} disabled={saving || saved}>
                   {saved ? '✅ Сохранено!' : saving ? '⏳ Сохранение...' : `💾 Сохранить тренировку (${workoutExercises.length} упр.)`}
                 </button>
+              )}
+              {workoutExercises.length > 0 && (
+                <div style={{display:'flex',gap:8,marginTop:10}}>
+                  {[['🤸','Разминка',()=>setShowWarmup(true)],['🧘','Растяжка',()=>setShowStretch(true)]].map(([icon,label,fn])=>(
+                    <button key={label} onClick={fn} style={{flex:1,padding:'10px 12px',borderRadius:12,border:`1px solid ${thm.border}`,background:'transparent',color:thm.text50,fontSize:13,fontWeight:600,cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',gap:6}}>
+                      <span style={{fontSize:15}}>{icon}</span>{label}
+                    </button>
+                  ))}
+                </div>
               )}
             </>
           )}
@@ -1417,7 +1429,7 @@ export default function App() {
           </div>}
           <div className="prog-title">📊 График роста</div>
           <div className="chart-wrap">
-            <select className="chart-ex-select" value={chartEx} onChange={e=>setChartEx(e.target.value)}>{prs.map(([name])=><option key={name} value={name}>{ruName(name)}</option>)}</select>
+            <ChartExercisePicker names={prs.map(([name])=>name)} value={chartEx} onChange={setChartEx} theme={isDark?'dark':'light'}/>
             <LineChart data={(() => {
               // Weight exercises are always charted by estimated 1RM; the tooltip shows the real set behind it
               const byMode = chartData[0]?.metric === 'weight'
