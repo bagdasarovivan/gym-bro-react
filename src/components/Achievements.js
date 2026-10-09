@@ -36,6 +36,7 @@ function TierBar({ value, tiers, isDark }) {
 }
 
 export function MonthChallenges({ month, thm, isDark, onSwap }) {
+  const [confirm, setConfirm] = useState(null) // id of the challenge waiting for swap confirmation
   const swapsLeft = Math.max(0, MAX_SWAPS - (month.swaps || 0))
   return (
     <div style={card(isDark, thm)}>
@@ -47,7 +48,7 @@ export function MonthChallenges({ month, thm, isDark, onSwap }) {
         {month.challenges.map((c, idx) => {
           const next = c.tiers[c.tier]
           const done = c.tier >= c.tiers.length
-          const canSwap = onSwap && swapsLeft > 0 && c.tier === 0
+          const canSwap = onSwap && swapsLeft > 0
           return (
             <div key={c.id} data-ch={c.id}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
@@ -60,7 +61,23 @@ export function MonthChallenges({ month, thm, isDark, onSwap }) {
                   ? <span style={{ fontSize: 13, fontWeight: 700, color: '#30D158', whiteSpace: 'nowrap' }}>✓ {t('Выполнено')}</span>
                   : <span style={{ fontSize: 13, fontWeight: 700, color: thm.text70, whiteSpace: 'nowrap' }}>{c.fmt(c.value)}</span>}
                 <span style={{ fontSize: done ? 24 : 18, width: 26, textAlign: 'right', filter: c.tier ? 'none' : 'grayscale(1)', opacity: c.tier ? 1 : 0.3 }}>{c.tier ? TIERS[c.tier - 1].medal : '🥉'}</span>
+                {canSwap && (
+                  <button onClick={() => setConfirm(confirm === c.id ? null : c.id)} aria-label={t('Заменить')} title={t('Заменить')}
+                    style={{ border: 'none', background: isDark ? 'rgba(255,255,255,0.07)' : 'rgba(0,0,0,0.05)', borderRadius: 99, width: 28, height: 28, fontSize: 13, cursor: 'pointer', flexShrink: 0, opacity: confirm === c.id ? 1 : 0.7 }}>🔄</button>
+                )}
               </div>
+              {confirm === c.id && canSwap && (
+                <div style={{ margin: '8px 0 2px 36px', padding: '10px 12px', borderRadius: 12, background: isDark ? 'rgba(255,159,10,0.1)' : 'rgba(255,159,10,0.12)', border: '1px solid rgba(255,159,10,0.3)' }}>
+                  <div style={{ fontSize: 13, color: thm.text, fontWeight: 600 }}>{t('Заменить «{name}»?', { name: t(c.name) })}</div>
+                  <div style={{ fontSize: 11, color: thm.text50, marginTop: 2 }}>
+                    {c.tier ? t('Медаль за это испытание пропадёт. ') : ''}{t('Осталось замен: {n}', { n: swapsLeft })}
+                  </div>
+                  <div style={{ display: 'flex', gap: 8, marginTop: 8 }}>
+                    <button onClick={() => { setConfirm(null); onSwap(idx) }} style={{ flex: 1, border: 'none', borderRadius: 10, padding: '8px', background: '#FF9F0A', color: '#000', fontWeight: 700, fontSize: 13, cursor: 'pointer' }}>{t('Да, заменить')}</button>
+                    <button onClick={() => setConfirm(null)} style={{ flex: 1, border: 'none', borderRadius: 10, padding: '8px', background: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)', color: thm.text70, fontWeight: 600, fontSize: 13, cursor: 'pointer' }}>{t('Отмена')}</button>
+                  </div>
+                </div>
+              )}
               {!done && (
                 <div style={{ paddingLeft: 36 }}>
                   <TierBar value={c.value} tiers={c.tiers} isDark={isDark} />
@@ -68,9 +85,6 @@ export function MonthChallenges({ month, thm, isDark, onSwap }) {
                     <div style={{ fontSize: 11, color: thm.text40 }}>
                       {`${TIERS[c.tier].medal} ${t(TIERS[c.tier].name).toLowerCase()} — ${c.fmt(next)}`}
                     </div>
-                    {canSwap && (
-                      <button onClick={() => onSwap(idx)} aria-label={t('Заменить')} style={{ border: 'none', background: isDark ? 'rgba(255,255,255,0.07)' : 'rgba(0,0,0,0.05)', color: thm.text50, borderRadius: 99, padding: '3px 10px', fontSize: 11, fontWeight: 600, cursor: 'pointer', whiteSpace: 'nowrap' }}>🔄 {t('Заменить')}</button>
-                    )}
                   </div>
                 </div>
               )}
