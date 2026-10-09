@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
+import { t } from '../i18n'
 
 const ORANGE = '#FF9F0A'
 
@@ -15,7 +16,7 @@ function MoveImage({ move, imgDir, size, thumb = false }) {
       : <div style={{ width: size, height: size, borderRadius: radius, background: 'rgba(255,159,10,0.08)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: size * 0.3 }}>{move.emoji}</div>
   }
   // Square, like exercise pictures elsewhere in the app
-  return <img src={src} alt={move.name} onError={() => setFailed(true)} loading={thumb ? 'lazy' : undefined}
+  return <img src={src} alt={t(move.name)} onError={() => setFailed(true)} loading={thumb ? 'lazy' : undefined}
     style={{ width: size, height: size, borderRadius: radius, objectFit: 'cover', background: '#fff', flexShrink: 0 }} />
 }
 
@@ -37,7 +38,7 @@ function Ring({ progress, children }) {
 export const stepSeconds = (m) => (m.sec ? m.sec * (m.sides ? 2 : 1) : 0)
 
 // Duration label for the overview list
-const durationLabel = (m) => m.sec ? (m.sides ? `${m.sec} сек × 2` : `${m.sec} сек`) : `×${m.reps}`
+const durationLabel = (m) => m.sec ? (m.sides ? `${m.sec} ${t('сек')} × 2` : `${m.sec} ${t('сек')}`) : `×${m.reps}`
 
 // Guided routine (warm-up, stretching): overview → step-by-step player → done.
 // plan: { blocks:[{title,subtitle,moves:[id]}], steps:[{id,name,emoji,cue,sec|reps,sides?,block}], totalMin }
@@ -92,26 +93,26 @@ export function RoutinePlayer({ plan, title, imgDir, summary, startLabel, done, 
       <div className="timer-modal" style={{ padding: '18px 20px 34px', maxHeight: '92vh', overflowY: 'auto' }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>
           <div style={{ fontSize: 18, fontWeight: 700 }}>{title}</div>
-          <button onClick={onClose} aria-label="Закрыть" style={{ background: 'none', border: 'none', color: 'rgba(255,255,255,0.5)', fontSize: 22, cursor: 'pointer', lineHeight: 1 }}>✕</button>
+          <button onClick={onClose} aria-label={t('Закрыть')} style={{ background: 'none', border: 'none', color: 'rgba(255,255,255,0.5)', fontSize: 22, cursor: 'pointer', lineHeight: 1 }}>✕</button>
         </div>
 
         {phase === 'overview' && (
           <>
             <div style={{ fontSize: 14, opacity: 0.7, marginBottom: 14 }}>
-              ~{plan.totalMin} мин · {plan.steps.length} упражнений · {summary}
+              ~{plan.totalMin} {t('мин')} · {t('{n} упражнений',{n:plan.steps.length})} · {summary}
             </div>
             {plan.blocks.map(b => (
               <div key={b.title} style={{ marginBottom: 14 }}>
                 <div style={{ display: 'flex', alignItems: 'baseline', gap: 8, marginBottom: 6 }}>
-                  <span style={{ fontSize: 12, fontWeight: 800, color: ORANGE, textTransform: 'uppercase', letterSpacing: '0.8px' }}>{b.title}</span>
-                  <span style={{ fontSize: 12, opacity: 0.45 }}>{b.subtitle}</span>
+                  <span style={{ fontSize: 12, fontWeight: 800, color: ORANGE, textTransform: 'uppercase', letterSpacing: '0.8px' }}>{t(b.title)}</span>
+                  <span style={{ fontSize: 12, opacity: 0.45 }}>{t(b.subtitle)}</span>
                 </div>
                 {b.moves.map(id => {
                   const m = plan.steps.find(s => s.id === id)
                   return (
                     <div key={id} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '8px 0', borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
                       <MoveImage move={m} imgDir={imgDir} size={40} thumb />
-                      <span style={{ flex: 1, fontSize: 15, fontWeight: 600 }}>{m.name}</span>
+                      <span style={{ flex: 1, fontSize: 15, fontWeight: 600 }}>{t(m.name)}</span>
                       <span style={{ fontSize: 13, opacity: 0.55, fontWeight: 600, whiteSpace: 'nowrap' }}>{durationLabel(m)}</span>
                     </div>
                   )
@@ -129,13 +130,13 @@ export function RoutinePlayer({ plan, title, imgDir, summary, startLabel, done, 
                 <div key={s.id} style={{ flex: 1, height: 4, borderRadius: 2, background: i < idx ? ORANGE : i === idx ? 'rgba(255,159,10,0.55)' : 'rgba(255,255,255,0.1)' }} />
               ))}
             </div>
-            <div style={{ fontSize: 12, fontWeight: 800, color: ORANGE, textTransform: 'uppercase', letterSpacing: '0.8px' }}>{step.block} · {idx + 1}/{plan.steps.length}</div>
-            <div style={{ fontSize: 24, fontWeight: 800, margin: '4px 0 14px' }}>{step.name}</div>
+            <div style={{ fontSize: 12, fontWeight: 800, color: ORANGE, textTransform: 'uppercase', letterSpacing: '0.8px' }}>{t(step.block)} · {idx + 1}/{plan.steps.length}</div>
+            <div style={{ fontSize: 24, fontWeight: 800, margin: '4px 0 14px' }}>{t(step.name)}</div>
             <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 14 }}><MoveImage move={step} imgDir={imgDir} size={240} /></div>
-            <div style={{ fontSize: 14, opacity: 0.75, lineHeight: 1.5, marginBottom: 18, textAlign: 'center' }}>{step.cue}</div>
+            <div style={{ fontSize: 14, opacity: 0.75, lineHeight: 1.5, marginBottom: 18, textAlign: 'center' }}>{t(step.cue)}</div>
             {step.sides && (
               <div style={{ display: 'flex', justifyContent: 'center', gap: 6, marginBottom: 12 }}>
-                {['Одна сторона', 'Другая сторона'].map((label, i) => {
+                {[t('Одна сторона'), t('Другая сторона')].map((label, i) => {
                   const active = i === 0 ? onFirstSide : !onFirstSide
                   return <span key={label} style={{ fontSize: 12, fontWeight: 700, padding: '4px 10px', borderRadius: 99,
                     background: active ? 'rgba(255,159,10,0.18)' : 'rgba(255,255,255,0.05)', color: active ? ORANGE : 'rgba(255,255,255,0.35)' }}>{label}</span>
@@ -146,23 +147,23 @@ export function RoutinePlayer({ plan, title, imgDir, summary, startLabel, done, 
               {step.sec ? (
                 <Ring progress={1 - Math.max(0, left) / total}>
                   <div style={{ fontSize: 40, fontWeight: 800, fontVariantNumeric: 'tabular-nums', color: paused ? 'rgba(255,255,255,0.4)' : 'white' }}>{shownLeft}</div>
-                  <div style={{ fontSize: 11, opacity: 0.5 }}>{paused ? 'пауза' : 'сек'}</div>
+                  <div style={{ fontSize: 11, opacity: 0.5 }}>{paused ? t('пауза') : t('сек')}</div>
                 </Ring>
               ) : (
                 <Ring progress={0}>
                   <div style={{ fontSize: 40, fontWeight: 800, color: ORANGE }}>×{step.reps}</div>
-                  <div style={{ fontSize: 11, opacity: 0.5 }}>повторений</div>
+                  <div style={{ fontSize: 11, opacity: 0.5 }}>{t('повторений')}</div>
                 </Ring>
               )}
             </div>
             <div style={{ display: 'flex', gap: 8 }}>
               <button onClick={prev} disabled={idx === 0} style={{ ...btn(false), flex: 0.6, opacity: idx === 0 ? 0.35 : 1 }}>‹</button>
               {step.sec
-                ? <button onClick={() => setPaused(p => !p)} style={btn(false)}>{paused ? '▶ Дальше' : '⏸ Пауза'}</button>
+                ? <button onClick={() => setPaused(p => !p)} style={btn(false)}>{paused ? t('▶ Дальше') : t('⏸ Пауза')}</button>
                 : null}
-              <button onClick={next} style={btn(true)}>{step.sec ? 'Пропустить ›' : 'Готово ›'}</button>
+              <button onClick={next} style={btn(true)}>{step.sec ? t('Пропустить ›') : t('Готово ›')}</button>
             </div>
-            {nextStep && <div style={{ fontSize: 12, opacity: 0.4, textAlign: 'center', marginTop: 12 }}>Далее: {nextStep.name}</div>}
+            {nextStep && <div style={{ fontSize: 12, opacity: 0.4, textAlign: 'center', marginTop: 12 }}>{t('Далее:')} {t(nextStep.name)}</div>}
           </>
         )}
 

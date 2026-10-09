@@ -1,10 +1,12 @@
 /* eslint-disable no-unused-vars */
 import { useState } from 'react'
+import { fmtW, locale, t } from '../i18n'
 
-export function LineChart({ data, period, setPeriod, unit = 'кг', totalPoints = 0 }) {
+export function LineChart({ data, period, setPeriod, unit, totalPoints = 0 }) {
+  unit = unit || t('кг')
   const [tooltip, setTooltip] = useState(null)
 
-  const periods = [{ id:'1M', label:'1 мес' }, { id:'3M', label:'3 мес' }, { id:'ALL', label:'Всё' }]
+  const periods = [{ id:'1M', label:t('1 мес') }, { id:'3M', label:t('3 мес') }, { id:'ALL', label:t('Всё') }]
 
   const noData = (
     <div>
@@ -20,10 +22,10 @@ export function LineChart({ data, period, setPeriod, unit = 'кг', totalPoints 
       <div style={{textAlign:'center',padding:'28px 0'}}>
         <div style={{fontSize:36,marginBottom:8}}>📊</div>
         <div style={{fontSize:14,fontWeight:600,opacity:0.5,marginBottom:4}}>
-          {period !== 'ALL' && totalPoints >= 2 ? `За ${period === '1M' ? 'месяц' : '3 месяца'} меньше 2 тренировок` : 'Нужно минимум 2 тренировки'}
+          {period !== 'ALL' && totalPoints >= 2 ? (period === '1M' ? t('За месяц меньше 2 тренировок') : t('За 3 месяца меньше 2 тренировок')) : t('Нужно минимум 2 тренировки')}
         </div>
         <div style={{fontSize:12,opacity:0.3}}>
-          {period !== 'ALL' && totalPoints >= 2 ? 'выбери период подлиннее' : 'для отображения графика'}
+          {period !== 'ALL' && totalPoints >= 2 ? t('выбери период подлиннее') : t('для отображения графика')}
         </div>
       </div>
     </div>
@@ -76,11 +78,11 @@ export function LineChart({ data, period, setPeriod, unit = 'кг', totalPoints 
   const signed = (v) => (v > 0 ? '+' : v < 0 ? '−' : '+') + Math.abs(v)
   const ORANGE = '#FF9F0A', RED = '#FF453A', MUTED = 'rgba(255,255,255,0.5)'
   const tiles = [
-    { label: 'Старт', value: `${first} ${unit}` },
-    { label: 'Рекорд', value: `${record} ${unit}`,
-      sub: gain > 0 ? `${signed(gain)} ${unit} · ${signed(gainPct)}%` : 'без роста', subColor: gain > 0 ? ORANGE : MUTED },
-    { label: 'Сейчас', value: `${last} ${unit}`, valueColor: fromRecord < 0 ? RED : 'white',
-      sub: fromRecord < 0 ? `${signed(fromRecord)} ${unit} от рекорда` : '🔥 на рекорде', subColor: fromRecord < 0 ? RED : ORANGE },
+    { label: t('Старт'), value: `${first} ${unit}` },
+    { label: t('Рекорд'), value: `${record} ${unit}`,
+      sub: gain > 0 ? `${signed(gain)} ${unit} · ${signed(gainPct)}%` : t('без роста'), subColor: gain > 0 ? ORANGE : MUTED },
+    { label: t('Сейчас'), value: `${last} ${unit}`, valueColor: fromRecord < 0 ? RED : 'white',
+      sub: fromRecord < 0 ? `${signed(fromRecord)} ${unit} ${t('от рекорда')}` : t('🔥 на рекорде'), subColor: fromRecord < 0 ? RED : ORANGE },
   ]
 
   return (
@@ -129,12 +131,12 @@ export function LineChart({ data, period, setPeriod, unit = 'кг', totalPoints 
           const leftPct = Math.min(Math.max((tooltip.x / W) * 100, 10), 90)
           const topPx = Math.max(tooltip.y - 8, 0)
           const fullDate = tooltip.date
-            ? new Date(tooltip.date+'T12:00:00').toLocaleDateString('ru',{day:'numeric',month:'long',year:'numeric'})
+            ? new Date(tooltip.date+'T12:00:00').toLocaleDateString(locale(),{day:'numeric',month:'long',year:'numeric'})
             : tooltip.label
           // Значение точки — уже сам вес / время / повторения, поэтому вторая строка — только повторения
-          const setLine = (tooltip.metric === 'e1rm' && tooltip.bestReps > 0) ? `${tooltip.bestWeight} кг × ${tooltip.bestReps} повт`
-            : (tooltip.metric === 'weight' && tooltip.bestReps > 0) ? `× ${tooltip.bestReps} повт`
-            : (tooltip.metric === 'reps' && tooltip.bestWeight > 0) ? `доп. вес ${tooltip.bestWeight} кг` : null
+          const setLine = (tooltip.metric === 'e1rm' && tooltip.bestReps > 0) ? `${fmtW(tooltip.bestWeight)} × ${tooltip.bestReps} ${t('повт')}`
+            : (tooltip.metric === 'weight' && tooltip.bestReps > 0) ? `× ${tooltip.bestReps} ${t('повт')}`
+            : (tooltip.metric === 'reps' && tooltip.bestWeight > 0) ? `${t('доп. вес')} ${fmtW(tooltip.bestWeight)}` : null
           return (
             <div style={{
               position:'absolute',
@@ -151,7 +153,7 @@ export function LineChart({ data, period, setPeriod, unit = 'кг', totalPoints 
               textAlign:'center',
               whiteSpace:'nowrap',
             }}>
-              <div style={{fontSize:18,fontWeight:700,color:'#FF9F0A',lineHeight:1.2}}>{tooltip.metric === 'e1rm' ? '≈' : ''}{tooltip.val} {unit}{tooltip.metric === 'e1rm' && <span style={{fontSize:11,opacity:0.7,marginLeft:4}}>1ПМ</span>}</div>
+              <div style={{fontSize:18,fontWeight:700,color:'#FF9F0A',lineHeight:1.2}}>{tooltip.metric === 'e1rm' ? '≈' : ''}{tooltip.val} {unit}{tooltip.metric === 'e1rm' && <span style={{fontSize:11,opacity:0.7,marginLeft:4}}>{t('1ПМ')}</span>}</div>
               {setLine && <div style={{fontSize:13,fontWeight:600,color:'rgba(255,255,255,0.9)',marginTop:3}}>{setLine}</div>}
               <div style={{fontSize:11,color:'rgba(255,255,255,0.4)',marginTop:3}}>{fullDate}</div>
             </div>

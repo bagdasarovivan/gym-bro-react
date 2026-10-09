@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react'
 import { GRIP_EXERCISES, getDefaultVariant, getExImage, getVariantOptions } from '../data/exerciseCatalog'
 import { baseExName } from '../utils/records'
+import { exName, t, variantName } from '../i18n'
 
 // Exercise picker for the growth chart.
 // Variants of one exercise («Тяга вертикального блока», «… (Широкий)», «… (Узкий)») are shown as one row
@@ -52,7 +53,7 @@ export function ChartExercisePicker({ names, value, onChange, theme }) {
     setOpen(false); setQ('')
   }
 
-  const list = [...groups.keys()].sort((a, b) => a.localeCompare(b, 'ru')).filter(b => !q.trim() || b.toLowerCase().includes(q.trim().toLowerCase()))
+  const list = [...groups.keys()].sort((a, b) => exName(a).localeCompare(exName(b))).filter(b => !q.trim() || b.toLowerCase().includes(q.trim().toLowerCase()) || exName(b).toLowerCase().includes(q.trim().toLowerCase()))
   const dark = theme !== 'light'
 
   return (
@@ -62,7 +63,7 @@ export function ChartExercisePicker({ names, value, onChange, theme }) {
         background: dark ? '#2c2c2e' : '#f2f2f7', color: dark ? '#fff' : '#1c1c1e', textAlign: 'left',
       }}>
         <Thumb key={curBase} name={curBase} size={36} />
-        <span style={{ flex: 1, fontSize: 15, fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{curBase}</span>
+        <span style={{ flex: 1, fontSize: 15, fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{exName(curBase)}</span>
         <span style={{ opacity: 0.4, fontSize: 12 }}>▼</span>
       </button>
 
@@ -73,7 +74,7 @@ export function ChartExercisePicker({ names, value, onChange, theme }) {
               padding: '5px 12px', borderRadius: 99, fontSize: 12, fontWeight: 600, border: 'none', cursor: 'pointer',
               background: n === value ? '#FF9F0A' : (dark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)'),
               color: n === value ? '#000' : (dark ? 'rgba(255,255,255,0.6)' : 'rgba(0,0,0,0.6)'),
-            }}>{variantLabel(n, curBase)}</button>
+            }}>{variantName(variantLabel(n, curBase))}</button>
           ))}
         </div>
       )}
@@ -83,9 +84,9 @@ export function ChartExercisePicker({ names, value, onChange, theme }) {
           <div className="modal">
             <div className="modal-handle" />
             <div className="modal-hdr">
-              <div className="modal-title">Упражнение для графика</div>
+              <div className="modal-title">{t('Упражнение для графика')}</div>
               <div className="modal-srch-wrap"><span className="modal-srch-icon">🔍</span>
-                <input className="modal-srch" placeholder="Поиск..." value={q} onChange={e => setQ(e.target.value)} />
+                <input className="modal-srch" placeholder={t('Поиск...')} value={q} onChange={e => setQ(e.target.value)} />
               </div>
             </div>
             <div className="modal-list">
@@ -94,12 +95,12 @@ export function ChartExercisePicker({ names, value, onChange, theme }) {
                 return (
                   <div key={b} className="modal-item" onClick={() => pickBase(b)} style={{ gap: 12, background: b === curBase ? 'rgba(255,159,10,0.1)' : undefined }}>
                     <Thumb name={b} size={40} />
-                    <span style={{ flex: 1, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', color: b === curBase ? '#FF9F0A' : undefined }}>{b}</span>
-                    {n > 1 && <span style={{ fontSize: 12, opacity: 0.4, flexShrink: 0 }}>{n} вар.</span>}
+                    <span style={{ flex: 1, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', color: b === curBase ? '#FF9F0A' : undefined }}>{exName(b)}</span>
+                    {n > 1 && <span style={{ fontSize: 12, opacity: 0.4, flexShrink: 0 }}>{n} {t('вар.')}</span>}
                   </div>
                 )
               })}
-              {!list.length && <div style={{ textAlign: 'center', opacity: 0.4, padding: 24, fontSize: 14 }}>Ничего не найдено</div>}
+              {!list.length && <div style={{ textAlign: 'center', opacity: 0.4, padding: 24, fontSize: 14 }}>{t('Ничего не найдено')}</div>}
             </div>
           </div>
         </div>

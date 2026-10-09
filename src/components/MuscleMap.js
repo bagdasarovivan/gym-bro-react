@@ -2,6 +2,7 @@
 import { useState } from 'react'
 import { ANATOMY_LABELS } from '../data/muscleLoad'
 import { MUSCLE_MAP_VIEWS, MUSCLE_ZONES_BY_VIEW } from '../data/muscleZones'
+import { anatomyLabel, t } from '../i18n'
 
 export function MuscleMap({ muscleScores, period = 7 }) {
   const [hovered, setHovered] = useState(null)
@@ -25,7 +26,7 @@ export function MuscleMap({ muscleScores, period = 7 }) {
   }
   const muscleNames = ANATOMY_LABELS
 
-  const hoveredScore = (hovered && scoreOf(hovered)) || { load: 0, label: 'Нет', color: 'none', percent: 0 }
+  const hoveredScore = (hovered && scoreOf(hovered)) || { load: 0, label: t('Нет'), color: 'none', percent: 0 }
   const hoveredLevel = hoveredScore.color
   const scoreColor = hoveredLevel === 'over' ? '#FF453A' : hoveredLevel === 'good' ? '#30D158' : hoveredLevel === 'normal' ? '#9EDB3F' : hoveredLevel === 'low' ? '#FFD60A' : 'rgba(255,255,255,0.3)'
 
@@ -49,14 +50,14 @@ export function MuscleMap({ muscleScores, period = 7 }) {
           <div style={{display:'flex',alignItems:'center',gap:8}}>
             <div style={{width:10,height:10,borderRadius:'50%',background:scoreColor,flexShrink:0}}/>
             <span style={{fontSize:14,fontWeight:700,color:scoreColor}}>
-              {muscleNames[hovered]}
+              {anatomyLabel(hovered, muscleNames[hovered])}
             </span>
             <span style={{fontSize:12,opacity:0.5}}>
-              {`${hoveredScore.label} · ${hoveredScore.percent}%`}
+              {`${t(hoveredScore.label)} · ${hoveredScore.percent}%`}
             </span>
           </div>
         ) : (
-          <div style={{fontSize:11,opacity:0.2,letterSpacing:'1px',textTransform:'uppercase'}}>нажми на мышцу</div>
+          <div style={{fontSize:11,opacity:0.2,letterSpacing:'1px',textTransform:'uppercase'}}>{t('нажми на мышцу')}</div>
         )}
       </div>
 
@@ -66,7 +67,7 @@ export function MuscleMap({ muscleScores, period = 7 }) {
           <div key={v.key} style={{position:'relative',flex:1,aspectRatio:`${v.w} / ${v.h}`,overflow:'hidden'}}>
             <img
               src="/images/muscle_map.png"
-              alt={v.key === 'front' ? 'мышцы спереди' : 'мышцы сзади'}
+              alt={v.key === 'front' ? t('мышцы спереди') : t('мышцы сзади')}
               style={{position:'absolute',width:`${1536 / v.w * 100}%`,maxWidth:'none',left:`${-v.x / v.w * 100}%`,top:`${-v.y / v.h * 100}%`,filter:'brightness(0.92) invert(1)',opacity:0.85}}
             />
             <svg

@@ -9,6 +9,7 @@ import { StretchModal } from './components/StretchModal'
 import { ChartExercisePicker } from './components/ChartExercisePicker'
 import { AchTabs, AchievementCelebration, BadgeGrid, MonthArchive, MonthChallenges } from './components/Achievements'
 import { computeAchievements, describeId } from './data/achievements'
+import { KG_TO_LB, dispW, exInfo, exName, fmtVolume, fmtW, isLbs, locale, muscleLabel, num, setPrefs, t, toKg, variantName, weightOptions } from './i18n'
 import { LineChart } from './components/LineChart'
 import { ModalItem } from './components/ModalItem'
 import { MuscleMap } from './components/MuscleMap'
@@ -105,6 +106,7 @@ export default function App() {
   const [showWarmup, setShowWarmup] = useState(false)
   const [showStretch, setShowStretch] = useState(false)
   const [settings, setSettings] = useState(DEFAULT_SETTINGS)
+  setPrefs(settings) // language and units for t() / formatters during this render
   const [showExportModal, setShowExportModal] = useState(false)
   const [exportPeriod, setExportPeriod] = useState('all')
   const [showClearConfirm, setShowClearConfirm] = useState(false)
@@ -131,10 +133,10 @@ export default function App() {
     setAuthLoading(true); setAuthError('')
     if (authMode === 'login') {
       const { error } = await supabase.auth.signInWithPassword({ email: authEmail, password: authPassword })
-      if (error) setAuthError(error.message === 'Invalid login credentials' ? 'Неверный email или пароль' : error.message)
+      if (error) setAuthError(error.message === 'Invalid login credentials' ? t('Неверный email или пароль') : error.message)
     } else {
       const { error } = await supabase.auth.signUp({ email: authEmail, password: authPassword })
-      if (error) setAuthError(error.message.includes('already registered') ? 'Этот email уже зарегистрирован' : error.message)
+      if (error) setAuthError(error.message.includes('already registered') ? t('Этот email уже зарегистрирован') : error.message)
     }
     setAuthLoading(false)
   }
@@ -205,21 +207,21 @@ export default function App() {
     const sortedDates = Object.keys(byDate).sort((a,b) => b.localeCompare(a))
 
     const now = new Date()
-    const periodLabel = period === 'all' ? 'Все время'
-      : period === '7d' ? 'Последние 7 дней'
-      : period === '30d' ? 'Последние 30 дней'
-      : period === '3m' ? 'Последние 3 месяца'
-      : period === '6m' ? 'Последние 6 месяцев'
-      : 'Последний год'
-    const genDate = now.toLocaleDateString('ru', { day: 'numeric', month: 'long', year: 'numeric' })
+    const periodLabel = period === 'all' ? t('Все время')
+      : period === '7d' ? t('Последние 7 дней')
+      : period === '30d' ? t('Последние 30 дней')
+      : period === '3m' ? t('Последние 3 месяца')
+      : period === '6m' ? t('Последние 6 месяцев')
+      : t('Последний год')
+    const genDate = now.toLocaleDateString(locale(), { day: 'numeric', month: 'long', year: 'numeric' })
 
     // Stats
     const workoutDatesAll = [...new Set(rows.map(r => r.workout_date))]
     const totalKg = rows.reduce((sum, w) => sum + (w.sets||[]).reduce((s2, s) => s2 + (s.weight||0)*(s.reps||1), 0), 0)
-    const totalKgK = totalKg >= 1000 ? `${(totalKg/1000).toFixed(1)}K` : String(Math.round(totalKg))
+    const totalVol = fmtVolume(totalKg)
 
     const workoutRows = sortedDates.map(date => {
-      const dateStr = new Date(date + 'T12:00:00').toLocaleDateString('ru', { day: 'numeric', month: 'long', year: 'numeric' })
+      const dateStr = new Date(date + 'T12:00:00').toLocaleDateString(locale(), { day: 'numeric', month: 'long', year: 'numeric' })
       const exGroups = {}
       byDate[date].forEach(w => {
         const name = w.exercises?.name || ''
@@ -227,15 +229,15 @@ export default function App() {
         exGroups[name].push(...(w.sets || []))
       })
       const dayKg = byDate[date].reduce((sum, w) => sum + (w.sets||[]).reduce((s2, s) => s2 + (s.weight||0)*(s.reps||1), 0), 0)
-      const dayKgStr = dayKg >= 1000 ? `${(dayKg/1000).toFixed(1)}K кг` : `${Math.round(dayKg)} кг`
-      const exCards = Object.entries(exGroups).map(([exName, sets]) => {
+      const dayKgStr = fmtVolume(dayKg)
+      const exCards = Object.entries(exGroups).map(([rawName, sets]) => {
         const validSets = sets.filter(s => s.weight > 0 || s.reps > 0 || s.time_sec > 0)
         if (!validSets.length) return null
-        const ruExName = normalizeName(exName)
+        const ruExName = exName(normalizeName(rawName))
         const setLines = validSets.map((s, i) => {
           const label = s.time_sec > 0
-            ? (s.weight > 0 ? `Подход ${i+1}: ${s.time_sec} сек × ${kgToDisplay(s.weight)} ${wUnit}` : `Подход ${i+1}: ${s.time_sec} сек`)
-            : s.weight > 0 ? `Подход ${i+1}: ${s.weight} кг × ${s.reps}` : `Подход ${i+1}: ${s.reps} повт`
+            ? (s.weight > 0 ? `${t('Подход {n}',{n:i+1})}: ${s.time_sec} ${t('сек')} × ${kgToDisplay(s.weight)} ${wUnit}` : `${t('Подход {n}',{n:i+1})}: ${s.time_sec} ${t('сек')}`)
+            : s.weight > 0 ? `${t('Подход {n}',{n:i+1})}: ${kgToDisplay(s.weight)} ${wUnit} × ${s.reps}` : `${t('Подход {n}',{n:i+1})}: ${s.reps} ${t('повт')}`
           return `<div style="padding:2px 0;color:rgba(255,255,255,0.6);font-size:11px;">${escapeHtml(label)}</div>`
         }).join('')
         return `<div style="margin-bottom:12px;"><div style="font-size:12px;font-weight:700;color:#ffffff;margin-bottom:4px;">${escapeHtml(ruExName)}</div>${setLines}</div>`
@@ -248,7 +250,7 @@ export default function App() {
         <div style="margin-bottom:24px;">
           <div style="display:flex;justify-content:space-between;align-items:baseline;padding:6px 0 4px;">
             <div style="color:#FF9F0A;font-size:13px;font-weight:700;">${dateStr}</div>
-            <div style="color:rgba(255,255,255,0.5);font-size:11px;">Итого: ${dayKgStr}</div>
+            <div style="color:rgba(255,255,255,0.5);font-size:11px;">${t('Итого:')} ${dayKgStr}</div>
           </div>
           <div style="border-bottom:1px solid rgba(255,255,255,0.1);margin-bottom:10px;"></div>
           <div style="display:table;width:100%;table-layout:fixed;">
@@ -262,24 +264,24 @@ export default function App() {
       <div style="font-family:'Helvetica Neue',Arial,sans-serif;background:#1a1a1a;color:#ffffff;padding:28px 28px 20px;min-height:100%;">
         <div style="margin-bottom:16px;">
           <div style="color:#FF9F0A;font-size:38px;font-weight:800;letter-spacing:-1px;line-height:1;">GYM BRO</div>
-          <div style="color:rgba(255,255,255,0.85);font-size:14px;font-weight:600;margin-top:6px;">Отчёт за ${periodLabel}</div>
-          <div style="color:rgba(255,255,255,0.4);font-size:11px;margin-top:2px;">Отчёт за ${genDate}</div>
+          <div style="color:rgba(255,255,255,0.85);font-size:14px;font-weight:600;margin-top:6px;">${t('Отчёт за {period}',{period:periodLabel})}</div>
+          <div style="color:rgba(255,255,255,0.4);font-size:11px;margin-top:2px;">${t('Сформирован {date}',{date:genDate})}</div>
         </div>
         <div style="border-bottom:1px solid rgba(255,255,255,0.1);margin-bottom:16px;"></div>
         <div style="margin-bottom:16px;">
-          <div style="color:#FF9F0A;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.8px;margin-bottom:8px;">Статистика</div>
-          <div style="font-size:12px;margin-bottom:4px;color:rgba(255,255,255,0.8);">Всего тренировок: <b style="color:#ffffff;">${workoutDatesAll.length}</b></div>
-          <div style="font-size:12px;color:rgba(255,255,255,0.8);">Поднято за период: <b style="color:#ffffff;">${totalKgK} кг</b></div>
+          <div style="color:#FF9F0A;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.8px;margin-bottom:8px;">${t('Статистика')}</div>
+          <div style="font-size:12px;margin-bottom:4px;color:rgba(255,255,255,0.8);">${t('Всего тренировок:')} <b style="color:#ffffff;">${workoutDatesAll.length}</b></div>
+          <div style="font-size:12px;color:rgba(255,255,255,0.8);">${t('Поднято за период:')} <b style="color:#ffffff;">${totalVol}</b></div>
         </div>
         <div style="border-bottom:1px solid rgba(255,255,255,0.1);margin-bottom:16px;"></div>
-        <div style="color:#FF9F0A;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.8px;margin-bottom:14px;">Тренировки</div>
+        <div style="color:#FF9F0A;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.8px;margin-bottom:14px;">${t('Тренировки')}</div>
         ${workoutRows}
         <div style="border-top:1px solid rgba(255,255,255,0.1);margin-top:20px;padding-top:8px;text-align:center;color:rgba(255,255,255,0.25);font-size:10px;">
-          Gym BRO — Твой личный тренировочный журнал
+          ${t('Gym BRO — Твой личный тренировочный журнал')}
         </div>
       </div>`
 
-    const fileMonth = now.toLocaleDateString('ru', { month: 'long' }).replace(' ', '_')
+    const fileMonth = now.toLocaleDateString(locale(), { month: 'long' }).replace(' ', '_')
     const fileYear = now.getFullYear()
 
     // html2pdf (~1 МБ) грузится только при экспорте, а не при открытии приложения
@@ -615,7 +617,7 @@ export default function App() {
         e1Reps: e1best?.reps || 0,
         metric,
         date,
-        label: new Date(date+'T12:00:00').toLocaleDateString('ru',{day:'numeric',month:'short'}),
+        label: new Date(date+'T12:00:00').toLocaleDateString(locale(),{day:'numeric',month:'short'}),
         bestWeight: best.weight || 0,
         bestReps: best.reps || 0,
         bestTimeSec: best.time_sec || 0,
@@ -888,14 +890,14 @@ export default function App() {
   }
 
   const deleteWorkout = async (workoutId) => {
-    if (!window.confirm('Удалить это упражнение из тренировки?')) return
+    if (!window.confirm(t('Удалить это упражнение из тренировки?'))) return
     await supabase.from('sets').delete().eq('workout_id', workoutId)
     await supabase.from('workouts').delete().eq('id', workoutId)
     setSaved(p => !p)
   }
 
   const deleteDay = async (date, workouts) => {
-    if (!window.confirm(`Удалить тренировку за ${date}?`)) return
+    if (!window.confirm(t('Удалить тренировку за {date}?',{date}))) return
     const ids = workouts.map(w => w.id)
     for (const id of ids) {
       await supabase.from('sets').delete().eq('workout_id', id)
@@ -924,13 +926,13 @@ export default function App() {
   const filtered = useMemo(() => {
     const q = modalSearch.toLowerCase().trim()
     if (!q) return exercises
-    return exercises.filter(e => e.name.toLowerCase().includes(q))
-  }, [exercises, modalSearch])
+    return exercises.filter(e => e.name.toLowerCase().includes(q) || exName(e.name).toLowerCase().includes(q))
+  }, [exercises, modalSearch, settings.language]) // eslint-disable-line react-hooks/exhaustive-deps
   const favSet = useMemo(() => new Set(favorites), [favorites])
   const favFiltered = useMemo(() => filtered.filter(e => favSet.has(e.name)), [filtered, favSet])
   const restFiltered = useMemo(() => filtered.filter(e => !favSet.has(e.name)), [filtered, favSet])
   const grouped = history.reduce((acc,w) => { if(!acc[w.workout_date]) acc[w.workout_date]=[]; acc[w.workout_date].push(w); return acc }, {})
-  const calMonthName = new Date(calYear,calMonth).toLocaleDateString('ru',{month:'long',year:'numeric'})
+  const calMonthName = new Date(calYear,calMonth).toLocaleDateString(locale(),{month:'long',year:'numeric'})
   const firstDow = new Date(calYear,calMonth,1).getDay()
   const offset = firstDow === 0 ? 6 : firstDow - 1
   const daysInMonth = new Date(calYear,calMonth+1,0).getDate()
@@ -940,11 +942,13 @@ export default function App() {
   const isFav = favorites.includes(selectedEx)
 
   // kg/lbs helpers
-  const kgToDisplay = (kg) => settings.units === 'lbs' ? Math.round(kg * 2.20462 * 10) / 10 : kg
-  const wUnit = settings.units === 'lbs' ? 'lbs' : 'кг'
+  const kgToDisplay = (kg) => num(dispW(kg))
+  // Set as a short chip: "100×5", "12 повт", "60s×10кг"
+  const setChip = (s) => s.time_sec>0 ? (s.weight>0 ? `${s.time_sec}s×${kgToDisplay(s.weight)}${wUnit}` : `${s.time_sec}s`) : (s.weight>0 ? `${kgToDisplay(s.weight)}×${s.reps}` : `${s.reps} ${t('повт')}`)
+  const wUnit = settings.units === 'lbs' ? 'lbs' : t('кг')
   // "100 кг × 5 (≈117 кг)", "12 повт", "90 сек"
-  const fmtRecordSet = (metric, s, value) => metric === 'time' ? `${s.time_sec} сек`
-    : metric === 'reps' ? `${s.reps} повт${s.weight > 0 ? ` +${kgToDisplay(s.weight)} ${wUnit}` : ''}`
+  const fmtRecordSet = (metric, s, value) => metric === 'time' ? `${s.time_sec} ${t('сек')}`
+    : metric === 'reps' ? `${s.reps} ${t('повт')}${s.weight > 0 ? ` +${kgToDisplay(s.weight)} ${wUnit}` : ''}`
     : `${kgToDisplay(s.weight)} ${wUnit} × ${s.reps}${s.reps > 1 ? ` (≈${kgToDisplay(Math.round(value))} ${wUnit})` : ''}`
 
   // Theme helpers
@@ -988,21 +992,21 @@ export default function App() {
       <div className="auth-card">
         <img src="/images/gymbro_icon.png" alt="logo" className="auth-logo" onError={e=>{e.target.style.display='none'}}/>
         <div className="auth-title">Gym BRO</div>
-        <div className="auth-sub">{authMode==='login' ? 'Войди в свой аккаунт' : 'Создай новый аккаунт'}</div>
+        <div className="auth-sub">{authMode==='login' ? t('Войди в свой аккаунт') : t('Создай новый аккаунт')}</div>
         {authError && <div className="auth-err">{authError}</div>}
         <div className="auth-inp-lbl">Email</div>
-        <input className="auth-inp" type="email" placeholder="твой@email.com" value={authEmail}
+        <input className="auth-inp" type="email" placeholder={t('твой@email.com')} value={authEmail}
           onChange={e=>setAuthEmail(e.target.value)} onKeyDown={e=>e.key==='Enter'&&handleAuth()}/>
-        <div className="auth-inp-lbl">Пароль</div>
-        <input className="auth-inp" type="password" placeholder="минимум 6 символов" value={authPassword}
+        <div className="auth-inp-lbl">{t('Пароль')}</div>
+        <input className="auth-inp" type="password" placeholder={t('минимум 6 символов')} value={authPassword}
           onChange={e=>setAuthPassword(e.target.value)} onKeyDown={e=>e.key==='Enter'&&handleAuth()}/>
         <button className="auth-btn" onClick={handleAuth} disabled={authLoading || !authEmail || !authPassword}>
-          {authLoading ? '...' : authMode==='login' ? 'Войти' : 'Зарегистрироваться'}
+          {authLoading ? '...' : authMode==='login' ? t('Войти') : t('Зарегистрироваться')}
         </button>
         <div className="auth-switch">
-          {authMode==='login' ? 'Нет аккаунта?' : 'Уже есть аккаунт?'}
+          {authMode==='login' ? t('Нет аккаунта?') : t('Уже есть аккаунт?')}
           <button onClick={()=>{setAuthMode(m=>m==='login'?'register':'login');setAuthError('')}}>
-            {authMode==='login' ? 'Регистрация' : 'Войти'}
+            {authMode==='login' ? t('Регистрация') : t('Войти')}
           </button>
         </div>
       </div>
@@ -1016,13 +1020,13 @@ export default function App() {
           <div className="onboard-card">
             <span className="onboard-emoji">💪</span>
             <div className="onboard-title">Gym BRO</div>
-            <div className="onboard-sub">Твой личный дневник тренировок. Записывай подходы, следи за прогрессом, бей рекорды.</div>
+            <div className="onboard-sub">{t('Твой личный дневник тренировок. Записывай подходы, следи за прогрессом, бей рекорды.')}</div>
             <div className="onboard-features">
-              {[['📝','Записывай тренировки за секунды'],['📈','Следи за личными рекордами'],['🔥','Не теряй серию тренировок'],['📅','Смотри историю в календаре']].map(([icon,text]) => (
+              {[['📝',t('Записывай тренировки за секунды')],['📈',t('Следи за личными рекордами')],['🔥',t('Не теряй серию тренировок')],['📅',t('Смотри историю в календаре')]].map(([icon,text]) => (
                 <div key={text} className="onboard-feature"><span style={{fontSize:20,width:36,textAlign:'center'}}>{icon}</span><span>{text}</span></div>
               ))}
             </div>
-            <button className="onboard-btn" onClick={() => { if(user) localStorage.setItem('gbOnboarded_'+user.id,'1'); setShowOnboard(false) }}>Начать тренироваться 🚀</button>
+            <button className="onboard-btn" onClick={() => { if(user) localStorage.setItem('gbOnboarded_'+user.id,'1'); setShowOnboard(false) }}>{t('Начать тренироваться 🚀')}</button>
           </div>
         </div>
       )}
@@ -1033,7 +1037,7 @@ export default function App() {
           <h1>Gym BRO</h1>
         </div>
         <div style={{display:'flex',alignItems:'center',gap:8}}>
-          <button onClick={() => setShowWeightModal(true)} aria-label="Вес тела" style={{
+          <button onClick={() => setShowWeightModal(true)} aria-label={t('Вес тела')} style={{
             background: showWeightModal ? 'rgba(255,159,10,0.08)' : thm.btnBg,
             border: showWeightModal ? '1.5px solid #FF9F0A' : `1px solid ${thm.btnBorder}`,
             borderRadius:10,padding:'0',width:36,height:36,cursor:'pointer',color:thm.text70,
@@ -1046,7 +1050,7 @@ export default function App() {
             color: (timerSecs!==null||stopwatchRunning||timerMode==='stopwatch') ? 'rgba(255,255,255,0.8)' : thm.text70,
             fontSize:18,display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0
           }}>⏱</button>
-          {(streak >= 1 || achievements) && <button onClick={openStreakModal} aria-label="Достижения" style={{position:'relative',
+          {(streak >= 1 || achievements) && <button onClick={openStreakModal} aria-label={t('Достижения')} style={{position:'relative',
             background:'rgba(255,100,0,0.12)',border:'1px solid rgba(255,100,0,0.25)',
             borderRadius:10,padding:'0 10px',height:36,cursor:'pointer',
             fontSize:13,fontWeight:700,color:'#FF6400',display:'flex',alignItems:'center',flexShrink:0,whiteSpace:'nowrap'
@@ -1076,8 +1080,8 @@ export default function App() {
           {(timerSecs !== null || stopwatchRunning || timerMode === 'stopwatch') && (
             <div style={{background: timerMode==='stopwatch' ? 'linear-gradient(135deg,rgba(255,159,10,0.1),rgba(255,159,10,0.05))' : 'linear-gradient(135deg,rgba(255,159,10,0.1),rgba(255,159,10,0.05))',border: timerMode==='stopwatch' ? '1px solid rgba(255,159,10,0.2)' : '1px solid rgba(255,159,10,0.2)',borderRadius:20,padding:'16px 18px',marginBottom:16}}>
               <div style={{display:'flex',gap:8,marginBottom:12}}>
-                <button onClick={()=>{setTimerMode('countdown');setStopwatchRunning(false);setStopwatchSecs(0);if(timerSecs===null){setTimerSecs(timerDuration);setTimerPaused(true)}}} style={{flex:1,padding:'7px 0',borderRadius:10,border:'none',cursor:'pointer',fontSize:13,fontWeight:700,background:timerMode==='countdown'?'rgba(255,159,10,0.2)':'rgba(255,255,255,0.06)',color:timerMode==='countdown'?'#FF9F0A':'rgba(255,255,255,0.4)'}}>⏱ Таймер</button>
-                <button onClick={()=>{setTimerMode('stopwatch');setTimerSecs(null);setTimerPaused(false)}} style={{flex:1,padding:'7px 0',borderRadius:10,border:'none',cursor:'pointer',fontSize:13,fontWeight:700,background:timerMode==='stopwatch'?'rgba(255,159,10,0.2)':'rgba(255,255,255,0.06)',color:timerMode==='stopwatch'?'#FF9F0A':'rgba(255,255,255,0.4)'}}>⏲ Секундомер</button>
+                <button onClick={()=>{setTimerMode('countdown');setStopwatchRunning(false);setStopwatchSecs(0);if(timerSecs===null){setTimerSecs(timerDuration);setTimerPaused(true)}}} style={{flex:1,padding:'7px 0',borderRadius:10,border:'none',cursor:'pointer',fontSize:13,fontWeight:700,background:timerMode==='countdown'?'rgba(255,159,10,0.2)':'rgba(255,255,255,0.06)',color:timerMode==='countdown'?'#FF9F0A':'rgba(255,255,255,0.4)'}}>{t('⏱ Таймер')}</button>
+                <button onClick={()=>{setTimerMode('stopwatch');setTimerSecs(null);setTimerPaused(false)}} style={{flex:1,padding:'7px 0',borderRadius:10,border:'none',cursor:'pointer',fontSize:13,fontWeight:700,background:timerMode==='stopwatch'?'rgba(255,159,10,0.2)':'rgba(255,255,255,0.06)',color:timerMode==='stopwatch'?'#FF9F0A':'rgba(255,255,255,0.4)'}}>{t('⏲ Секундомер')}</button>
                 <button onClick={()=>{setTimerSecs(null);setTimerPaused(false);setStopwatchRunning(false);setStopwatchSecs(0);setTimerMode('countdown')}} style={{width:32,height:32,borderRadius:10,border:'none',cursor:'pointer',background:'rgba(255,255,255,0.06)',color:'rgba(255,255,255,0.35)',fontSize:13,display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0}}>✕</button>
               </div>
               {/* Both modes are stacked in one grid cell so the panel keeps the same height when switching */}
@@ -1087,17 +1091,17 @@ export default function App() {
                   <span style={{fontSize:48,fontWeight:800,color:timerPaused?'rgba(255,159,10,0.55)':'#FF9F0A',fontVariantNumeric:'tabular-nums',letterSpacing:'-2px'}}>
                     {`${Math.floor((timerSecs||0)/60)}:${String((timerSecs||0)%60).padStart(2,'0')}`}
                   </span>
-                  {timerPaused && <span style={{fontSize:13,color:'rgba(255,159,10,0.5)',fontWeight:600}}>пауза</span>}
+                  {timerPaused && <span style={{fontSize:13,color:'rgba(255,159,10,0.5)',fontWeight:600}}>{t('пауза')}</span>}
                 </div>
                 <div style={{display:'flex',gap:8,marginBottom:12}}>
                   <button onClick={()=>setTimerPaused(p=>!p)} style={{flex:1,padding:'9px 0',borderRadius:12,border:'none',cursor:'pointer',fontWeight:700,fontSize:14,background:timerPaused?'#FF9F0A':'rgba(255,159,10,0.15)',color:timerPaused?'#000':'#FF9F0A'}}>
-                    {timerPaused ? '▶ Продолжить' : '⏸ Пауза'}
+                    {timerPaused ? t('▶ Продолжить') : t('⏸ Пауза')}
                   </button>
-                  <button onClick={()=>{setTimerSecs(timerDuration);setTimerPaused(true)}} style={{flex:1,padding:'9px 0',borderRadius:12,border:'none',cursor:'pointer',fontWeight:700,fontSize:14,background:'rgba(255,255,255,0.07)',color:'rgba(255,255,255,0.7)'}}>↺ Заново</button>
+                  <button onClick={()=>{setTimerSecs(timerDuration);setTimerPaused(true)}} style={{flex:1,padding:'9px 0',borderRadius:12,border:'none',cursor:'pointer',fontWeight:700,fontSize:14,background:'rgba(255,255,255,0.07)',color:'rgba(255,255,255,0.7)'}}>{t('↺ Заново')}</button>
 
                 </div>
-                <div style={{fontSize:11,opacity:0.35,marginBottom:6,fontWeight:600,textTransform:'uppercase',letterSpacing:'0.5px'}}>Изменить время</div>
-                <DropdownPicker options={Array.from({length:50},(_,i)=>(i+1)*5)} value={timerDuration} onChange={v=>{setTimerDuration(v);setTimerSecs(v);setTimerPaused(true)}} unit="сек" label=""/>
+                <div style={{fontSize:11,opacity:0.35,marginBottom:6,fontWeight:600,textTransform:'uppercase',letterSpacing:'0.5px'}}>{t('Изменить время')}</div>
+                <DropdownPicker options={Array.from({length:50},(_,i)=>(i+1)*5)} value={timerDuration} onChange={v=>{setTimerDuration(v);setTimerSecs(v);setTimerPaused(true)}} unit={t('сек')} label=""/>
               </div>
               <div style={{gridArea:'1/1',visibility:timerMode==='stopwatch'?'visible':'hidden'}} aria-hidden={timerMode!=='stopwatch'}>
                 <div style={{display:'flex',alignItems:'baseline',gap:8,marginBottom:12}}>
@@ -1107,9 +1111,9 @@ export default function App() {
                 </div>
                 <div style={{display:'flex',gap:8,marginBottom:4}}>
                   <button onClick={()=>setStopwatchRunning(r=>!r)} style={{flex:1,padding:'9px 0',borderRadius:12,border:'none',cursor:'pointer',fontWeight:700,fontSize:14,background:stopwatchRunning?'rgba(255,59,48,0.15)':'#FF9F0A',color:stopwatchRunning?'#FF453A':'#000'}}>
-                    {stopwatchRunning ? '⏸ Пауза' : '▶ Старт'}
+                    {stopwatchRunning ? t('⏸ Пауза') : t('▶ Старт')}
                   </button>
-                  <button onClick={()=>{setStopwatchSecs(0);setStopwatchRunning(false)}} style={{flex:1,padding:'9px 0',borderRadius:12,border:'none',cursor:'pointer',fontWeight:700,fontSize:14,background:'rgba(255,255,255,0.07)',color:'rgba(255,255,255,0.7)'}}>↺ Сброс</button>
+                  <button onClick={()=>{setStopwatchSecs(0);setStopwatchRunning(false)}} style={{flex:1,padding:'9px 0',borderRadius:12,border:'none',cursor:'pointer',fontWeight:700,fontSize:14,background:'rgba(255,255,255,0.07)',color:'rgba(255,255,255,0.7)'}}>{t('↺ Сброс')}</button>
 
                 </div>
               </div>
@@ -1121,9 +1125,9 @@ export default function App() {
             <div style={{display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',flex:1,paddingTop:'20vh',paddingBottom:40,gap:44}}>
               <div style={{textAlign:'center'}}>
                 <div style={{fontSize:12,color:thm.text28,fontWeight:600,textTransform:'uppercase',letterSpacing:'1.5px',marginBottom:14}}>
-                  {new Date().toLocaleDateString('ru',{weekday:'long',day:'numeric',month:'long'})}
+                  {new Date().toLocaleDateString(locale(),{weekday:'long',day:'numeric',month:'long'})}
                 </div>
-                <div style={{fontSize:26,fontWeight:700,color:thm.text70,letterSpacing:'-0.3px'}}>Тренировка</div>
+                <div style={{fontSize:26,fontWeight:700,color:thm.text70,letterSpacing:'-0.3px'}}>{t('Тренировка')}</div>
               </div>
               <div style={{position:'relative',display:'flex',alignItems:'center',justifyContent:'center'}}>
                 <style>{`
@@ -1147,20 +1151,20 @@ export default function App() {
                   onTouchStart={e=>e.currentTarget.style.transform='scale(0.95)'}
                   onTouchEnd={e=>e.currentTarget.style.transform='scale(1)'}
                 >
-                  <span style={{fontSize:13,fontWeight:700,color:thm.text70,letterSpacing:'3px',textTransform:'uppercase'}}>{workoutExercises.length>0?'ПРОДОЛЖИТЬ':'НАЧАТЬ'}</span>
+                  <span style={{fontSize:13,fontWeight:700,color:thm.text70,letterSpacing:'3px',textTransform:'uppercase'}}>{workoutExercises.length>0?t('ПРОДОЛЖИТЬ'):t('НАЧАТЬ')}</span>
                 </button>
               </div>
             </div>
           ) : (
             <>
               <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:16}}>
-                <button onClick={()=>{setWorkoutStarted(false);setSaved(false)}} className="back-btn">← Назад</button>
+                <button onClick={()=>{setWorkoutStarted(false);setSaved(false)}} className="back-btn">{t('← Назад')}</button>
                 {/* Дата тренировки — тап открывает выбор даты */}
                 <label style={{position:'relative',fontSize:13,color:thm.text70,fontWeight:600,padding:'6px 10px',borderRadius:10,background:thm.btnBg,cursor:'pointer',display:'flex',alignItems:'center',gap:6}}>
-                  📅 {new Date(workoutDate+'T12:00:00').toLocaleDateString('ru',{day:'numeric',month:'long'})}
+                  📅 {new Date(workoutDate+'T12:00:00').toLocaleDateString(locale(),{day:'numeric',month:'long'})}
                   <span style={{fontSize:11,opacity:0.6}}>▾</span>
                   <input type="date" value={workoutDate} max={localDateStr(new Date())} onChange={e=>e.target.value && setWorkoutDate(e.target.value)}
-                    aria-label="Дата тренировки"
+                    aria-label={t('Дата тренировки')}
                     style={{position:'absolute',inset:0,width:'100%',height:'100%',opacity:0,cursor:'pointer',colorScheme:'dark'}}/>
                 </label>
               </div>
@@ -1179,10 +1183,10 @@ export default function App() {
                         : <div style={{width:36,height:36,borderRadius:8,background:thm.btnBg,display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0,fontSize:18}}>🏋️</div>
                       }
                       <div style={{flex:1}}>
-                        <span style={{fontSize:15,fontWeight:700,color:thm.text85}}>{ex.name}</span>
+                        <span style={{fontSize:15,fontWeight:700,color:thm.text85}}>{exName(ex.name)}</span>
                         {ex.grip && ex.grip !== getDefaultVariant(ex.name) && <span style={{fontSize:11,color:'rgba(255,159,10,0.8)',marginLeft:6,fontWeight:600}}>({ex.grip})</span>}
                       </div>
-                      <span style={{fontSize:12,color:thm.text30,marginRight:4}}>{ex.sets.filter(s=>isRepsType(exType2)?s.reps>0:(s.weight>0&&s.reps>0)).length} подх.</span>
+                      <span style={{fontSize:12,color:thm.text30,marginRight:4}}>{ex.sets.filter(s=>isRepsType(exType2)?s.reps>0:(s.weight>0&&s.reps>0)).length} {t('подх.')}</span>
                       <button onClick={e=>{e.stopPropagation();setWorkoutExercises(prev=>prev.filter((_,i)=>i!==exIdx))}}
                         style={{background:'rgba(255,59,48,0.1)',border:'none',borderRadius:8,padding:'4px 8px',color:'#FF453A',cursor:'pointer',fontSize:12,fontWeight:700,marginRight:4}}>✕</button>
                       <span style={{color:thm.text40,fontSize:20,display:'inline-block',transform:isOpen?'rotate(180deg)':'none',transition:'transform 0.2s',padding:'2px 8px',minWidth:32,textAlign:'center'}}>▼</span>
@@ -1191,24 +1195,24 @@ export default function App() {
                       <div style={{padding:'0 14px 14px'}}>
                         {ex.lastSession && (
                           <div style={{fontSize:12,color:thm.text35,marginBottom:10,padding:'7px 10px',background:thm.card2,borderRadius:8}}>
-                            💡 Прошлый раз: {ex.lastSession.sets?.sort((a,b)=>a.set_no-b.set_no).slice(-3).map(s=>s.time_sec>0?(s.weight>0?`${s.time_sec}s×${kgToDisplay(s.weight)}${wUnit}`:`${s.time_sec}s`):(s.weight>0?`${kgToDisplay(s.weight)}×${s.reps}`:`${s.reps} повт`)).join(' · ')}
+                            💡 {t('Прошлый раз:')} {ex.lastSession.sets?.sort((a,b)=>a.set_no-b.set_no).slice(-3).map(setChip).join(' · ')}
                           </div>
                         )}
                         {rec.pr && (
                           <div style={{fontSize:12,color:thm.text35,marginTop:ex.lastSession?-4:0,marginBottom:10,padding:'0 10px'}}>
-                            🏆 Рекорд: {fmtRecordSet(rec.metric, rec.pr, rec.pr.value)}
+                            🏆 {t('Рекорд:')} {fmtRecordSet(rec.metric, rec.pr, rec.pr.value)}
                           </div>
                         )}
                         {ex.grip !== null && ex.grip !== undefined && (
                           <div style={{marginBottom:12}}>
-                            <div style={{fontSize:11,opacity:0.4,textTransform:'uppercase',letterSpacing:'0.5px',marginBottom:6}}>{VARIANT_EXERCISES.has(ex.name) ? 'Вариация' : 'Хват'}</div>
+                            <div style={{fontSize:11,opacity:0.4,textTransform:'uppercase',letterSpacing:'0.5px',marginBottom:6}}>{VARIANT_EXERCISES.has(ex.name) ? t('Вариация') : t('Хват')}</div>
                             <div style={{display:'flex',gap:6,flexWrap:'wrap'}}>
                               {getVariantOptions(ex.name).map(g => (
                                 <button key={g} onClick={()=>setWorkoutExercises(prev=>prev.map((e,i)=>i!==exIdx?e:{...e,grip:g}))}
                                   style={{padding:'5px 12px',borderRadius:99,fontSize:12,fontWeight:600,border:'none',cursor:'pointer',
                                     background: ex.grip===g ? '#FF9F0A' : thm.btnBg,
                                     color: ex.grip===g ? '#000' : 'rgba(255,255,255,0.6)'}}>
-                                  {g}
+                                  {variantName(g)}
                                 </button>
                               ))}
                             </div>
@@ -1222,35 +1226,35 @@ export default function App() {
                               {ex.sets.map((s,si) => (
                                 <div key={si} className="set-row">
                                   {beats[si]
-                                    ? <span className="set-num" title="Новый рекорд" style={{opacity:1,fontSize:14}}>🏆</span>
+                                    ? <span className="set-num" title={t('Новый рекорд')} style={{opacity:1,fontSize:14}}>🏆</span>
                                     : <span className="set-num">{si+1}</span>}
                                   {exType2 === 'timed' ? (
                                     <>
-                                      <DropdownPicker options={TIME_OPTIONS} value={s.weight} onChange={v=>setWorkoutExercises(prev=>prev.map((e,i)=>i!==exIdx?e:{...e,sets:e.sets.map((ss,j)=>j!==si?ss:{...ss,weight:v})}))} unit="s" label={`Подход ${si+1}`}/>
+                                      <DropdownPicker options={TIME_OPTIONS} value={s.weight} onChange={v=>setWorkoutExercises(prev=>prev.map((e,i)=>i!==exIdx?e:{...e,sets:e.sets.map((ss,j)=>j!==si?ss:{...ss,weight:v})}))} unit="s" label={t('Подход {n}',{n:si+1})}/>
                                       <span className="set-sep">×</span>
                                       <div style={{display:'flex',flexDirection:'column',flex:1}}>
-                                        <div className="dpicker-label">Вес (кг)</div>
+                                        <div className="dpicker-label">{t('Вес')} ({wUnit})</div>
                                         <div style={{display:'flex',alignItems:'center',gap:6,height:51}}>
-                                          <button onClick={()=>setWorkoutExercises(prev=>prev.map((e,i)=>i!==exIdx?e:{...e,sets:e.sets.map((ss,j)=>j!==si?ss:{...ss,timedWeight:Math.max(0,(ss.timedWeight||0)-5)})}))} style={{width:40,height:40,borderRadius:10,border:'1.5px solid rgba(255,255,255,0.1)',background:'rgba(255,255,255,0.06)',color:'rgba(255,255,255,0.7)',fontSize:20,cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0}}>−</button>
-                                          <span style={{flex:1,textAlign:'center',fontSize:17,fontWeight:600,color:(s.timedWeight||0)>0?'#fff':'rgba(255,255,255,0.3)'}}>{s.timedWeight||0}</span>
-                                          <button onClick={()=>setWorkoutExercises(prev=>prev.map((e,i)=>i!==exIdx?e:{...e,sets:e.sets.map((ss,j)=>j!==si?ss:{...ss,timedWeight:(ss.timedWeight||0)+5})}))} style={{width:40,height:40,borderRadius:10,border:'1.5px solid rgba(255,255,255,0.1)',background:'rgba(255,255,255,0.06)',color:'rgba(255,255,255,0.7)',fontSize:20,cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0}}>+</button>
+                                          <button onClick={()=>setWorkoutExercises(prev=>prev.map((e,i)=>i!==exIdx?e:{...e,sets:e.sets.map((ss,j)=>j!==si?ss:{...ss,timedWeight:Math.max(0,toKg(dispW(ss.timedWeight||0)-5))})}))} style={{width:40,height:40,borderRadius:10,border:'1.5px solid rgba(255,255,255,0.1)',background:'rgba(255,255,255,0.06)',color:'rgba(255,255,255,0.7)',fontSize:20,cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0}}>−</button>
+                                          <span style={{flex:1,textAlign:'center',fontSize:17,fontWeight:600,color:(s.timedWeight||0)>0?'#fff':'rgba(255,255,255,0.3)'}}>{num(dispW(s.timedWeight||0))}</span>
+                                          <button onClick={()=>setWorkoutExercises(prev=>prev.map((e,i)=>i!==exIdx?e:{...e,sets:e.sets.map((ss,j)=>j!==si?ss:{...ss,timedWeight:toKg(dispW(ss.timedWeight||0)+5)})}))} style={{width:40,height:40,borderRadius:10,border:'1.5px solid rgba(255,255,255,0.1)',background:'rgba(255,255,255,0.06)',color:'rgba(255,255,255,0.7)',fontSize:20,cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0}}>+</button>
                                         </div>
                                       </div>
                                     </>
                                   ) : exType2 === 'bodyweight' ? (
-                                    <DropdownPicker options={REPS_OPTIONS} value={s.reps} onChange={v=>setWorkoutExercises(prev=>prev.map((e,i)=>i!==exIdx?e:{...e,sets:e.sets.map((ss,j)=>j!==si?ss:{...ss,weight:0,reps:v})}))} unit="повт" label={`Подход ${si+1} — Повт`}/>
+                                    <DropdownPicker options={REPS_OPTIONS} value={s.reps} onChange={v=>setWorkoutExercises(prev=>prev.map((e,i)=>i!==exIdx?e:{...e,sets:e.sets.map((ss,j)=>j!==si?ss:{...ss,weight:0,reps:v})}))} unit={t('повт')} label={t('Подход {n} — Повт',{n:si+1})}/>
                                   ) : (
                                     <>
-                                      <DropdownPicker options={wOpts} value={s.weight} onChange={v=>setWorkoutExercises(prev=>prev.map((e,i)=>i!==exIdx?e:{...e,sets:e.sets.map((ss,j)=>j!==si?ss:{...ss,weight:v})}))} unit={settings.units==='lbs'?'':wUnit} labelFn={settings.units==='lbs'?(v=>`${kgToDisplay(v)} lbs`):null} label={exType2==='bodyweight_plus' ? `Подход ${si+1} — +вес` : `Подход ${si+1} — Вес`}/>
+                                      <DropdownPicker options={weightOptions(wOpts)} value={dispW(s.weight)} onChange={v=>setWorkoutExercises(prev=>prev.map((e,i)=>i!==exIdx?e:{...e,sets:e.sets.map((ss,j)=>j!==si?ss:{...ss,weight:toKg(v)})}))} unit={wUnit} label={exType2==='bodyweight_plus' ? t('Подход {n} — +вес',{n:si+1}) : t('Подход {n} — Вес',{n:si+1})}/>
                                       <span className="set-sep">×</span>
-                                      <DropdownPicker options={REPS_OPTIONS} value={s.reps} onChange={v=>setWorkoutExercises(prev=>prev.map((e,i)=>i!==exIdx?e:{...e,sets:e.sets.map((ss,j)=>j!==si?ss:{...ss,reps:v})}))} unit="повт" label={`Подход ${si+1} — Повт`}/>
+                                      <DropdownPicker options={REPS_OPTIONS} value={s.reps} onChange={v=>setWorkoutExercises(prev=>prev.map((e,i)=>i!==exIdx?e:{...e,sets:e.sets.map((ss,j)=>j!==si?ss:{...ss,reps:v})}))} unit={t('повт')} label={t('Подход {n} — Повт',{n:si+1})}/>
                                     </>
                                   )}
                                 </div>
                               ))}
                               <div className="set-btns" style={{marginTop:4}}>
-                                <button className="set-btn" onClick={()=>setWorkoutExercises(prev=>prev.map((e,i)=>i!==exIdx?e:{...e,sets:[...e.sets,{weight:e.sets[e.sets.length-1]?.weight||0,reps:e.sets[e.sets.length-1]?.reps||0,timedWeight:e.sets[e.sets.length-1]?.timedWeight||0}]}))}>➕ Подход</button>
-                                <button className="set-btn" onClick={()=>setWorkoutExercises(prev=>prev.map((e,i)=>i!==exIdx?e:{...e,sets:e.sets.length>1?e.sets.slice(0,-1):e.sets}))} style={{opacity:ex.sets.length<=1?0.35:1}}>➖ Убрать</button>
+                                <button className="set-btn" onClick={()=>setWorkoutExercises(prev=>prev.map((e,i)=>i!==exIdx?e:{...e,sets:[...e.sets,{weight:e.sets[e.sets.length-1]?.weight||0,reps:e.sets[e.sets.length-1]?.reps||0,timedWeight:e.sets[e.sets.length-1]?.timedWeight||0}]}))}>{t('➕ Подход')}</button>
+                                <button className="set-btn" onClick={()=>setWorkoutExercises(prev=>prev.map((e,i)=>i!==exIdx?e:{...e,sets:e.sets.length>1?e.sets.slice(0,-1):e.sets}))} style={{opacity:ex.sets.length<=1?0.35:1}}>{t('➖ Убрать')}</button>
                               </div>
                             </>
                           )
@@ -1263,8 +1267,8 @@ export default function App() {
               <button onClick={()=>setShowExModal(true)} style={{width:'100%',marginBottom:10,padding:'16px 20px',borderRadius:16,border:'1px solid rgba(255,255,255,0.09)',background:'rgba(255,255,255,0.06)',cursor:'pointer',display:'flex',alignItems:'center',gap:14,textAlign:'left'}}>
                 <div style={{width:44,height:44,borderRadius:12,background:'rgba(255,255,255,0.08)',display:'flex',alignItems:'center',justifyContent:'center',fontSize:20,flexShrink:0}}>＋</div>
                 <div style={{flex:1}}>
-                  <div style={{fontSize:16,fontWeight:600,color:'#fff',marginBottom:4}}>Добавить упражнение</div>
-                  <div style={{fontSize:12,color:'rgba(255,255,255,0.35)',marginTop:4}}>Выбрать вручную</div>
+                  <div style={{fontSize:16,fontWeight:600,color:'#fff',marginBottom:4}}>{t('Добавить упражнение')}</div>
+                  <div style={{fontSize:12,color:'rgba(255,255,255,0.35)',marginTop:4}}>{t('Выбрать вручную')}</div>
                 </div>
                 <span style={{color:'rgba(255,255,255,0.2)',fontSize:18}}>›</span>
               </button>
@@ -1278,10 +1282,10 @@ export default function App() {
                   return (
                     <div key={plan.id} onClick={()=>setShowDayPreview({plan, dayIdx, dayDef})} style={{background:'rgba(255,255,255,0.06)',borderRadius:14,border:'1px solid rgba(255,255,255,0.1)',padding:'12px 14px',marginBottom:8,cursor:'pointer'}}>
                       <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:4}}>
-                        <span style={{fontSize:15,fontWeight:700,color:'rgba(255,255,255,0.9)'}}>{PLAN_ICONS[plan.plan_type]} {PLAN_NAMES[plan.plan_type]}</span>
-                        <span style={{fontSize:11,color:'rgba(255,255,255,0.35)',fontWeight:600}}>{plan.slot===1?'основной':'доп.'}</span>
+                        <span style={{fontSize:15,fontWeight:700,color:'rgba(255,255,255,0.9)'}}>{PLAN_ICONS[plan.plan_type]} {t(PLAN_NAMES[plan.plan_type])}</span>
+                        <span style={{fontSize:11,color:'rgba(255,255,255,0.35)',fontWeight:600}}>{plan.slot===1?t('основной'):t('доп.')}</span>
                       </div>
-                      <div style={{fontSize:13,color:'rgba(255,255,255,0.5)'}}>{dayDef?.label} · Неделя {week} · тренировка {plan.workout_count+1}</div>
+                      <div style={{fontSize:13,color:'rgba(255,255,255,0.5)'}}>{t(dayDef?.label)} · {t('Неделя')} {week} · {t('тренировка')} {plan.workout_count+1}</div>
                     </div>
                   )
                 })}
@@ -1289,20 +1293,20 @@ export default function App() {
                   <button onClick={()=>setShowPlanModal(true)} style={{width:'100%',marginBottom:10,padding:'16px 20px',borderRadius:16,border:'1px solid rgba(255,255,255,0.09)',background:'rgba(255,255,255,0.06)',cursor:'pointer',display:'flex',alignItems:'center',gap:14,textAlign:'left'}}>
                     <div style={{width:44,height:44,borderRadius:12,background:'rgba(255,159,10,0.15)',display:'flex',alignItems:'center',justifyContent:'center',fontSize:20,flexShrink:0}}>📋</div>
                     <div style={{flex:1}}>
-                      <div style={{fontSize:16,fontWeight:600,color:'#fff',marginBottom:4}}>Выбрать план тренировок</div>
-                      <div style={{fontSize:12,color:'rgba(255,255,255,0.35)',marginTop:4}}>Тренируйся по программе</div>
+                      <div style={{fontSize:16,fontWeight:600,color:'#fff',marginBottom:4}}>{t('Выбрать план тренировок')}</div>
+                      <div style={{fontSize:12,color:'rgba(255,255,255,0.35)',marginTop:4}}>{t('Тренируйся по программе')}</div>
                     </div>
                     <span style={{color:'rgba(255,255,255,0.2)',fontSize:18}}>›</span>
                   </button>
                 )}
                 {activePlans.length === 1 && (
                   <button onClick={()=>setShowPlanModal(true)} style={{width:'100%',marginBottom:8,padding:'10px 14px',borderRadius:12,border:'1px dashed rgba(255,255,255,0.15)',background:'transparent',color:'rgba(255,255,255,0.5)',fontSize:13,fontWeight:600,cursor:'pointer'}}>
-                    + Добавить второй план
+                    {t('+ Добавить второй план')}
                   </button>
                 )}
                 {activePlans.length > 0 && (
                   <button onClick={()=>setShowPlanModal(true)} style={{width:'100%',marginTop:2,padding:'8px 14px',borderRadius:12,border:'none',background:'transparent',color:'rgba(255,255,255,0.35)',fontSize:12,cursor:'pointer'}}>
-                    ⚙️ Управление планами
+                    {t('⚙️ Управление планами')}
                   </button>
                 )}
               </div>}
@@ -1310,28 +1314,28 @@ export default function App() {
               <button onClick={()=>setShowWarmup(true)} style={{width:'100%',marginBottom:10,padding:'16px 20px',borderRadius:16,border:'1px solid rgba(255,255,255,0.09)',background:'rgba(255,255,255,0.06)',cursor:'pointer',display:'flex',alignItems:'center',gap:14,textAlign:'left'}}>
                 <div style={{width:44,height:44,borderRadius:12,background:'rgba(255,200,0,0.12)',display:'flex',alignItems:'center',justifyContent:'center',fontSize:20,flexShrink:0}}>🤸</div>
                 <div style={{flex:1}}>
-                  <div style={{fontSize:16,fontWeight:600,color:'#fff',marginBottom:4}}>Разминка</div>
-                  <div style={{fontSize:12,color:'rgba(255,255,255,0.35)',marginTop:4}}>Подготовь тело к тренировке</div>
+                  <div style={{fontSize:16,fontWeight:600,color:'#fff',marginBottom:4}}>{t('Разминка')}</div>
+                  <div style={{fontSize:12,color:'rgba(255,255,255,0.35)',marginTop:4}}>{t('Подготовь тело к тренировке')}</div>
                 </div>
                 <span style={{color:'rgba(255,255,255,0.2)',fontSize:18}}>›</span>
               </button>
               <button onClick={()=>setShowStretch(true)} style={{width:'100%',marginBottom:16,padding:'16px 20px',borderRadius:16,border:'1px solid rgba(255,255,255,0.09)',background:'rgba(255,255,255,0.06)',cursor:'pointer',display:'flex',alignItems:'center',gap:14,textAlign:'left'}}>
                 <div style={{width:44,height:44,borderRadius:12,background:'rgba(100,180,255,0.1)',display:'flex',alignItems:'center',justifyContent:'center',fontSize:20,flexShrink:0}}>🧘</div>
                 <div style={{flex:1}}>
-                  <div style={{fontSize:16,fontWeight:600,color:'#fff',marginBottom:4}}>Растяжка</div>
-                  <div style={{fontSize:12,color:'rgba(255,255,255,0.35)',marginTop:4}}>Восстановление после нагрузки</div>
+                  <div style={{fontSize:16,fontWeight:600,color:'#fff',marginBottom:4}}>{t('Растяжка')}</div>
+                  <div style={{fontSize:12,color:'rgba(255,255,255,0.35)',marginTop:4}}>{t('Восстановление после нагрузки')}</div>
                 </div>
                 <span style={{color:'rgba(255,255,255,0.2)',fontSize:18}}>›</span>
               </button>
               </>)}
               {workoutExercises.length > 0 && (
                 <button className={`save-btn${saved?' done':''}`} onClick={saveWorkout} disabled={saving || saved}>
-                  {saved ? '✅ Сохранено!' : saving ? '⏳ Сохранение...' : `💾 Сохранить тренировку (${workoutExercises.length} упр.)`}
+                  {saved ? t('✅ Сохранено!') : saving ? t('⏳ Сохранение...') : t('💾 Сохранить тренировку ({n} упр.)',{n:workoutExercises.length})}
                 </button>
               )}
               {workoutExercises.length > 0 && (
                 <div style={{display:'flex',gap:8,marginTop:10}}>
-                  {[['🤸','Разминка',()=>setShowWarmup(true)],['🧘','Растяжка',()=>setShowStretch(true)]].map(([icon,label,fn])=>(
+                  {[['🤸',t('Разминка'),()=>setShowWarmup(true)],['🧘',t('Растяжка'),()=>setShowStretch(true)]].map(([icon,label,fn])=>(
                     <button key={label} onClick={fn} style={{flex:1,padding:'10px 12px',borderRadius:12,border:`1px solid ${thm.border}`,background:'transparent',color:thm.text50,fontSize:13,fontWeight:600,cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',gap:6}}>
                       <span style={{fontSize:15}}>{icon}</span>{label}
                     </button>
@@ -1353,7 +1357,7 @@ export default function App() {
         const monthLabel = (m) => {
           if (!m) return ''
           const [y,mo] = m.split('-')
-          return new Date(y, mo-1).toLocaleDateString('ru', {month:'long', year:'numeric'})
+          return new Date(y, mo-1).toLocaleDateString(locale(), {month:'long', year:'numeric'})
         }
         return (
           <div className="section">
@@ -1367,18 +1371,18 @@ export default function App() {
                       value={activeMonth}
                       onChange={v=>{setHistoryMonth(v);setOpenDays({})}}
                       unit=""
-                      label="Месяц"
+                      label={t('Месяц')}
                       labelFn={formatMonth}
                     />
                   </div>
                   <div style={{background:'#1c1c1e',borderRadius:12,padding:'10px 14px',textAlign:'center',flexShrink:0,minWidth:72}}>
                     <div style={{fontSize:22,fontWeight:800,color:'#FF9F0A'}}>{workoutDaysCount}</div>
-                    <div style={{fontSize:10,opacity:0.4,marginTop:2,textTransform:'uppercase',letterSpacing:'0.5px'}}>трен.</div>
+                    <div style={{fontSize:10,opacity:0.4,marginTop:2,textTransform:'uppercase',letterSpacing:'0.5px'}}>{t('трен.')}</div>
                   </div>
                 </div>
               </div>
             )}
-            {Object.keys(filteredGrouped).length === 0 && <div style={{opacity:0.5,marginTop:20}}>Нет записей</div>}
+            {Object.keys(filteredGrouped).length === 0 && <div style={{opacity:0.5,marginTop:20}}>{t('Нет записей')}</div>}
             {Object.entries(filteredGrouped).map(([date, ws]) => {
               const isOpen = openDays[date]
               return (
@@ -1386,24 +1390,24 @@ export default function App() {
                   <button className={`day-hdr${isOpen?' open':''}`} onClick={() => setOpenDays(p=>({...p,[date]:!p[date]}))}>
                     <span>{formatDateShort(date)}</span>
                     <div style={{display:'flex',alignItems:'center',gap:8}}>
-                      <span style={{fontSize:12,opacity:0.4}}>{ws.length} упр.</span>
+                      <span style={{fontSize:12,opacity:0.4}}>{ws.length} {t('упр.')}</span>
                       <span className={`day-chev${isOpen?' open':''}`}>▼</span>
                     </div>
                   </button>
                   {isOpen && (
                     <div className="day-body">
                       <div className="day-actions">
-                        <button className={`day-action-btn${copiedDay===date?' ok':''}`} onClick={() => copyDay(date,ws)}>{copiedDay===date?'✅ Скопировано':'📋 Копировать'}</button>
-                        <button className="day-action-btn" onClick={() => setEditModal({date,workouts:ws.map(w=>({...w,sets:w.sets?[...w.sets]:[]}))})}> ✏️ Редактировать</button>
-                        <button className="day-action-btn del" onClick={() => deleteDay(date,ws)}>🗑 Удалить</button>
+                        <button className={`day-action-btn${copiedDay===date?' ok':''}`} onClick={() => copyDay(date,ws)}>{copiedDay===date?t('✅ Скопировано'):t('📋 Копировать')}</button>
+                        <button className="day-action-btn" onClick={() => setEditModal({date,workouts:ws.map(w=>({...w,sets:w.sets?[...w.sets]:[]}))})}> {t('✏️ Редактировать')}</button>
+                        <button className="day-action-btn del" onClick={() => deleteDay(date,ws)}>{t('🗑 Удалить')}</button>
                       </div>
                       {ws.map(w => (
                         <div key={w.id} className="hist-card" style={{position:'relative'}}>
                           <div style={{display:'flex',alignItems:'center',justifyContent:'space-between'}}>
-                            <div className="hist-ex">{normalizeName(w.exercises?.name)}</div>
-                            <button onClick={()=>deleteWorkout(w.id)} style={{background:'none',border:'none',cursor:'pointer',fontSize:16,opacity:0.4,padding:'0 4px',color:'#ff453a'}} title="Удалить упражнение">✕</button>
+                            <div className="hist-ex">{exName(normalizeName(w.exercises?.name))}</div>
+                            <button onClick={()=>deleteWorkout(w.id)} style={{background:'none',border:'none',cursor:'pointer',fontSize:16,opacity:0.4,padding:'0 4px',color:'#ff453a'}} title={t('Удалить упражнение')}>✕</button>
                           </div>
-                          <div className="chips">{w.sets?.sort((a,b)=>a.set_no-b.set_no).map((s,i) => <span key={i} className="chip">{s.time_sec>0?(s.weight>0?`${s.time_sec}s×${kgToDisplay(s.weight)}${wUnit}`:`${s.time_sec}s`):(s.weight>0?`${kgToDisplay(s.weight)}×${s.reps}`:`${s.reps} повт`)}</span>)}</div>
+                          <div className="chips">{w.sets?.sort((a,b)=>a.set_no-b.set_no).map((s,i) => <span key={i} className="chip">{setChip(s)}</span>)}</div>
                         </div>
                       ))}
                     </div>
@@ -1424,15 +1428,15 @@ export default function App() {
         <div className="section">
           {stats && (
             <div className="stats-row">
-              <div className="stat-card"><div className="stat-val">{stats.monthW}</div><div className="stat-lbl">{new Date().toLocaleDateString('ru',{month:'long'})}</div></div>
-              <div className="stat-card"><div className="stat-val">{stats.totalW}</div><div className="stat-lbl">всего</div></div>
-              <div className="stat-card"><div className="stat-val" style={{color:'#FF9F0A',fontSize:18}}>{(()=>{const v=settings.units==='lbs'?Math.round(stats.monthKg*2.20462):Math.round(stats.monthKg);return v>=1000?`${(v/1000).toFixed(1)}K`:v})()}{' '}{wUnit}</div><div className="stat-lbl">поднято за месяц</div></div>
+              <div className="stat-card"><div className="stat-val">{stats.monthW}</div><div className="stat-lbl">{new Date().toLocaleDateString(locale(),{month:'long'})}</div></div>
+              <div className="stat-card"><div className="stat-val">{stats.totalW}</div><div className="stat-lbl">{t('всего')}</div></div>
+              <div className="stat-card"><div className="stat-val" style={{color:'#FF9F0A',fontSize:18}}>{fmtVolume(stats.monthKg)}</div><div className="stat-lbl">{t('поднято за месяц')}</div></div>
             </div>
           )}
-          <div className="prog-title">💪 Нагрузка по мышцам</div>
+          <div className="prog-title">{t('💪 Нагрузка по мышцам')}</div>
           <div className="chart-wrap" style={{padding:'16px 8px'}}>
             <div style={{display:'flex',gap:6,justifyContent:'center',marginBottom:14}}>
-              {[[7,'7 дней'],[30,'30 дней']].map(([days,label]) => (
+              {[[7,t('7 дней')],[30,t('30 дней')]].map(([days,label]) => (
                 <button key={days} onClick={()=>setMusclePeriod(days)} style={{
                   padding:'6px 18px',borderRadius:99,fontSize:12,fontWeight:700,cursor:'pointer',border:'none',
                   background: musclePeriod===days ? '#FF9F0A' : '#2c2c2e',
@@ -1442,7 +1446,7 @@ export default function App() {
             </div>
             <MuscleMap muscleScores={muscleScores} period={musclePeriod}/>
             <div style={{display:'flex',justifyContent:'center',gap:14,marginTop:12}}>
-              {[['#3A3A3C','Нет'],['#FFD60A','Мало'],['#9EDB3F','Норма'],['#30D158','Отлично'],['#FF453A','Перегрузка']].map(([color,label])=>(
+              {[['#3A3A3C',t('Нет')],['#FFD60A',t('Мало')],['#9EDB3F',t('Норма')],['#30D158',t('Отлично')],['#FF453A',t('Перегрузка')]].map(([color,label])=>(
                 <div key={label} style={{display:'flex',alignItems:'center',gap:5}}>
                   <div style={{width:10,height:10,borderRadius:3,background:color,flexShrink:0}}/>
                   <span style={{fontSize:11,color:'rgba(255,255,255,0.4)',fontWeight:500}}>{label}</span>
@@ -1450,19 +1454,19 @@ export default function App() {
               ))}
             </div>
           </div>
-          <div className="prog-title">📅 Календарь</div>
+          <div className="prog-title">{t('📅 Календарь')}</div>
           <div className="cal-nav">
             <button className="cal-btn" onClick={()=>{if(calMonth===0){setCalMonth(11);setCalYear(y=>y-1)}else setCalMonth(m=>m-1)}}>◀</button>
             <span className="cal-mname">{calMonthName}</span>
             <button className="cal-btn" onClick={()=>{if(calMonth===11){setCalMonth(0);setCalYear(y=>y+1)}else setCalMonth(m=>m+1)}}>▶</button>
           </div>
           <div className="cal-grid">
-            {['Пн','Вт','Ср','Чт','Пт','Сб','Вс'].map(d=><div key={d} className="cal-dow">{d}</div>)}
+            {[t('Пн'),t('Вт'),t('Ср'),t('Чт'),t('Пт'),t('Сб'),t('Вс')].map(d=><div key={d} className="cal-dow">{d}</div>)}
             {Array(offset).fill(null).map((_,i)=><div key={`e${i}`} className="cal-cell empty"/>)}
             {Array(daysInMonth).fill(null).map((_,i)=>{
               const day=i+1; const ds=`${calYear}-${String(calMonth+1).padStart(2,'0')}-${String(day).padStart(2,'0')}`
               const trained=calData[day]!==undefined; const vol=calData[day]||0
-              return <div key={day} className={`cal-cell${trained?' trained':''}${ds===todayStr?' today':''}`} onClick={()=>trained&&openCalDay(day)}>{day}{trained&&vol>0&&<div className="cal-vol">{vol>=1000?`${(vol/1000).toFixed(1)}K`:vol}</div>}</div>
+              return <div key={day} className={`cal-cell${trained?' trained':''}${ds===todayStr?' today':''}`} onClick={()=>trained&&openCalDay(day)}>{day}{trained&&vol>0&&<div className="cal-vol">{(()=>{const v=isLbs()?Math.round(vol*KG_TO_LB):vol;return v>=1000?`${(v/1000).toFixed(1)}K`:v})()}</div>}</div>
             })}
           </div>
           <button onClick={()=>setOpenPrs(p=>({...p,__all__:!p.__all__}))} style={{
@@ -1470,9 +1474,9 @@ export default function App() {
             borderRadius:14,padding:'14px 16px',display:'flex',alignItems:'center',justifyContent:'space-between',
             cursor:'pointer',marginBottom:4
           }}>
-            <span style={{fontSize:15,fontWeight:700,color:thm.text85}}>🏆 Личные рекорды</span>
+            <span style={{fontSize:15,fontWeight:700,color:thm.text85}}>{t('🏆 Личные рекорды')}</span>
             <div style={{display:'flex',alignItems:'center',gap:8}}>
-              <span style={{fontSize:12,color:thm.text35}}>{prs.length} упр.</span>
+              <span style={{fontSize:12,color:thm.text35}}>{prs.length} {t('упр.')}</span>
               <span style={{color:thm.text30,fontSize:12,display:'inline-block',transition:'transform 0.2s',transform:openPrs.__all__?'rotate(180deg)':'none'}}>▼</span>
             </div>
           </button>
@@ -1483,19 +1487,19 @@ export default function App() {
               <div key={name} style={{borderBottom: prIdx<prs.length-1 ? `1px solid ${thm.border2}` : 'none'}}>
                 <button style={{width:'100%',background:'none',border:'none',cursor:'pointer',padding:'11px 16px',display:'flex',alignItems:'center',gap:10,textAlign:'left'}} onClick={()=>setOpenPrs(p=>({...p,[name]:!p[name]}))}>
                   {img ? <img src={img} alt={name} loading="lazy" decoding="async" style={{width:32,height:32,borderRadius:7,objectFit:'cover',flexShrink:0}} onError={e=>e.target.style.display='none'}/> : <div style={{width:32,height:32,borderRadius:7,background:thm.btnBg,display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0,fontSize:16}}>🏋️</div>}
-                  <span style={{flex:1,color:thm.text85,fontSize:14,fontWeight:600}}>{normalizeName(name)}</span>
-                  <span style={{color:'#FF9F0A',fontSize:14,fontWeight:700,marginRight:8}}>{pr.metric==='time' ? `${pr.time_sec} сек` : pr.metric==='reps' ? `${pr.reps} повт${pr.weight>0?` +${kgToDisplay(pr.weight)}`:''}` : `${kgToDisplay(pr.weight)} × ${pr.reps}`}</span>
+                  <span style={{flex:1,color:thm.text85,fontSize:14,fontWeight:600}}>{exName(normalizeName(name))}</span>
+                  <span style={{color:'#FF9F0A',fontSize:14,fontWeight:700,marginRight:8}}>{pr.metric==='time' ? `${pr.time_sec} ${t('сек')}` : pr.metric==='reps' ? `${pr.reps} ${t('повт')}${pr.weight>0?` +${kgToDisplay(pr.weight)}`:''}` : `${kgToDisplay(pr.weight)} × ${pr.reps}`}</span>
                   <span style={{color:thm.text25,fontSize:11,display:'inline-block',transition:'transform 0.2s',transform:isOpen?'rotate(180deg)':'none'}}>▼</span>
                 </button>
                 {isOpen && <div style={{padding:'2px 16px 12px 58px',display:'flex',gap:16,flexWrap:'wrap',alignItems:'center'}}>
-                  <span style={{fontSize:13,color:thm.text50,fontWeight:600}}>{pr.metric==='time' ? `${pr.time_sec} сек${pr.weight>0?` × ${kgToDisplay(pr.weight)} ${wUnit}`:''}` : pr.metric==='reps' ? `${pr.reps} повт${pr.weight>0?` с доп. весом ${kgToDisplay(pr.weight)} ${wUnit}`:''}` : `${kgToDisplay(pr.weight)} ${wUnit} × ${pr.reps} повт · 1ПМ ≈ ${kgToDisplay(Math.round(pr.value*10)/10)} ${wUnit}`}</span>
-                  <span style={{fontSize:12,color:thm.text30}}>{new Date(pr.date).toLocaleDateString('ru',{day:'numeric',month:'short',year:'numeric'})}</span>
+                  <span style={{fontSize:13,color:thm.text50,fontWeight:600}}>{pr.metric==='time' ? `${pr.time_sec} ${t('сек')}${pr.weight>0?` × ${kgToDisplay(pr.weight)} ${wUnit}`:''}` : pr.metric==='reps' ? `${pr.reps} ${t('повт')}${pr.weight>0?` ${t('с доп. весом')} ${kgToDisplay(pr.weight)} ${wUnit}`:''}` : `${kgToDisplay(pr.weight)} ${wUnit} × ${pr.reps} ${t('повт')} · ${t('1ПМ')} ≈ ${kgToDisplay(Math.round(pr.value*10)/10)} ${wUnit}`}</span>
+                  <span style={{fontSize:12,color:thm.text30}}>{new Date(pr.date).toLocaleDateString(locale(),{day:'numeric',month:'short',year:'numeric'})}</span>
                 </div>}
               </div>
             )
           })}
           </div>}
-          <div className="prog-title">📊 График роста</div>
+          <div className="prog-title">{t('📊 График роста')}</div>
           <div className="chart-wrap">
             <ChartExercisePicker names={prs.map(([name])=>name)} value={chartEx} onChange={setChartEx} theme={isDark?'dark':'light'}/>
             <LineChart data={(() => {
@@ -1512,7 +1516,7 @@ export default function App() {
               if (settings.units === 'lbs' && (base[0]?.metric === 'weight' || base[0]?.metric === 'e1rm')) return base.map(p => ({...p, val: Math.round(p.val * 2.20462 * 10) / 10}))
               return base
             })()} period={chartPeriod} setPeriod={setChartPeriod} totalPoints={chartData.length}
-              unit={chartData[0]?.metric === 'time' ? 'сек' : chartData[0]?.metric === 'reps' ? 'повт' : wUnit}/>
+              unit={chartData[0]?.metric === 'time' ? t('сек') : chartData[0]?.metric === 'reps' ? t('повт') : wUnit}/>
           </div>
         </div>
         )
@@ -1523,12 +1527,12 @@ export default function App() {
           <div className="modal">
             <div className="modal-handle"/>
             <div className="modal-hdr">
-              <div className="modal-title">Выбери упражнение</div>
-              <div className="modal-srch-wrap"><span className="modal-srch-icon">🔍</span><input className="modal-srch" placeholder="Поиск..." value={modalSearch} onChange={e=>setModalSearch(e.target.value)}/></div>
+              <div className="modal-title">{t('Выбери упражнение')}</div>
+              <div className="modal-srch-wrap"><span className="modal-srch-icon">🔍</span><input className="modal-srch" placeholder={t('Поиск...')} value={modalSearch} onChange={e=>setModalSearch(e.target.value)}/></div>
             </div>
             <div className="modal-list">
-              {!modalSearch&&favFiltered.length>0&&<><div className="modal-sect-lbl">⭐ Избранные</div>{favFiltered.map(ex=><ModalItem key={ex.id} ex={ex} onAdd={addExToWorkout} isFav={true} onToggleFav={toggleFav}/>)}<div className="modal-sect-lbl">Все упражнения</div></>}
-              {(modalSearch?filtered:restFiltered).map(ex=><ModalItem key={ex.id} ex={ex} onAdd={addExToWorkout} isFav={favSet.has(ex.name)} onToggleFav={toggleFav}/>)}
+              {!modalSearch&&favFiltered.length>0&&<><div className="modal-sect-lbl">{t('⭐ Избранные')}</div>{favFiltered.map(ex=><ModalItem key={ex.id} ex={ex} lang={settings.language} onAdd={addExToWorkout} isFav={true} onToggleFav={toggleFav}/>)}<div className="modal-sect-lbl">{t('Все упражнения')}</div></>}
+              {(modalSearch?filtered:restFiltered).map(ex=><ModalItem key={ex.id} ex={ex} lang={settings.language} onAdd={addExToWorkout} isFav={favSet.has(ex.name)} onToggleFav={toggleFav}/>)}
             </div>
           </div>
         </div>
@@ -1543,7 +1547,7 @@ export default function App() {
               {calDayModal.workouts.map(w=>(
                 <div key={w.id} style={{padding:'12px 10px',borderRadius:12,marginBottom:6,background:thm.card2,border:`1px solid ${thm.border}`}}>
                   <div style={{fontSize:14,fontWeight:700,marginBottom:7,color:thm.text}}>{normalizeName(w.exercises?.name)}</div>
-                  <div className="chips">{w.sets?.sort((a,b)=>a.set_no-b.set_no).map((s,i)=><span key={i} className="chip">{s.time_sec>0?(s.weight>0?`${s.time_sec}s×${kgToDisplay(s.weight)}${wUnit}`:`${s.time_sec}s`):(s.weight>0?`${kgToDisplay(s.weight)}×${s.reps}`:`${s.reps} повт`)}</span>)}</div>
+                  <div className="chips">{w.sets?.sort((a,b)=>a.set_no-b.set_no).map((s,i)=><span key={i} className="chip">{setChip(s)}</span>)}</div>
                 </div>
               ))}
             </div>
@@ -1555,14 +1559,14 @@ export default function App() {
 
       {tab === 'settings' && (
         <div className="section">
-          <div style={{fontSize:20,fontWeight:700,marginBottom:20,letterSpacing:'-0.3px'}}>⚙️ Настройки</div>
+          <div style={{fontSize:20,fontWeight:700,marginBottom:20,letterSpacing:'-0.3px'}}>{t('⚙️ Настройки')}</div>
 
 
           {/* Тренировки */}
           <div className="settings-card">
-            <div className="settings-section-title">🏋️ Тренировки</div>
+            <div className="settings-section-title">{t('🏋️ Тренировки')}</div>
             <div className="settings-row">
-              <div className="settings-row-label">Единицы веса</div>
+              <div className="settings-row-label">{t('Единицы веса')}</div>
               <div className="settings-toggle">
                 {['kg','lbs'].map(u=>(
                   <button key={u} className={`settings-toggle-btn${settings.units===u?' active':''}`}
@@ -1574,18 +1578,18 @@ export default function App() {
 
           {/* Внешний вид */}
           <div className="settings-card">
-            <div className="settings-section-title">🎨 Внешний вид</div>
+            <div className="settings-section-title">{t('🎨 Внешний вид')}</div>
             <div className="settings-row" style={{marginBottom:14}}>
-              <div className="settings-row-label">Тема</div>
+              <div className="settings-row-label">{t('Тема')}</div>
               <div className="settings-toggle">
-                {[['dark','🌙 Тёмная'],['light','☀️ Светлая']].map(([val,label])=>(
+                {[['dark',t('🌙 Тёмная')],['light',t('☀️ Светлая')]].map(([val,label])=>(
                   <button key={val} className={`settings-toggle-btn${settings.theme===val?' active':''}`}
                     onClick={()=>saveSettings({...settings,theme:val})}>{label}</button>
                 ))}
               </div>
             </div>
             <div className="settings-row">
-              <div className="settings-row-label">Язык</div>
+              <div className="settings-row-label">{t('Язык')}</div>
               <div className="settings-toggle">
                 {[['ru','RU'],['en','EN']].map(([val,label])=>(
                   <button key={val} className={`settings-toggle-btn${settings.language===val?' active':''}`}
@@ -1597,23 +1601,23 @@ export default function App() {
 
           {/* Данные */}
           <div className="settings-card">
-            <div className="settings-section-title">💾 Данные</div>
+            <div className="settings-section-title">{t('💾 Данные')}</div>
             <button className="settings-action-btn" onClick={()=>setShowExportModal(true)}>
-              <span>📤</span> Экспорт тренировок
+              <span>📤</span> {t('Экспорт тренировок')}
             </button>
             <button className="settings-action-btn danger" onClick={()=>setShowClearConfirm(true)}>
-              <span>🗑</span> Очистить историю
+              <span>🗑</span> {t('Очистить историю')}
             </button>
           </div>
 
           {/* Аккаунт */}
           <div className="settings-card">
-            <div className="settings-section-title">👤 Аккаунт</div>
+            <div className="settings-section-title">{t('👤 Аккаунт')}</div>
             <div style={{fontSize:13,color:thm.text40,marginBottom:16,padding:'10px 12px',background:thm.card2,borderRadius:10}}>
               📧 {user?.email}
             </div>
             <button className="settings-signout-btn" onClick={handleSignOut}>
-              Выйти из аккаунта
+              {t('Выйти из аккаунта')}
             </button>
           </div>
         </div>
@@ -1624,42 +1628,42 @@ export default function App() {
         const allExNames = Object.keys(EXERCISE_IMAGES)
         const filtered = allExNames.filter(name => {
           const primaryMuscles = EXERCISE_MUSCLES[name]?.primary || []
-          if (exTabFilter === 'favorites') return favorites.includes(name) && name.toLowerCase().includes(exTabSearch.toLowerCase())
+          if (exTabFilter === 'favorites') return favorites.includes(name) && (name.toLowerCase().includes(exTabSearch.toLowerCase()) || exName(name).toLowerCase().includes(exTabSearch.toLowerCase()))
           const matchesFilter = exTabFilter === 'all' || (MUSCLE_FILTER_MAP[exTabFilter] || []).some(m => primaryMuscles.includes(m))
-          const matchesSearch = name.toLowerCase().includes(exTabSearch.toLowerCase())
+          const matchesSearch = name.toLowerCase().includes(exTabSearch.toLowerCase()) || exName(name).toLowerCase().includes(exTabSearch.toLowerCase())
           return matchesFilter && matchesSearch
         }).sort((a,b) => a.localeCompare(b,'ru'))
         return (
           <div className="section" style={{paddingTop:16}}>
             <div style={{position:'relative',marginBottom:0}}>
               <span style={{position:'absolute',left:14,top:'50%',transform:'translateY(-50%)',fontSize:16,opacity:0.35,pointerEvents:'none'}}>🔍</span>
-              <input className="ex-tab-search" placeholder="Поиск упражнения..." value={exTabSearch}
+              <input className="ex-tab-search" placeholder={t('Поиск упражнения...')} value={exTabSearch}
                 onChange={e=>setExTabSearch(e.target.value)} style={{color:thm.text,background:thm.input}}/>
             </div>
             <div className="muscle-filters">
               <div className="muscle-filters-fav-row">
                 <button className={`muscle-chip-fav${exTabFilter==='favorites'?' active':''}`}
                   style={exTabFilter!=='favorites'?{background:thm.btnBg,color:thm.text50,border:`1px solid ${thm.border}`}:{border:'none'}}
-                  onClick={()=>setExTabFilter('favorites')}>⭐ Избранные</button>
+                  onClick={()=>setExTabFilter('favorites')}>{t('⭐ Избранные')}</button>
               </div>
               <div className="muscle-filters-divider"/>
               <div className="muscle-filters-row">
                 {MUSCLE_FILTERS_ROW1.map(f => (
                   <button key={f.id} className={`muscle-chip${exTabFilter===f.id?' active':''}`}
                     style={exTabFilter!==f.id?{background:thm.btnBg,color:thm.text50,border:`1px solid ${thm.border}`}:{border:'none'}}
-                    onClick={()=>setExTabFilter(f.id)}>{f.label}</button>
+                    onClick={()=>setExTabFilter(f.id)}>{t(f.label)}</button>
                 ))}
               </div>
               <div className="muscle-filters-row">
                 {MUSCLE_FILTERS_ROW2.map(f => (
                   <button key={f.id} className={`muscle-chip${exTabFilter===f.id?' active':''}`}
                     style={exTabFilter!==f.id?{background:thm.btnBg,color:thm.text50,border:`1px solid ${thm.border}`}:{border:'none'}}
-                    onClick={()=>setExTabFilter(f.id)}>{f.label}</button>
+                    onClick={()=>setExTabFilter(f.id)}>{t(f.label)}</button>
                 ))}
               </div>
             </div>
             {filtered.length === 0 && (
-              <div style={{textAlign:'center',color:thm.text40,fontSize:14,padding:'40px 0'}}>{exTabFilter==='favorites'?'Нет избранных упражнений':'Ничего не найдено'}</div>
+              <div style={{textAlign:'center',color:thm.text40,fontSize:14,padding:'40px 0'}}>{exTabFilter==='favorites'?t('Нет избранных упражнений'):t('Ничего не найдено')}</div>
             )}
             {filtered.map(name => {
               const img = EXERCISE_IMAGES[name]
@@ -1675,10 +1679,10 @@ export default function App() {
                     : null}
                   <div className="ex-list-ph" style={{display: img ? 'none' : 'flex'}}>💪</div>
                   <div style={{flex:1}}>
-                    <div className="ex-list-name" style={{color:thm.text}}>{name}</div>
+                    <div className="ex-list-name" style={{color:thm.text}}>{exName(name)}</div>
                     <div style={{fontSize:12,marginTop:2}}>
-                      <span style={{color:thm.text60}}>{primaryMuscles.slice(0,2).map(m=>MUSCLE_LABELS[m]||m).join(' · ')}</span>
-                      {secondaryMuscles.length > 0 && <span style={{color:thm.text30,fontSize:11}}>{' · '}{secondaryMuscles.slice(0,2).map(m=>MUSCLE_LABELS[m]||m).join(', ')}</span>}
+                      <span style={{color:thm.text60}}>{primaryMuscles.slice(0,2).map(m=>muscleLabel(m, MUSCLE_LABELS[m]||m)).join(' · ')}</span>
+                      {secondaryMuscles.length > 0 && <span style={{color:thm.text30,fontSize:11}}>{' · '}{secondaryMuscles.slice(0,2).map(m=>muscleLabel(m, MUSCLE_LABELS[m]||m)).join(', ')}</span>}
                     </div>
                   </div>
                   <button onClick={e=>{e.stopPropagation();toggleFav(name)}} style={{background:'none',border:'none',cursor:'pointer',fontSize:20,padding:'4px 6px',flexShrink:0,lineHeight:1,color:'inherit'}}>{isFav?'⭐':'☆'}</button>
@@ -1696,13 +1700,13 @@ export default function App() {
         const exMusclesDetail = EXERCISE_MUSCLES[name]
         const primaryMusclesDetail = exMusclesDetail?.primary || []
         const secondaryMusclesDetail = exMusclesDetail?.secondary || []
-        const info = EXERCISE_INFO[name]
+        const info = exInfo(name, EXERCISE_INFO[name])
         return (
           <div className="modal-overlay" onClick={e=>{if(e.target===e.currentTarget)setExDetailModal(null)}}>
             <div className="modal" style={{background:thm.modalBg}}>
               <div className="modal-handle" style={{background:isDark?'rgba(255,255,255,0.15)':'rgba(0,0,0,0.12)'}}/>
               <div style={{padding:'14px 18px 0',display:'flex',justifyContent:'space-between',alignItems:'center',flexShrink:0}}>
-                <span style={{fontSize:17,fontWeight:700,color:thm.text}}>{name}</span>
+                <span style={{fontSize:17,fontWeight:700,color:thm.text}}>{exName(name)}</span>
                 <button onClick={()=>setExDetailModal(null)} style={{background:'none',border:'none',fontSize:22,cursor:'pointer',color:thm.text50,lineHeight:1}}>×</button>
               </div>
               <div className="modal-body">
@@ -1712,29 +1716,29 @@ export default function App() {
                 <div className="ex-detail-ph" style={{display: img ? 'none' : 'flex'}}>💪</div>
                 <div className="ex-detail-muscles">
                   {primaryMusclesDetail.map(m => (
-                    <span key={m} className="ex-detail-muscle-tag">{MUSCLE_LABELS[m]||m}</span>
+                    <span key={m} className="ex-detail-muscle-tag">{muscleLabel(m, MUSCLE_LABELS[m]||m)}</span>
                   ))}
                   {secondaryMusclesDetail.map(m => (
-                    <span key={'s_'+m} className="ex-detail-muscle-tag-secondary">{MUSCLE_LABELS[m]||m}</span>
+                    <span key={'s_'+m} className="ex-detail-muscle-tag-secondary">{muscleLabel(m, MUSCLE_LABELS[m]||m)}</span>
                   ))}
                 </div>
                 {info ? (
                   <>
                     <div className="ex-detail-section">
-                      <div className="ex-detail-section-lbl">Описание</div>
+                      <div className="ex-detail-section-lbl">{t('Описание')}</div>
                       <div className="ex-detail-text" style={{color:thm.text70}}>{info.desc}</div>
                     </div>
                     <div className="ex-detail-section">
-                      <div className="ex-detail-section-lbl">Польза</div>
+                      <div className="ex-detail-section-lbl">{t('Польза')}</div>
                       <div className="ex-detail-text" style={{color:thm.text70}}>{info.benefit}</div>
                     </div>
                     <div className="ex-detail-section">
-                      <div className="ex-detail-section-lbl" style={{color:'#FF9F0A',opacity:1}}>💡 Советы</div>
+                      <div className="ex-detail-section-lbl" style={{color:'#FF9F0A',opacity:1}}>{t('💡 Советы')}</div>
                       <div className="ex-detail-text" style={{color:thm.text70}}>{info.tips}</div>
                     </div>
                   </>
                 ) : (
-                  <div style={{textAlign:'center',color:thm.text40,fontSize:14,padding:'20px 0'}}>Описание скоро появится</div>
+                  <div style={{textAlign:'center',color:thm.text40,fontSize:14,padding:'20px 0'}}>{t('Описание скоро появится')}</div>
                 )}
               </div>
             </div>
@@ -1748,8 +1752,8 @@ export default function App() {
         <div className="alert-toast" onClick={() => setAchToast(null)} style={{borderColor:'rgba(255,159,10,0.3)',cursor:'pointer'}}>
           <div className="alert-toast-icon">🏅</div>
           <div>
-            <div className="alert-toast-title">У тебя уже {achToast} достижений!</div>
-            <div className="alert-toast-sub">Загляни в 🔥 — там всё по истории тренировок</div>
+            <div className="alert-toast-title">{t('У тебя уже {n} достижений!',{n:achToast})}</div>
+            <div className="alert-toast-sub">{t('Загляни в 🔥 — там всё по истории тренировок')}</div>
           </div>
         </div>
       )}
@@ -1758,9 +1762,9 @@ export default function App() {
         <div className="alert-toast" onClick={()=>setPrAlert(null)} style={{borderColor:'rgba(255,200,0,0.3)',cursor:'pointer'}}>
           <div className="alert-toast-icon">🏆</div>
           <div>
-            <div className="alert-toast-title">Новый рекорд!</div>
+            <div className="alert-toast-title">{t('Новый рекорд!')}</div>
             <div className="alert-toast-sub" style={{opacity:0.75}}>{prAlert.name}: {fmtRecordSet(prAlert.metric, prAlert.best, prAlert.value)}</div>
-            <div style={{fontSize:11,color:'#FF9F0A',marginTop:2}}>Было: {fmtRecordSet(prAlert.metric, prAlert.pr, prAlert.pr.value)}</div>
+            <div style={{fontSize:11,color:'#FF9F0A',marginTop:2}}>{t('Было:')} {fmtRecordSet(prAlert.metric, prAlert.pr, prAlert.pr.value)}</div>
           </div>
         </div>
       )}
@@ -1770,8 +1774,8 @@ export default function App() {
         <div className="alert-toast" style={{borderColor:'rgba(255,159,10,0.3)',pointerEvents:'none'}}>
           <div className="alert-toast-icon">💾</div>
           <div>
-            <div className="alert-toast-title">Тренировка восстановлена</div>
-            <div className="alert-toast-sub">Все введённые подходы на месте</div>
+            <div className="alert-toast-title">{t('Тренировка восстановлена')}</div>
+            <div className="alert-toast-sub">{t('Все введённые подходы на месте')}</div>
           </div>
         </div>
       )}
@@ -1781,7 +1785,7 @@ export default function App() {
             {streakAlert.count>=20?'👑':streakAlert.count>=10?'🏆':streakAlert.count>=5?'⚡':'🔥'}
           </div>
           <div>
-            <div className="alert-toast-title">{streakAlert.count}-я тренировка месяца!</div>
+            <div className="alert-toast-title">{t('{n}-я тренировка месяца!',{n:streakAlert.count})}</div>
             <div className="alert-toast-sub">{streakAlert.msg}</div>
           </div>
         </div>
@@ -1792,9 +1796,9 @@ export default function App() {
         <div style={{position:'fixed',inset:0,background:'rgba(0,0,0,0.7)',zIndex:200,display:'flex',alignItems:'center',justifyContent:'center',backdropFilter:'blur(8px)'}}
           onClick={e=>{if(e.target===e.currentTarget)setShowExportModal(false)}}>
           <div style={{background:thm.overlayCard,borderRadius:20,padding:'28px 24px',width:'calc(100% - 48px)',maxWidth:340,border:`1px solid ${thm.border}`}}>
-            <div style={{fontSize:17,fontWeight:700,color:thm.text,marginBottom:6,textAlign:'center'}}>📤 Экспорт тренировок</div>
-            <div style={{fontSize:13,color:thm.text50,marginBottom:20,textAlign:'center'}}>Выбери период</div>
-            {[['7d','Последние 7 дней'],['30d','Последние 30 дней'],['3m','Последние 3 месяца'],['6m','Последние 6 месяцев'],['1y','Последний год'],['all','Всё время']].map(([val,label])=>(
+            <div style={{fontSize:17,fontWeight:700,color:thm.text,marginBottom:6,textAlign:'center'}}>{t('📤 Экспорт тренировок')}</div>
+            <div style={{fontSize:13,color:thm.text50,marginBottom:20,textAlign:'center'}}>{t('Выбери период')}</div>
+            {[['7d',t('Последние 7 дней')],['30d',t('Последние 30 дней')],['3m',t('Последние 3 месяца')],['6m',t('Последние 6 месяцев')],['1y',t('Последний год')],['all',t('Всё время')]].map(([val,label])=>(
               <button key={val} onClick={()=>{setExportPeriod(val);exportWorkouts(val)}} style={{
                 width:'100%',padding:'13px 16px',borderRadius:12,border:`1px solid ${exportPeriod===val?'rgba(255,159,10,0.4)':thm.border}`,
                 background:exportPeriod===val?'rgba(255,159,10,0.1)':thm.card2,
@@ -1802,7 +1806,7 @@ export default function App() {
                 marginBottom:8,textAlign:'left',transition:'all 0.15s'
               }}>{label}</button>
             ))}
-            <button onClick={()=>setShowExportModal(false)} style={{width:'100%',padding:'12px',borderRadius:12,border:'none',background:'rgba(255,59,48,0.1)',color:'#FF453A',fontSize:14,fontWeight:600,cursor:'pointer',marginTop:4}}>Отмена</button>
+            <button onClick={()=>setShowExportModal(false)} style={{width:'100%',padding:'12px',borderRadius:12,border:'none',background:'rgba(255,59,48,0.1)',color:'#FF453A',fontSize:14,fontWeight:600,cursor:'pointer',marginTop:4}}>{t('Отмена')}</button>
           </div>
         </div>
       )}
@@ -1813,13 +1817,13 @@ export default function App() {
           onClick={e=>{if(e.target===e.currentTarget)setShowClearConfirm(false)}}>
           <div style={{background:thm.overlayCard,borderRadius:20,padding:'28px 24px',width:'calc(100% - 48px)',maxWidth:320,border:`1px solid ${thm.border}`}}>
             <div style={{fontSize:32,textAlign:'center',marginBottom:12}}>🗑</div>
-            <div style={{fontSize:17,fontWeight:700,color:thm.text,marginBottom:8,textAlign:'center'}}>Очистить историю?</div>
-            <div style={{fontSize:14,color:thm.text50,marginBottom:24,textAlign:'center',lineHeight:1.5}}>Все тренировки будут удалены безвозвратно. Это действие нельзя отменить.</div>
+            <div style={{fontSize:17,fontWeight:700,color:thm.text,marginBottom:8,textAlign:'center'}}>{t('Очистить историю?')}</div>
+            <div style={{fontSize:14,color:thm.text50,marginBottom:24,textAlign:'center',lineHeight:1.5}}>{t('Все тренировки будут удалены безвозвратно. Это действие нельзя отменить.')}</div>
             <button onClick={clearHistory} style={{width:'100%',padding:'14px',borderRadius:14,border:'none',background:'#FF3B30',color:'#fff',fontSize:15,fontWeight:700,cursor:'pointer',marginBottom:10}}>
-              Удалить всё
+              {t('Удалить всё')}
             </button>
             <button onClick={()=>setShowClearConfirm(false)} style={{width:'100%',padding:'14px',borderRadius:14,border:`1px solid ${thm.border}`,background:thm.card2,color:thm.text70,fontSize:15,fontWeight:600,cursor:'pointer'}}>
-              Отмена
+              {t('Отмена')}
             </button>
           </div>
         </div>
@@ -1834,69 +1838,69 @@ export default function App() {
             <div className="modal" style={{background:thm.modalBg,maxHeight:'88dvh'}}>
               <div className="modal-handle" style={{background:isDark?'rgba(255,255,255,0.15)':'rgba(0,0,0,0.12)'}}/>
               <div style={{padding:'16px 20px 0',display:'flex',justifyContent:'space-between',alignItems:'center',flexShrink:0}}>
-                <span style={{fontSize:17,fontWeight:700,color:thm.text}}>Достижения</span>
+                <span style={{fontSize:17,fontWeight:700,color:thm.text}}>{t('Достижения')}</span>
                 <button onClick={()=>setShowStreakModal(false)} style={{background:'none',border:'none',fontSize:22,cursor:'pointer',color:thm.text50,lineHeight:1}}>×</button>
               </div>
               <AchTabs tab={achTab} setTab={setAchTab} thm={thm} isDark={isDark}/>
               <div style={{overflowY:'auto',padding:'16px 20px 32px',flex:1}}>
                 {achTab === 'all' && (achievements
                   ? <BadgeGrid list={achievements.permanent} thm={thm} isDark={isDark}/>
-                  : <div style={{textAlign:'center',color:thm.text40,fontSize:14,padding:'24px 0'}}>Загрузка...</div>)}
+                  : <div style={{textAlign:'center',color:thm.text40,fontSize:14,padding:'24px 0'}}>{t('Загрузка...')}</div>)}
                 {achTab === 'month' && (<>
                 {/* Rank block */}
                 <div style={{background:isDark?'rgba(255,255,255,0.05)':'rgba(0,0,0,0.03)',borderRadius:20,padding:'24px 20px',marginBottom:12,border:`1px solid ${thm.border}`,textAlign:'center'}}>
                   <div style={{fontSize:56,marginBottom:8}}>{rank.icon}</div>
-                  <div style={{fontSize:22,fontWeight:800,color:thm.text,marginBottom:4}}>{rank.name}</div>
-                  <div style={{fontSize:13,color:thm.text50,marginBottom:16}}>{streak} тренировок в этом месяце</div>
+                  <div style={{fontSize:22,fontWeight:800,color:thm.text,marginBottom:4}}>{t(rank.name)}</div>
+                  <div style={{fontSize:13,color:thm.text50,marginBottom:16}}>{t('{n} тренировок в этом месяце',{n:streak})}</div>
                   {!rank.isMax && (
                     <div style={{marginBottom:16}}>
                       <div style={{height:6,background:isDark?'rgba(255,255,255,0.1)':'rgba(0,0,0,0.08)',borderRadius:99,overflow:'hidden'}}>
                         <div style={{height:'100%',width:`${Math.round(rank.progress*100)}%`,background:'#FF9F0A',borderRadius:99,transition:'width 0.5s ease'}}/>
                       </div>
-                      <div style={{fontSize:12,color:thm.text40,marginTop:6}}>{rank.nextAt - streak} тренировок до ранга «{rank.nextName}» {RANK_LEVELS.find(r=>r.name===rank.nextName)?.icon}</div>
+                      <div style={{fontSize:12,color:thm.text40,marginTop:6}}>{t('{n} тренировок до ранга «{rank}»',{n:rank.nextAt - streak, rank:t(rank.nextName)})} {RANK_LEVELS.find(r=>r.name===rank.nextName)?.icon}</div>
                     </div>
                   )}
-                  {rank.isMax && <div style={{fontSize:12,color:'#FF9F0A',marginBottom:16,fontWeight:700}}>Максимальный ранг достигнут! 🎉</div>}
-                  <div style={{fontSize:14,color:thm.text70,fontStyle:'italic',lineHeight:1.5,marginBottom:10}}>«{streakMotivQuote}»</div>
+                  {rank.isMax && <div style={{fontSize:12,color:'#FF9F0A',marginBottom:16,fontWeight:700}}>{t('Максимальный ранг достигнут! 🎉')}</div>}
+                  <div style={{fontSize:14,color:thm.text70,fontStyle:'italic',lineHeight:1.5,marginBottom:10}}>«{t(streakMotivQuote)}»</div>
                   <div style={{fontSize:13,color:thm.text50,fontStyle:'italic',lineHeight:1.5,borderTop:`1px solid ${thm.border}`,paddingTop:12,marginTop:4}}>
-                    «{greatQ.text}»
-                    <div style={{fontSize:11,color:thm.text35,marginTop:4}}>— {greatQ.author}</div>
+                    «{t(greatQ.text)}»
+                    <div style={{fontSize:11,color:thm.text35,marginTop:4}}>— {t(greatQ.author)}</div>
                   </div>
                 </div>
 
                 {achievements && <MonthChallenges month={achievements.current} thm={thm} isDark={isDark}/>}
                 {/* Month stats */}
                 <div style={{background:isDark?'rgba(255,255,255,0.05)':'rgba(0,0,0,0.03)',borderRadius:20,padding:'18px 20px',marginBottom:12,border:`1px solid ${thm.border}`}}>
-                  <div style={{fontSize:13,fontWeight:700,textTransform:'uppercase',letterSpacing:'0.8px',color:thm.text40,marginBottom:14}}>Статистика месяца</div>
+                  <div style={{fontSize:13,fontWeight:700,textTransform:'uppercase',letterSpacing:'0.8px',color:thm.text40,marginBottom:14}}>{t('Статистика месяца')}</div>
                   {streakModalData === null ? (
-                    <div style={{textAlign:'center',color:thm.text40,fontSize:14,padding:'12px 0'}}>Загрузка...</div>
+                    <div style={{textAlign:'center',color:thm.text40,fontSize:14,padding:'12px 0'}}>{t('Загрузка...')}</div>
                   ) : (
                     <div style={{display:'flex',flexDirection:'column',gap:10}}>
                       <div style={{display:'flex',justifyContent:'space-between',alignItems:'center'}}>
-                        <span style={{fontSize:14,color:thm.text70}}>🏋️ Тренировок</span>
+                        <span style={{fontSize:14,color:thm.text70}}>{t('🏋️ Тренировок')}</span>
                         <span style={{fontSize:15,fontWeight:700,color:thm.text}}>{streak}</span>
                       </div>
                       <div style={{display:'flex',justifyContent:'space-between',alignItems:'center'}}>
-                        <span style={{fontSize:14,color:thm.text70}}>📦 Поднято</span>
-                        <span style={{fontSize:15,fontWeight:700,color:thm.text}}>{settings.units==='lbs'?`${Math.round(streakModalData.monthKg*2.20462)} lbs`:`${streakModalData.monthKg} кг`}</span>
+                        <span style={{fontSize:14,color:thm.text70}}>{t('📦 Поднято')}</span>
+                        <span style={{fontSize:15,fontWeight:700,color:thm.text}}>{fmtVolume(streakModalData.monthKg)}</span>
                       </div>
                       <div style={{display:'flex',justifyContent:'space-between',alignItems:'center'}}>
-                        <span style={{fontSize:14,color:thm.text70}}>🏆 Новых рекордов</span>
+                        <span style={{fontSize:14,color:thm.text70}}>{t('🏆 Новых рекордов')}</span>
                         <span style={{fontSize:15,fontWeight:700,color:streakModalData.monthPRs>0?'#FF9F0A':thm.text}}>{streakModalData.monthPRs}</span>
                       </div>
                       {streakModalData.bestWorkout && (
                         <div style={{display:'flex',justifyContent:'space-between',alignItems:'center'}}>
-                          <span style={{fontSize:14,color:thm.text70}}>🔝 Лучшая тренировка</span>
+                          <span style={{fontSize:14,color:thm.text70}}>{t('🔝 Лучшая тренировка')}</span>
                           <span style={{fontSize:14,fontWeight:600,color:thm.text,textAlign:'right'}}>
-                            {formatDateShort(streakModalData.bestWorkout.date)} · {settings.units==='lbs'?`${Math.round(streakModalData.bestWorkout.kg*2.20462)} lbs`:`${streakModalData.bestWorkout.kg} кг`}
+                            {formatDateShort(streakModalData.bestWorkout.date)} · {fmtVolume(streakModalData.bestWorkout.kg)}
                           </span>
                         </div>
                       )}
                       {streakModalData.bestImprovement && (
                         <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',flexWrap:'wrap',gap:4}}>
-                          <span style={{fontSize:14,color:thm.text70}}>📈 Лучший прирост</span>
+                          <span style={{fontSize:14,color:thm.text70}}>{t('📈 Лучший прирост')}</span>
                           <span style={{fontSize:14,fontWeight:600,color:'#FF9F0A',textAlign:'right',maxWidth:'55%'}}>
-                            {streakModalData.bestImprovement.name} +{settings.units==='lbs'?`${Math.round(streakModalData.bestImprovement.diff*2.20462)} lbs`:`${streakModalData.bestImprovement.diff} кг`}
+                            {exName(streakModalData.bestImprovement.name)} +{fmtW(streakModalData.bestImprovement.diff)}
                           </span>
                         </div>
                       )}
@@ -1918,22 +1922,22 @@ export default function App() {
               {editSetModal && (
                 <div style={{position:'fixed',inset:0,background:'rgba(0,0,0,0.7)',zIndex:1000,display:'flex',alignItems:'flex-end',justifyContent:'center'}} onClick={()=>setEditSetModal(null)}>
                   <div style={{background:'#1C1C1E',borderRadius:'20px 20px 0 0',padding:24,width:'100%',maxWidth:480}} onClick={e=>e.stopPropagation()}>
-                    <div style={{fontSize:17,fontWeight:700,color:'rgba(255,255,255,0.9)',marginBottom:20}}>Изменить подход</div>
+                    <div style={{fontSize:17,fontWeight:700,color:'rgba(255,255,255,0.9)',marginBottom:20}}>{t('Изменить подход')}</div>
                     {editSetModal.isTimed ? (
                       <div style={{marginBottom:16}}>
-                        <div style={{fontSize:13,color:'rgba(255,255,255,0.4)',marginBottom:8}}>Секунды</div>
+                        <div style={{fontSize:13,color:'rgba(255,255,255,0.4)',marginBottom:8}}>{t('Секунды')}</div>
                         <input type="number" value={editSetModal.weight} onChange={e=>setEditSetModal(m=>({...m,weight:+e.target.value}))}
                           style={{width:'100%',padding:'12px',borderRadius:12,border:'1px solid rgba(255,255,255,0.15)',background:'rgba(255,255,255,0.07)',color:'#fff',fontSize:16,boxSizing:'border-box'}}/>
                       </div>
                     ) : (
                       <div style={{display:'flex',gap:12,marginBottom:16}}>
                         <div style={{flex:1}}>
-                          <div style={{fontSize:13,color:'rgba(255,255,255,0.4)',marginBottom:8}}>Вес (кг)</div>
+                          <div style={{fontSize:13,color:'rgba(255,255,255,0.4)',marginBottom:8}}>{t('Вес (кг)')}</div>
                           <input type="number" value={editSetModal.weight} onChange={e=>setEditSetModal(m=>({...m,weight:+e.target.value}))}
                             style={{width:'100%',padding:'12px',borderRadius:12,border:'1px solid rgba(255,255,255,0.15)',background:'rgba(255,255,255,0.07)',color:'#fff',fontSize:16,boxSizing:'border-box'}}/>
                         </div>
                         <div style={{flex:1}}>
-                          <div style={{fontSize:13,color:'rgba(255,255,255,0.4)',marginBottom:8}}>Повторения</div>
+                          <div style={{fontSize:13,color:'rgba(255,255,255,0.4)',marginBottom:8}}>{t('Повторения')}</div>
                           <input type="number" value={editSetModal.reps} onChange={e=>setEditSetModal(m=>({...m,reps:+e.target.value}))}
                             style={{width:'100%',padding:'12px',borderRadius:12,border:'1px solid rgba(255,255,255,0.15)',background:'rgba(255,255,255,0.07)',color:'#fff',fontSize:16,boxSizing:'border-box'}}/>
                         </div>
@@ -1943,7 +1947,7 @@ export default function App() {
                       setWorkoutExercises(prev=>prev.map((e,i)=>i!==editSetModal.exIdx?e:{...e,sets:e.sets.map((ss,j)=>j!==editSetModal.setIdx?ss:{...ss,weight:editSetModal.weight,reps:editSetModal.reps})}))
                       setEditSetModal(null)
                     }} style={{width:'100%',padding:'14px',borderRadius:14,background:'#FF9F0A',color:'#000',fontSize:16,fontWeight:700,border:'none',cursor:'pointer'}}>
-                      Сохранить
+                      {t('Сохранить')}
                     </button>
                   </div>
                 </div>
@@ -1953,11 +1957,11 @@ export default function App() {
               {showPlanModal && (
                 <div style={{position:'fixed',inset:0,background:'rgba(0,0,0,0.8)',zIndex:1000,display:'flex',alignItems:'center',justifyContent:'center',padding:20}} onClick={()=>setShowPlanModal(false)}>
                   <div style={{background:'#1C1C1E',borderRadius:24,padding:24,width:'100%',maxWidth:400}} onClick={e=>e.stopPropagation()}>
-                    <div style={{fontSize:19,fontWeight:700,color:'rgba(255,255,255,0.9)',marginBottom:6}}>Выбери план тренировок</div>
-                    <div style={{fontSize:13,color:'rgba(255,255,255,0.4)',marginBottom:16}}>Gym BRO будет подбирать упражнения и веса автоматически</div>
+                    <div style={{fontSize:19,fontWeight:700,color:'rgba(255,255,255,0.9)',marginBottom:6}}>{t('Выбери план тренировок')}</div>
+                    <div style={{fontSize:13,color:'rgba(255,255,255,0.4)',marginBottom:16}}>{t('Gym BRO будет подбирать упражнения и веса автоматически')}</div>
                     {activePlans.length > 0 && (
                       <div style={{marginBottom:16}}>
-                        <div style={{fontSize:11,fontWeight:700,textTransform:'uppercase',letterSpacing:'0.6px',color:'rgba(255,255,255,0.3)',marginBottom:8}}>Активные планы</div>
+                        <div style={{fontSize:11,fontWeight:700,textTransform:'uppercase',letterSpacing:'0.6px',color:'rgba(255,255,255,0.3)',marginBottom:8}}>{t('Активные планы')}</div>
                         {activePlans.map(plan => {
                           const days = PLAN_DAYS[plan.plan_type] || []
                           const dayIdx = (plan.current_day - 1) % days.length
@@ -1966,8 +1970,8 @@ export default function App() {
                           return (
                             <div key={plan.id} onClick={()=>setShowPlanModal(false)} style={{display:'flex',alignItems:'center',justifyContent:'space-between',background:'rgba(255,255,255,0.06)',borderRadius:12,padding:'10px 12px',marginBottom:8,cursor:'pointer'}}>
                               <div>
-                                <div style={{fontSize:14,fontWeight:700,color:'rgba(255,255,255,0.9)'}}>{PLAN_ICONS[plan.plan_type]} {PLAN_NAMES[plan.plan_type]}</div>
-                                <div style={{fontSize:12,color:'rgba(255,255,255,0.4)',marginTop:2}}>{dayDef?.label} · Неделя {week}</div>
+                                <div style={{fontSize:14,fontWeight:700,color:'rgba(255,255,255,0.9)'}}>{PLAN_ICONS[plan.plan_type]} {t(PLAN_NAMES[plan.plan_type])}</div>
+                                <div style={{fontSize:12,color:'rgba(255,255,255,0.4)',marginTop:2}}>{t(dayDef?.label)} · {t('Неделя')} {week}</div>
                               </div>
                               <button onClick={e=>{e.stopPropagation();setConfirmDeletePlan(plan)}} style={{background:'rgba(255,59,48,0.12)',border:'none',color:'#FF453A',width:28,height:28,borderRadius:8,cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',fontSize:14,fontWeight:700,flexShrink:0}}>✕</button>
                             </div>
@@ -1992,7 +1996,7 @@ export default function App() {
                             }
                           }} style={{padding:'18px 12px',borderRadius:16,border:'1px solid rgba(255,255,255,0.1)',background:'rgba(255,255,255,0.05)',cursor:'pointer',textAlign:'left'}}>
                             <div style={{fontSize:28,marginBottom:8}}>{PLAN_ICONS[type]}</div>
-                            <div style={{fontSize:15,fontWeight:700,color:'rgba(255,255,255,0.9)'}}>{PLAN_NAMES[type]}</div>
+                            <div style={{fontSize:15,fontWeight:700,color:'rgba(255,255,255,0.9)'}}>{t(PLAN_NAMES[type])}</div>
                           </button>
                         ))}
                       </div>
@@ -2005,15 +2009,15 @@ export default function App() {
               {confirmDeletePlan && (
                 <div style={{position:'fixed',inset:0,background:'rgba(0,0,0,0.7)',zIndex:1002,display:'flex',alignItems:'center',justifyContent:'center',padding:32}}>
                   <div style={{background:'#1C1C1E',borderRadius:20,padding:24,width:'100%',maxWidth:320,textAlign:'center'}}>
-                    <div style={{fontSize:16,fontWeight:700,color:'rgba(255,255,255,0.9)',marginBottom:8}}>Удалить план «{PLAN_NAMES[confirmDeletePlan.plan_type]}»?</div>
-                    <div style={{fontSize:13,color:'rgba(255,255,255,0.4)',marginBottom:24}}>Прогресс весов будет сохранён.</div>
+                    <div style={{fontSize:16,fontWeight:700,color:'rgba(255,255,255,0.9)',marginBottom:8}}>{t('Удалить план «{name}»?',{name:t(PLAN_NAMES[confirmDeletePlan.plan_type])})}</div>
+                    <div style={{fontSize:13,color:'rgba(255,255,255,0.4)',marginBottom:24}}>{t('Прогресс весов будет сохранён.')}</div>
                     <div style={{display:'flex',gap:10}}>
-                      <button onClick={()=>setConfirmDeletePlan(null)} style={{flex:1,padding:'12px',borderRadius:12,border:'1px solid rgba(255,255,255,0.1)',background:'transparent',color:'rgba(255,255,255,0.6)',fontSize:15,fontWeight:600,cursor:'pointer'}}>Отмена</button>
+                      <button onClick={()=>setConfirmDeletePlan(null)} style={{flex:1,padding:'12px',borderRadius:12,border:'1px solid rgba(255,255,255,0.1)',background:'transparent',color:'rgba(255,255,255,0.6)',fontSize:15,fontWeight:600,cursor:'pointer'}}>{t('Отмена')}</button>
                       <button onClick={async ()=>{
                         await supabase.from('workout_plans').update({is_active:false}).eq('id',confirmDeletePlan.id)
                         setActivePlans(prev => prev.filter(p => p.id !== confirmDeletePlan.id))
                         setConfirmDeletePlan(null)
-                      }} style={{flex:1,padding:'12px',borderRadius:12,border:'none',background:'rgba(255,59,48,0.85)',color:'#fff',fontSize:15,fontWeight:700,cursor:'pointer'}}>Удалить</button>
+                      }} style={{flex:1,padding:'12px',borderRadius:12,border:'none',background:'rgba(255,59,48,0.85)',color:'#fff',fontSize:15,fontWeight:700,cursor:'pointer'}}>{t('Удалить')}</button>
                     </div>
                   </div>
                 </div>
@@ -2024,14 +2028,14 @@ export default function App() {
                 <div style={{position:'fixed',inset:0,background:'rgba(0,0,0,0.85)',zIndex:1001,display:'flex',alignItems:'center',justifyContent:'center',padding:24}}>
                   <div style={{background:'#1C1C1E',borderRadius:24,padding:28,maxWidth:360,width:'100%',textAlign:'center'}}>
                     <div style={{fontSize:36,marginBottom:16}}>👋</div>
-                    <div style={{fontSize:20,fontWeight:700,color:'rgba(255,255,255,0.9)',marginBottom:12}}>Первая тренировка</div>
+                    <div style={{fontSize:20,fontWeight:700,color:'rgba(255,255,255,0.9)',marginBottom:12}}>{t('Первая тренировка')}</div>
                     <div style={{fontSize:15,color:'rgba(255,255,255,0.55)',lineHeight:1.6,marginBottom:24}}>
-                      Сегодня найдём твой стартовый вес.<br/>
-                      Возьми вес с которым сделаешь нужное количество повторений комфортно — не на максимуме.<br/><br/>
-                      Gym BRO запомнит и будет считать прогрессию сам.
+                      {t('Сегодня найдём твой стартовый вес.')}<br/>
+                      {t('Возьми вес с которым сделаешь нужное количество повторений комфортно — не на максимуме.')}<br/><br/>
+                      {t('Gym BRO запомнит и будет считать прогрессию сам.')}
                     </div>
                     <button onClick={()=>setPlanOnboarding(false)} style={{width:'100%',padding:'14px',borderRadius:14,background:'#FF9F0A',color:'#000',fontSize:16,fontWeight:700,border:'none',cursor:'pointer'}}>
-                      Понятно, начинаем!
+                      {t('Понятно, начинаем!')}
                     </button>
                   </div>
                 </div>
@@ -2044,9 +2048,9 @@ export default function App() {
                 return (
                   <div style={{position:'fixed',inset:0,background:'rgba(0,0,0,0.8)',zIndex:1000,display:'flex',alignItems:'flex-end',justifyContent:'center'}} onClick={()=>setShowDayPreview(null)}>
                     <div style={{background:'#1C1C1E',borderRadius:'20px 20px 0 0',padding:24,width:'100%',maxWidth:480,paddingBottom:40,maxHeight:'85vh',overflowY:'auto'}} onClick={e=>e.stopPropagation()}>
-                      <div style={{fontSize:17,fontWeight:700,color:'rgba(255,255,255,0.9)',marginBottom:4}}>{dayDef.label}</div>
-                      <div style={{fontSize:13,color:'rgba(255,255,255,0.4)',marginBottom:4}}>{PLAN_ICONS[plan.plan_type]} {PLAN_NAMES[plan.plan_type]} · Неделя {week} · тренировка {plan.workout_count+1}</div>
-                      <div style={{fontSize:13,color:'#FF9F0A',marginBottom:16}}>⚡ Разогрей {dayDef.warmupHint}</div>
+                      <div style={{fontSize:17,fontWeight:700,color:'rgba(255,255,255,0.9)',marginBottom:4}}>{t(dayDef.label)}</div>
+                      <div style={{fontSize:13,color:'rgba(255,255,255,0.4)',marginBottom:4}}>{PLAN_ICONS[plan.plan_type]} {t(PLAN_NAMES[plan.plan_type])} · {t('Неделя')} {week} · {t('тренировка')} {plan.workout_count+1}</div>
+                      <div style={{fontSize:13,color:'#FF9F0A',marginBottom:16}}>⚡ {t('Разогрей')} {t(dayDef.warmupHint)}</div>
                       {dayDef.exercises.map((ex,i) => {
                         const key = `${plan.id}:${ex.name}`
                         const pw = planWeights[key]
@@ -2054,11 +2058,11 @@ export default function App() {
                         return (
                           <div key={i} style={{display:'flex',alignItems:'center',justifyContent:'space-between',padding:'10px 12px',background:'rgba(255,255,255,0.05)',borderRadius:12,marginBottom:6}}>
                             <div>
-                              <span style={{fontSize:14,fontWeight:600,color:'rgba(255,255,255,0.85)'}}>{ex.name}</span>
-                              {ex.isBase && <span style={{fontSize:11,color:'#FF9F0A',marginLeft:6,fontWeight:600}}>база</span>}
+                              <span style={{fontSize:14,fontWeight:600,color:'rgba(255,255,255,0.85)'}}>{exName(ex.name)}</span>
+                              {ex.isBase && <span style={{fontSize:11,color:'#FF9F0A',marginLeft:6,fontWeight:600}}>{t('база')}</span>}
                             </div>
                             <span style={{fontSize:13,color:'rgba(255,255,255,0.45)',fontWeight:600}}>
-                              {hasWeight ? `${pw.working_weight}кг × ${ex.reps} × ${ex.sets}` : `? × ${ex.reps} × ${ex.sets}`}
+                              {hasWeight ? `${fmtW(pw.working_weight)} × ${ex.reps} × ${ex.sets}` : `? × ${ex.reps} × ${ex.sets}`}
                             </span>
                           </div>
                         )
@@ -2093,10 +2097,10 @@ export default function App() {
                           setShowDayPreview(null)
                         }
                       }} style={{width:'100%',marginTop:16,padding:'14px',borderRadius:14,background:'#FF9F0A',color:'#000',fontSize:16,fontWeight:700,border:'none',cursor:loadingPlan?'default':'pointer',opacity:loadingPlan?0.7:1}}>
-                        {loadingPlan ? 'Загружаю упражнения…' : 'Загрузить в тренировку'}
+                        {loadingPlan ? t('Загружаю упражнения…') : t('Загрузить в тренировку')}
                       </button>
                       <button onClick={()=>setShowDayPreview(null)} style={{width:'100%',marginTop:8,padding:'12px',borderRadius:14,border:'none',background:'transparent',color:'rgba(255,255,255,0.4)',fontSize:14,cursor:'pointer'}}>
-                        ← Закрыть
+                        {t('← Закрыть')}
                       </button>
                     </div>
                   </div>
@@ -2107,9 +2111,9 @@ export default function App() {
               {showRatingModal && pendingRatingPlan && (
                 <div style={{position:'fixed',inset:0,background:'rgba(0,0,0,0.85)',zIndex:1001,display:'flex',alignItems:'center',justifyContent:'center',padding:24}}>
                   <div style={{background:'#1C1C1E',borderRadius:24,padding:28,maxWidth:360,width:'100%',textAlign:'center'}}>
-                    <div style={{fontSize:22,fontWeight:700,color:'rgba(255,255,255,0.9)',marginBottom:20}}>Как прошла тренировка? 💪</div>
+                    <div style={{fontSize:22,fontWeight:700,color:'rgba(255,255,255,0.9)',marginBottom:20}}>{t('Как прошла тренировка? 💪')}</div>
                     <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:10,marginBottom:20}}>
-                      {[{key:'hard',label:'😓 Тяжело'},{key:'ok',label:'😐 Нормально'},{key:'good',label:'😊 Хорошо'},{key:'super',label:'🔥 Супер'}].map(r=>(
+                      {[{key:'hard',label:t('😓 Тяжело')},{key:'ok',label:t('😐 Нормально')},{key:'good',label:t('😊 Хорошо')},{key:'super',label:t('🔥 Супер')}].map(r=>(
                         <button key={r.key} onClick={async ()=>{
                           const completedMap = {}
                           for (const ex of workoutExercises) {
@@ -2133,7 +2137,7 @@ export default function App() {
 
 
       <div className="nav-bar">
-        {[{id:'add',icon:'➕',label:'Тренировка'},{id:'history',icon:'📜',label:'История'},{id:'progress',icon:'📈',label:'Прогресс'},{id:'exercises',icon:'📋',label:'Упражнения'}].map(t=>(
+        {[{id:'add',icon:'➕',label:t('Тренировка')},{id:'history',icon:'📜',label:t('История')},{id:'progress',icon:'📈',label:t('Прогресс')},{id:'exercises',icon:'📋',label:t('Упражнения')}].map(t=>(
           <div key={t.id} className="nav-item" style={{opacity:tab===t.id?1:0.62}} onClick={()=>{setTab(t.id);if(t.id!=='add'){setWorkoutStarted(false);setSelectedEx(null)}}}>
             <span className="nav-icon">{t.icon}</span>
             <span className="nav-lbl" style={{color:tab===t.id?'#FF9F0A':'white'}}>{t.label}</span>

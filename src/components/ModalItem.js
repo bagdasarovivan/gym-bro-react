@@ -1,6 +1,7 @@
 /* eslint-disable no-unused-vars */
 import { memo } from 'react'
 import { getExImage } from '../data/exerciseCatalog'
+import { exName } from '../i18n'
 
 export const ModalItem = memo(function ModalItem({ ex, onAdd, isFav, onToggleFav }) {
   const img = getExImage(ex.name)
@@ -8,7 +9,7 @@ export const ModalItem = memo(function ModalItem({ ex, onAdd, isFav, onToggleFav
     <div className="modal-item" onClick={()=>onAdd(ex.name)} style={{display:'flex',alignItems:'center',justifyContent:'space-between'}}>
       <div style={{display:'flex',alignItems:'center',gap:12,flex:1,minWidth:0}}>
         {img ? <img src={img} alt={ex.name} className="modal-img" loading="lazy" decoding="async" onError={e => e.target.style.display='none'}/> : <div className="modal-ph">🏋️</div>}
-        <span style={{overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{ex.name}</span>
+        <span style={{overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{exName(ex.name)}</span>
       </div>
       {onToggleFav && (
         <button onClick={e=>{e.stopPropagation();onToggleFav(ex.name)}} style={{background:'none',border:'none',cursor:'pointer',fontSize:18,padding:'4px 6px',flexShrink:0,lineHeight:1}}>{isFav ? '⭐' : '☆'}</button>

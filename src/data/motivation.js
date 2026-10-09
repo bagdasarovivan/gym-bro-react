@@ -1,5 +1,6 @@
 // Мотивационные фразы, ранги и цитаты.
 /* eslint-disable no-unused-vars */
+import { t } from '../i18n'
 
 export const MONTH_MOTIVATIONS = {
   1:  ['Первая тренировка месяца! Отличное начало', 'Старт дан! Так держать', 'Первый шаг самый важный!'],
@@ -18,9 +19,9 @@ export const MONTH_MOTIVATIONS = {
 
 export function getMotivation(count) {
   const exact = MONTH_MOTIVATIONS[count]
-  if (exact) return exact[Math.floor(Math.random() * exact.length)]
-  if (count > 20) return count + ' тренировок за месяц — ты легенда!'
-  const msgs = [count+'-я тренировка! Продолжай в том же духе', 'Уже '+count+'! Прогресс очевиден', count+' тренировок — ты на верном пути']
+  if (exact) return t(exact[Math.floor(Math.random() * exact.length)])
+  if (count > 20) return t('{n} тренировок за месяц — ты легенда!', { n: count })
+  const msgs = [t('{n}-я тренировка! Продолжай в том же духе', { n: count }), t('Уже {n}! Прогресс очевиден', { n: count }), t('{n} тренировок — ты на верном пути', { n: count })]
   return msgs[count % 3]
 }
 
