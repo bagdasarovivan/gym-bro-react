@@ -1207,7 +1207,7 @@ export default function App() {
             const hint = resume ? t('Тренировка не сохранена — продолжи')
               : trainedToday ? t('Сегодня уже была тренировка — можно добавить ещё')
               : t('Это будет {n}-я тренировка в {month}', { n: streak + 1, month: monthIn })
-            const press = (e, v) => { e.currentTarget.style.transform = `scale(${v})` }
+            const press = (e, v) => { e.currentTarget.style.filter = v < 1 ? 'brightness(0.88)' : '' }
             return (
             <div style={{display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',flex:1,paddingTop:'14vh',paddingBottom:40,gap:36}}>
               <div style={{textAlign:'center'}}>
@@ -1217,19 +1217,28 @@ export default function App() {
                 <div style={{fontSize:30,fontWeight:800,color:thm.text,letterSpacing:'-0.5px',marginTop:10}}>{resume ? t('Продолжим?') : t('Время тренироваться')}</div>
               </div>
               <style>{`
-                @keyframes start-pulse{0%{transform:scale(1);opacity:0.55}70%{transform:scale(1.22);opacity:0}100%{transform:scale(1.22);opacity:0}}
-                .start-pulse{position:absolute;inset:0;border-radius:50%;border:1.5px solid rgba(255,159,10,0.5);animation:start-pulse 2.6s ease-out infinite;pointer-events:none}
-                .start-pulse.p2{animation-delay:1.3s}
+                /* soft filled waves rolling out from the button + a slow "breathing" glow on the button itself */
+                @keyframes start-wave{0%{transform:scale(0.72);opacity:0.5}100%{transform:scale(1.35);opacity:0}}
+                @keyframes start-breathe{0%,100%{transform:scale(1);box-shadow:0 0 36px rgba(255,159,10,0.35),0 0 0 0 rgba(255,159,10,0.25)}50%{transform:scale(1.035);box-shadow:0 0 64px rgba(255,159,10,0.6),0 0 0 10px rgba(255,159,10,0.08)}}
+                @keyframes start-halo{0%,100%{opacity:0.7}50%{opacity:1}}
+                .start-pulse{position:absolute;inset:0;border-radius:50%;background:radial-gradient(circle,rgba(255,159,10,0) 52%,rgba(255,159,10,0.28) 66%,rgba(255,159,10,0) 72%);animation:start-wave 3.6s cubic-bezier(0.22,0.61,0.36,1) infinite;pointer-events:none}
+                .start-pulse.p2{animation-delay:1.2s}
+                .start-pulse.p3{animation-delay:2.4s}
+                .start-halo{animation:start-halo 3.6s ease-in-out infinite}
+                .start-btn{animation:start-breathe 3.6s ease-in-out infinite}
+                .start-btn:active{animation-play-state:paused}
+                @media (prefers-reduced-motion: reduce){.start-pulse,.start-btn,.start-halo{animation:none}}
               `}</style>
               <div style={{position:'relative',width:232,height:232,borderRadius:'50%',background:'rgba(255,159,10,0.07)',border:'1px solid rgba(255,159,10,0.18)',display:'flex',alignItems:'center',justifyContent:'center'}}>
                 <div className="start-pulse"/>
                 <div className="start-pulse p2"/>
-                <div style={{width:196,height:196,borderRadius:'50%',background:'rgba(255,159,10,0.12)',display:'flex',alignItems:'center',justifyContent:'center'}}>
+                <div className="start-pulse p3"/>
+                <div className="start-halo" style={{position:'relative',zIndex:1,width:196,height:196,borderRadius:'50%',background:'rgba(255,159,10,0.12)',display:'flex',alignItems:'center',justifyContent:'center'}}>
                   <button className="start-btn" onClick={()=>{ if (!workoutExercises.length) setWorkoutDate(localDateStr(new Date())); setWorkoutStarted(true) }}
                     onMouseDown={e=>press(e,0.95)} onMouseUp={e=>press(e,1)} onMouseLeave={e=>press(e,1)}
                     onTouchStart={e=>press(e,0.95)} onTouchEnd={e=>press(e,1)}
                     style={{width:164,height:164,borderRadius:'50%',border:'none',cursor:'pointer',background:'#FF9F0A',color:'#000',
-                      fontSize:resume?16:20,fontWeight:900,letterSpacing:'3px',boxShadow:'0 0 48px rgba(255,159,10,0.45)',transition:'transform 0.15s'}}>
+                      fontSize:resume?16:20,fontWeight:900,letterSpacing:'3px',boxShadow:'0 0 48px rgba(255,159,10,0.45)',transition:'filter 0.15s'}}>
                     {resume ? t('ПРОДОЛЖИТЬ') : t('НАЧАТЬ')}
                   </button>
                 </div>
