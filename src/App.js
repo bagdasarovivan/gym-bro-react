@@ -8,14 +8,14 @@ import { WarmupModal } from './components/WarmupModal'
 import { StretchModal } from './components/StretchModal'
 import { ChartExercisePicker } from './components/ChartExercisePicker'
 import { HistoryView } from './components/History'
-import { AchTabs, AchievementCelebration, BadgeGrid, MonthArchive, MonthChallenges } from './components/Achievements'
+import { AchTabs, AchievementCelebration, BadgeGrid, MonthArchive, MonthChallenges, NextGoals, RanksCard, RecentEarned } from './components/Achievements'
 import { computeAchievements, describeId } from './data/achievements'
 import { KG_TO_LB, dispW, exInfo, exName, fmtVolume, fmtW, isLbs, locale, muscleLabel, num, setPrefs, t, toKg, variantName, weightOptions } from './i18n'
 import { LineChart } from './components/LineChart'
 import { ModalItem } from './components/ModalItem'
 import { MuscleMap } from './components/MuscleMap'
 import { DEFAULT_FAVORITES, EXERCISES, EXERCISE_IMAGES, EXERCISE_INFO, EXERCISE_MUSCLES, EXERCISE_TYPE, LIGHT_WEIGHTS, MUSCLE_FILTERS_ROW1, MUSCLE_FILTERS_ROW2, MUSCLE_FILTER_MAP, MUSCLE_LABELS, REPS_OPTIONS, TIME_OPTIONS, VARIANT_EXERCISES, getDefaultVariant, getExImage, getVariantOptions, getWarmupSets, getWeightOptions, normalizeName } from './data/exerciseCatalog'
-import { GREAT_QUOTES, RANK_LEVELS, RANK_QUOTES, getMotivation, getRank } from './data/motivation'
+import { RANK_LEVELS, RANK_QUOTES, getMotivation, getRank } from './data/motivation'
 import { calcAnatomyLoad } from './data/muscleLoad'
 import { PLAN_DAYS, PLAN_ICONS, PLAN_NAMES } from './data/plans'
 import { CSS_ALL } from './styles/appCss'
@@ -114,7 +114,6 @@ export default function App() {
   const [showClearConfirm, setShowClearConfirm] = useState(false)
   const [showStreakModal, setShowStreakModal] = useState(false)
   const [streakModalData, setStreakModalData] = useState(null)
-  const [streakQuote, setStreakQuote] = useState(0)
   const [streakMotivQuote, setStreakMotivQuote] = useState('')
   const [exTabSearch, setExTabSearch] = useState('')
   const [exTabFilter, setExTabFilter] = useState('all')
@@ -311,7 +310,6 @@ export default function App() {
   const openStreakModal = async () => {
     setShowStreakModal(true); setAchUnviewed(false)
     setStreakModalData(null)
-    setStreakQuote(Math.floor(Math.random() * GREAT_QUOTES.length))
     const rankNow = getRank(streak)
     const quotesArr = RANK_QUOTES[rankNow.name] || RANK_QUOTES['Новичок']
     setStreakMotivQuote(quotesArr[Math.floor(Math.random() * quotesArr.length)])
@@ -780,9 +778,9 @@ export default function App() {
 
   const achievements = useMemo(() => {
     if (!allRows || !achReady || weightsStatus === 'loading') return null
-    try { return computeAchievements({ rows: allRows, bodyWeights, routineLog, today: localDateStr(new Date()) }) }
+    try { return computeAchievements({ rows: allRows, bodyWeights, routineLog, today: localDateStr(new Date()), sex: settings.sex || 'male' }) }
     catch (e) { console.error('achievements', e); return null }
-  }, [allRows, achReady, bodyWeights, weightsStatus, routineLog])
+  }, [allRows, achReady, bodyWeights, weightsStatus, routineLog, settings.sex])
 
   // Celebrate newly earned ones. On the very first run everything already earned is marked as seen quietly.
   useEffect(() => {
@@ -799,7 +797,11 @@ export default function App() {
       return
     }
     const cur = achievements.current.month
-    const items = fresh.filter(id => id.startsWith('p:') || id.startsWith(`m:${cur}:`)).map(id => describeId(id, achievements)).filter(Boolean)
+    // For sport ranks only the highest new rank per lift is celebrated
+    const RANK_ORDER = ['III юн', 'II юн', 'I юн', 'III', 'II', 'I', 'КМС', 'МС', 'МСМК']
+    const topRank = {}
+    fresh.filter(id => id.startsWith('r:')).forEach(id => { const [, lift, r] = id.split(':'); if (!topRank[lift] || RANK_ORDER.indexOf(r) > RANK_ORDER.indexOf(topRank[lift])) topRank[lift] = r })
+    const items = fresh.filter(id => id.startsWith('p:') || (id.startsWith('r:') && topRank[id.split(':')[1]] === id.split(':')[2]) || id.startsWith(`m:${cur}:`)).map(id => describeId(id, achievements)).filter(Boolean)
     if (items.length) {
       setAchQueue(q => [...q, ...items]); setAchUnviewed(true)
       if (navigator.vibrate) navigator.vibrate([80, 40, 80, 40, 200])
@@ -1769,7 +1771,6 @@ export default function App() {
       {/* Streak / Rank Modal */}
       {showStreakModal && (() => {
         const rank = getRank(streak)
-        const greatQ = GREAT_QUOTES[streakQuote]
         return (
           <div className="modal-overlay" onClick={e=>{if(e.target===e.currentTarget)setShowStreakModal(false)}}>
             <div className="modal" style={{background:thm.modalBg,maxHeight:'88dvh'}}>
@@ -1781,69 +1782,59 @@ export default function App() {
               <AchTabs tab={achTab} setTab={setAchTab} thm={thm} isDark={isDark}/>
               <div style={{overflowY:'auto',padding:'16px 20px 32px',flex:1}}>
                 {achTab === 'all' && (achievements
-                  ? <BadgeGrid list={achievements.permanent} thm={thm} isDark={isDark}/>
+                  ? <>
+                      <RanksCard ranks={achievements.ranks} sex={settings.sex || 'male'} onSex={v=>saveSettings({...settings,sex:v})} thm={thm} isDark={isDark}/>
+                      <NextGoals list={achievements.permanent} bodyWeight={achievements.ranks?.bodyWeight} thm={thm} isDark={isDark}/>
+                      <RecentEarned ach={achievements} thm={thm} isDark={isDark}/>
+                      <BadgeGrid list={achievements.permanent} thm={thm} isDark={isDark}/>
+                    </>
                   : <div style={{textAlign:'center',color:thm.text40,fontSize:14,padding:'24px 0'}}>{t('Загрузка...')}</div>)}
                 {achTab === 'month' && (<>
-                {/* Rank block */}
-                <div style={{background:isDark?'rgba(255,255,255,0.05)':'rgba(0,0,0,0.03)',borderRadius:20,padding:'24px 20px',marginBottom:12,border:`1px solid ${thm.border}`,textAlign:'center'}}>
-                  <div style={{fontSize:56,marginBottom:8}}>{rank.icon}</div>
-                  <div style={{fontSize:22,fontWeight:800,color:thm.text,marginBottom:4}}>{t(rank.name)}</div>
-                  <div style={{fontSize:13,color:thm.text50,marginBottom:16}}>{t('{n} тренировок в этом месяце',{n:streak})}</div>
-                  {!rank.isMax && (
-                    <div style={{marginBottom:16}}>
+                {/* Rank — compact */}
+                <div style={{background:isDark?'rgba(255,255,255,0.05)':'rgba(0,0,0,0.03)',borderRadius:20,padding:'14px 16px',marginBottom:12,border:`1px solid ${thm.border}`}}>
+                  <div style={{display:'flex',alignItems:'center',gap:12}}>
+                    <div style={{fontSize:38,lineHeight:1}}>{rank.icon}</div>
+                    <div style={{flex:1,minWidth:0}}>
+                      <div style={{fontSize:18,fontWeight:800,color:thm.text}}>{t(rank.name)}</div>
+                      <div style={{fontSize:12,color:thm.text50,marginTop:2}}>{t('{n} тренировок в этом месяце',{n:streak})}</div>
+                    </div>
+                  </div>
+                  {!rank.isMax ? (
+                    <div style={{marginTop:12}}>
                       <div style={{height:6,background:isDark?'rgba(255,255,255,0.1)':'rgba(0,0,0,0.08)',borderRadius:99,overflow:'hidden'}}>
                         <div style={{height:'100%',width:`${Math.round(rank.progress*100)}%`,background:'#FF9F0A',borderRadius:99,transition:'width 0.5s ease'}}/>
                       </div>
                       <div style={{fontSize:12,color:thm.text40,marginTop:6}}>{t('{n} тренировок до ранга «{rank}»',{n:rank.nextAt - streak, rank:t(rank.nextName)})} {RANK_LEVELS.find(r=>r.name===rank.nextName)?.icon}</div>
                     </div>
-                  )}
-                  {rank.isMax && <div style={{fontSize:12,color:'#FF9F0A',marginBottom:16,fontWeight:700}}>{t('Максимальный ранг достигнут! 🎉')}</div>}
-                  <div style={{fontSize:14,color:thm.text70,fontStyle:'italic',lineHeight:1.5,marginBottom:10}}>«{t(streakMotivQuote)}»</div>
-                  <div style={{fontSize:13,color:thm.text50,fontStyle:'italic',lineHeight:1.5,borderTop:`1px solid ${thm.border}`,paddingTop:12,marginTop:4}}>
-                    «{t(greatQ.text)}»
-                    <div style={{fontSize:11,color:thm.text35,marginTop:4}}>— {t(greatQ.author)}</div>
-                  </div>
+                  ) : <div style={{fontSize:12,color:'#FF9F0A',marginTop:10,fontWeight:700}}>{t('Максимальный ранг достигнут! 🎉')}</div>}
+                  {streakMotivQuote && <div style={{fontSize:12,color:thm.text50,fontStyle:'italic',marginTop:10}}>«{t(streakMotivQuote)}»</div>}
                 </div>
 
                 {achievements && <MonthChallenges month={achievements.current} thm={thm} isDark={isDark}/>}
-                {/* Month stats */}
-                <div style={{background:isDark?'rgba(255,255,255,0.05)':'rgba(0,0,0,0.03)',borderRadius:20,padding:'18px 20px',marginBottom:12,border:`1px solid ${thm.border}`}}>
-                  <div style={{fontSize:13,fontWeight:700,textTransform:'uppercase',letterSpacing:'0.8px',color:thm.text40,marginBottom:14}}>{t('Статистика месяца')}</div>
-                  {streakModalData === null ? (
-                    <div style={{textAlign:'center',color:thm.text40,fontSize:14,padding:'12px 0'}}>{t('Загрузка...')}</div>
-                  ) : (
-                    <div style={{display:'flex',flexDirection:'column',gap:10}}>
+                {/* Best of the month (totals are in the challenges above and in History) */}
+                {streakModalData && (streakModalData.bestWorkout || streakModalData.bestImprovement) && (
+                <div style={{background:isDark?'rgba(255,255,255,0.05)':'rgba(0,0,0,0.03)',borderRadius:20,padding:'16px 18px',marginBottom:12,border:`1px solid ${thm.border}`}}>
+                  <div style={{fontSize:13,fontWeight:700,textTransform:'uppercase',letterSpacing:'0.8px',color:thm.text40,marginBottom:12}}>{t('Лучшее за месяц')}</div>
+                  <div style={{display:'flex',flexDirection:'column',gap:10}}>
+                    {streakModalData.bestWorkout && (
                       <div style={{display:'flex',justifyContent:'space-between',alignItems:'center'}}>
-                        <span style={{fontSize:14,color:thm.text70}}>{t('🏋️ Тренировок')}</span>
-                        <span style={{fontSize:15,fontWeight:700,color:thm.text}}>{streak}</span>
+                        <span style={{fontSize:14,color:thm.text70}}>{t('🔝 Лучшая тренировка')}</span>
+                        <span style={{fontSize:14,fontWeight:600,color:thm.text,textAlign:'right'}}>
+                          {formatDateShort(streakModalData.bestWorkout.date)} · {fmtVolume(streakModalData.bestWorkout.kg)}
+                        </span>
                       </div>
-                      <div style={{display:'flex',justifyContent:'space-between',alignItems:'center'}}>
-                        <span style={{fontSize:14,color:thm.text70}}>{t('📦 Поднято')}</span>
-                        <span style={{fontSize:15,fontWeight:700,color:thm.text}}>{fmtVolume(streakModalData.monthKg)}</span>
+                    )}
+                    {streakModalData.bestImprovement && (
+                      <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',flexWrap:'wrap',gap:4}}>
+                        <span style={{fontSize:14,color:thm.text70}}>{t('📈 Лучший прирост')}</span>
+                        <span style={{fontSize:14,fontWeight:600,color:'#FF9F0A',textAlign:'right',maxWidth:'55%'}}>
+                          {exName(streakModalData.bestImprovement.name)} +{fmtW(streakModalData.bestImprovement.diff)}
+                        </span>
                       </div>
-                      <div style={{display:'flex',justifyContent:'space-between',alignItems:'center'}}>
-                        <span style={{fontSize:14,color:thm.text70}}>{t('🏆 Новых рекордов')}</span>
-                        <span style={{fontSize:15,fontWeight:700,color:streakModalData.monthPRs>0?'#FF9F0A':thm.text}}>{streakModalData.monthPRs}</span>
-                      </div>
-                      {streakModalData.bestWorkout && (
-                        <div style={{display:'flex',justifyContent:'space-between',alignItems:'center'}}>
-                          <span style={{fontSize:14,color:thm.text70}}>{t('🔝 Лучшая тренировка')}</span>
-                          <span style={{fontSize:14,fontWeight:600,color:thm.text,textAlign:'right'}}>
-                            {formatDateShort(streakModalData.bestWorkout.date)} · {fmtVolume(streakModalData.bestWorkout.kg)}
-                          </span>
-                        </div>
-                      )}
-                      {streakModalData.bestImprovement && (
-                        <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',flexWrap:'wrap',gap:4}}>
-                          <span style={{fontSize:14,color:thm.text70}}>{t('📈 Лучший прирост')}</span>
-                          <span style={{fontSize:14,fontWeight:600,color:'#FF9F0A',textAlign:'right',maxWidth:'55%'}}>
-                            {exName(streakModalData.bestImprovement.name)} +{fmtW(streakModalData.bestImprovement.diff)}
-                          </span>
-                        </div>
-                      )}
-                    </div>
-                  )}
+                    )}
+                  </div>
                 </div>
+                )}
 
                 {achievements
                   ? <MonthArchive archive={achievements.archive} thm={thm} isDark={isDark}/>
