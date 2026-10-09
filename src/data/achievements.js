@@ -27,14 +27,14 @@ const volume = (sets) => (sets || []).reduce((s, x) => s + (x.weight > 0 && x.re
 
 // Muscle groups (the 9 filter groups) an exercise trains, by its primary muscles
 const GROUPS = Object.keys(MUSCLE_FILTER_MAP)
-function groupsOf(name) {
+export function groupsOf(name) {
   const m = EXERCISE_MUSCLES[baseExName(name)] || EXERCISE_MUSCLES[name]
   if (!m) return []
   return GROUPS.filter(g => MUSCLE_FILTER_MAP[g].some(x => m.primary.includes(x)))
 }
 
 // rows: [{ workout_date, exercises: { name }, sets: [{ weight, reps, time_sec }] }] → days in date order
-function buildDays(rows) {
+export function buildDays(rows) {
   const byDate = new Map()
   ;(rows || []).forEach(w => {
     const name = normalizeName(w.exercises?.name)
@@ -59,7 +59,7 @@ function crossings(series, tiers) {
 }
 
 // Replays history per exercise and returns every new-record event (the first time doing an exercise is not one)
-function recordEvents(days) {
+export function recordEvents(days) {
   const best = {}, streak = {}, events = []
   let prStreakDate = null
   days.forEach(({ date, items }) => {

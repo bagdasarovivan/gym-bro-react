@@ -285,5 +285,11 @@ export const UI_EN = {
   'Вес, lbs': 'Weight, lbs',
   'раз': 'times',
   'Вес': 'Weight',
+  'т': 't',
+  'поднято': 'lifted',
+  'Сравнение с {range}': 'Compared with {range}',
+  'Сравнение с прошлым месяцем': 'Compared with the previous month',
+  '✏️ Изменить': '✏️ Edit',
+  'к {date}': 'vs {date}',
   '＋ Ввести вес': '＋ Log weight',
 }

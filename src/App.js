@@ -7,6 +7,7 @@ import { WeightModal } from './components/WeightModal'
 import { WarmupModal } from './components/WarmupModal'
 import { StretchModal } from './components/StretchModal'
 import { ChartExercisePicker } from './components/ChartExercisePicker'
+import { HistoryView } from './components/History'
 import { AchTabs, AchievementCelebration, BadgeGrid, MonthArchive, MonthChallenges } from './components/Achievements'
 import { computeAchievements, describeId } from './data/achievements'
 import { KG_TO_LB, dispW, exInfo, exName, fmtVolume, fmtW, isLbs, locale, muscleLabel, num, setPrefs, t, toKg, variantName, weightOptions } from './i18n'
@@ -1347,77 +1348,12 @@ export default function App() {
         </div>
       )}
 
-      {tab === 'history' && (() => {
-        // Build list of available months from history
-        const allMonths = [...new Set(history.map(w => w.workout_date.slice(0,7)))].sort().reverse()
-        const activeMonth = historyMonth || allMonths[0] || ''
-        const filtered = history.filter(w => w.workout_date.startsWith(activeMonth))
-        const filteredGrouped = filtered.reduce((acc,w) => { if(!acc[w.workout_date]) acc[w.workout_date]=[]; acc[w.workout_date].push(w); return acc }, {})
-        const workoutDaysCount = Object.keys(filteredGrouped).length
-        const monthLabel = (m) => {
-          if (!m) return ''
-          const [y,mo] = m.split('-')
-          return new Date(y, mo-1).toLocaleDateString(locale(), {month:'long', year:'numeric'})
-        }
-        return (
-          <div className="section">
-            {/* Month selector */}
-            {allMonths.length > 0 && (
-              <div style={{marginBottom:16}}>
-                <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',gap:12}}>
-                  <div style={{flex:1}}>
-                    <DropdownPicker
-                      options={allMonths}
-                      value={activeMonth}
-                      onChange={v=>{setHistoryMonth(v);setOpenDays({})}}
-                      unit=""
-                      label={t('Месяц')}
-                      labelFn={formatMonth}
-                    />
-                  </div>
-                  <div style={{background:'#1c1c1e',borderRadius:12,padding:'10px 14px',textAlign:'center',flexShrink:0,minWidth:72}}>
-                    <div style={{fontSize:22,fontWeight:800,color:'#FF9F0A'}}>{workoutDaysCount}</div>
-                    <div style={{fontSize:10,opacity:0.4,marginTop:2,textTransform:'uppercase',letterSpacing:'0.5px'}}>{t('трен.')}</div>
-                  </div>
-                </div>
-              </div>
-            )}
-            {Object.keys(filteredGrouped).length === 0 && <div style={{opacity:0.5,marginTop:20}}>{t('Нет записей')}</div>}
-            {Object.entries(filteredGrouped).map(([date, ws]) => {
-              const isOpen = openDays[date]
-              return (
-                <div key={date} className="day-group">
-                  <button className={`day-hdr${isOpen?' open':''}`} onClick={() => setOpenDays(p=>({...p,[date]:!p[date]}))}>
-                    <span>{formatDateShort(date)}</span>
-                    <div style={{display:'flex',alignItems:'center',gap:8}}>
-                      <span style={{fontSize:12,opacity:0.4}}>{ws.length} {t('упр.')}</span>
-                      <span className={`day-chev${isOpen?' open':''}`}>▼</span>
-                    </div>
-                  </button>
-                  {isOpen && (
-                    <div className="day-body">
-                      <div className="day-actions">
-                        <button className={`day-action-btn${copiedDay===date?' ok':''}`} onClick={() => copyDay(date,ws)}>{copiedDay===date?t('✅ Скопировано'):t('📋 Копировать')}</button>
-                        <button className="day-action-btn" onClick={() => setEditModal({date,workouts:ws.map(w=>({...w,sets:w.sets?[...w.sets]:[]}))})}> {t('✏️ Редактировать')}</button>
-                        <button className="day-action-btn del" onClick={() => deleteDay(date,ws)}>{t('🗑 Удалить')}</button>
-                      </div>
-                      {ws.map(w => (
-                        <div key={w.id} className="hist-card" style={{position:'relative'}}>
-                          <div style={{display:'flex',alignItems:'center',justifyContent:'space-between'}}>
-                            <div className="hist-ex">{exName(normalizeName(w.exercises?.name))}</div>
-                            <button onClick={()=>deleteWorkout(w.id)} style={{background:'none',border:'none',cursor:'pointer',fontSize:16,opacity:0.4,padding:'0 4px',color:'#ff453a'}} title={t('Удалить упражнение')}>✕</button>
-                          </div>
-                          <div className="chips">{w.sets?.sort((a,b)=>a.set_no-b.set_no).map((s,i) => <span key={i} className="chip">{setChip(s)}</span>)}</div>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              )
-            })}
-          </div>
-        )
-      })()}
+      {tab === 'history' && (
+        <HistoryView history={history} allRows={allRows} month={historyMonth} setMonth={setHistoryMonth}
+          openDays={openDays} setOpenDays={setOpenDays} copiedDay={copiedDay} onCopy={copyDay}
+          onEdit={(date, ws) => setEditModal({ date, workouts: ws.map(w => ({ ...w, sets: w.sets ? [...w.sets] : [] })) })}
+          onDeleteDay={deleteDay} onDeleteExercise={deleteWorkout} setChip={setChip} thm={thm} isDark={isDark}/>
+      )}
 
       {tab === 'progress' && (() => {
         // Compute muscle scores
