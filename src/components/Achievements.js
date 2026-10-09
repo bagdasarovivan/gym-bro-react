@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { MAX_SWAPS, TIERS, tierOf } from '../data/achievements'
+import { MAX_SWAPS, TIERS, isHardChallenge, tierOf } from '../data/achievements'
 import { fmtW, locale, t } from '../i18n'
 
 const ORANGE = '#FF9F0A'
@@ -44,6 +44,7 @@ export function MonthChallenges({ month, thm, isDark, onSwap }) {
         <div style={sectionTitle(thm)}>{t('Испытания месяца')}</div>
         {onSwap && <div style={{ fontSize: 11, color: thm.text40, whiteSpace: 'nowrap' }}>🔄 {t('замен: {n} из {max}', { n: swapsLeft, max: MAX_SWAPS })}</div>}
       </div>
+      <PerfectMonthBar month={month} thm={thm} isDark={isDark} />
       <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
         {month.challenges.map((c, idx) => {
           const next = c.tiers[c.tier]
@@ -54,7 +55,7 @@ export function MonthChallenges({ month, thm, isDark, onSwap }) {
               <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
                 <span style={{ fontSize: 20, width: 26, textAlign: 'center' }}>{c.emoji}</span>
                 <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ fontSize: 14, fontWeight: 600, color: thm.text }}>{t(c.name)}</div>
+                  <div style={{ fontSize: 14, fontWeight: 600, color: thm.text }}>{t(c.name)}{isHardChallenge(c.id) && !done && <span title={t('Нужно тренироваться весь месяц')} style={{ marginLeft: 6, fontSize: 10, fontWeight: 700, padding: '1px 6px', borderRadius: 99, background: 'rgba(255,69,58,0.15)', color: '#FF6B5E', verticalAlign: 'middle' }}>{t('сложное')}</span>}</div>
                   {!done && <div style={{ fontSize: 11, color: thm.text40, marginTop: 1 }}>{t(c.desc)}</div>}
                 </div>
                 {done
@@ -70,7 +71,7 @@ export function MonthChallenges({ month, thm, isDark, onSwap }) {
                 <div style={{ margin: '8px 0 2px 36px', padding: '10px 12px', borderRadius: 12, background: isDark ? 'rgba(255,159,10,0.1)' : 'rgba(255,159,10,0.12)', border: '1px solid rgba(255,159,10,0.3)' }}>
                   <div style={{ fontSize: 13, color: thm.text, fontWeight: 600 }}>{t('Заменить «{name}»?', { name: t(c.name) })}</div>
                   <div style={{ fontSize: 11, color: thm.text50, marginTop: 2 }}>
-                    {c.tier ? t('Медаль за это испытание пропадёт. ') : ''}{t('Осталось замен: {n}', { n: swapsLeft })}
+                    {c.tier ? t('Медаль за это испытание пропадёт. ') : ''}{isHardChallenge(c.id) ? t('Сложное испытание может замениться только на сложное. ') : ''}{t('Осталось замен: {n}', { n: swapsLeft })}
                   </div>
                   <div style={{ display: 'flex', gap: 8, marginTop: 8 }}>
                     <button onClick={() => { setConfirm(null); onSwap(idx) }} style={{ flex: 1, border: 'none', borderRadius: 10, padding: '8px', background: '#FF9F0A', color: '#000', fontWeight: 700, fontSize: 13, cursor: 'pointer' }}>{t('Да, заменить')}</button>
@@ -96,14 +97,48 @@ export function MonthChallenges({ month, thm, isDark, onSwap }) {
   )
 }
 
+// "Perfect month" progress: all challenges of the month at gold
+function PerfectMonthBar({ month, thm, isDark }) {
+  const total = month.challenges.length
+  const golds = month.challenges.filter(c => c.tier >= c.tiers.length).length
+  if (month.perfect) {
+    return (
+      <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 12px', borderRadius: 14, marginBottom: 14, background: 'linear-gradient(135deg, rgba(255,215,0,0.25), rgba(255,159,10,0.12))', border: '1px solid rgba(255,215,0,0.45)' }}>
+        <span style={{ fontSize: 28 }}>🌟</span>
+        <div>
+          <div style={{ fontSize: 15, fontWeight: 800, color: '#FFD700' }}>{t('Идеальный месяц!')}</div>
+          <div style={{ fontSize: 11, color: thm.text50 }}>{t('Все 5 испытаний выполнены на золото')}</div>
+        </div>
+      </div>
+    )
+  }
+  return (
+    <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '8px 12px', borderRadius: 14, marginBottom: 14, background: isDark ? 'rgba(255,255,255,0.04)' : 'rgba(0,0,0,0.03)' }}>
+      <span style={{ fontSize: 20, filter: 'grayscale(1)', opacity: 0.5 }}>🌟</span>
+      <div style={{ flex: 1, minWidth: 0 }}>
+        <div style={{ fontSize: 12, fontWeight: 700, color: thm.text70 }}>{t('Идеальный месяц')}</div>
+        <div style={{ fontSize: 11, color: thm.text40 }}>{t('Выполни все испытания на золото')}</div>
+      </div>
+      <div style={{ display: 'flex', gap: 3 }}>
+        {month.challenges.map(c => <span key={c.id} style={{ width: 8, height: 8, borderRadius: 99, background: c.tier >= c.tiers.length ? '#FFD700' : (isDark ? 'rgba(255,255,255,0.15)' : 'rgba(0,0,0,0.12)') }} />)}
+      </div>
+      <span style={{ fontSize: 12, fontWeight: 700, color: thm.text70, whiteSpace: 'nowrap' }}>{golds}/{total}</span>
+    </div>
+  )
+}
+
 // Total medals from monthly challenges, shown on top of the Records tab
-export function MonthMedalsSummary({ medals, thm, isDark }) {
-  if (!medals || !medals.some(Boolean)) return null
+export function MonthMedalsSummary({ medals, perfect = 0, thm, isDark }) {
+  if ((!medals || !medals.some(Boolean)) && !perfect) return null
   return (
     <div style={{ ...card(isDark, thm), display: 'flex', alignItems: 'center', gap: 12 }}>
       <div style={{ flex: 1, minWidth: 0 }}>
         <div style={{ fontSize: 14, fontWeight: 700, color: thm.text }}>{t('Медали испытаний')}</div>
         <div style={{ fontSize: 11, color: thm.text40, marginTop: 2 }}>{t('За все месяцы')}</div>
+      </div>
+      <div style={{ textAlign: 'center', minWidth: 40, paddingRight: 8, marginRight: 2, borderRight: `1px solid ${thm.border}` }} title={t('Идеальных месяцев')}>
+        <div style={{ fontSize: 22, lineHeight: 1, filter: perfect ? 'none' : 'grayscale(1)', opacity: perfect ? 1 : 0.3 }}>🌟</div>
+        <div style={{ fontSize: 13, fontWeight: 800, color: perfect ? '#FFD700' : thm.text, marginTop: 3 }}>{perfect}</div>
       </div>
       {[2, 1, 0].map(i => (
         <div key={i} style={{ textAlign: 'center', minWidth: 34 }}>
@@ -129,6 +164,7 @@ export function MonthArchive({ archive, thm, isDark }) {
               <div style={{ fontSize: 12, color: thm.text40 }}>{m.visits ? `${t(m.rank.name)} · ${m.visits} ${t('тр.')}` : t('Нет тренировок')}</div>
             </div>
             <div style={{ display: 'flex', gap: 2, fontSize: 16 }}>
+              {m.perfect && <span title={t('Идеальный месяц')}>🌟</span>}
               {m.challenges.filter(c => c.tier).map(c => <span key={c.id} title={`${t(c.name)}: ${t(TIERS[c.tier - 1].name)}`}>{TIERS[c.tier - 1].medal}</span>)}
             </div>
           </div>

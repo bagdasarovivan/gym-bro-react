@@ -798,7 +798,7 @@ export default function App() {
   }, [])
   useEffect(() => {
     const cur = achievements?.current
-    if (cur?.needsSave) saveMonthPicks(cur.month, { ids: cur.challenges.map(c => c.id), swaps: 0, out: [] })
+    if (cur?.needsSave) saveMonthPicks(cur.month, { ids: cur.challenges.map(c => c.id), swaps: cur.swaps || 0, out: cur.out || [] })
   }, [achievements, saveMonthPicks])
   const swapMonthChallenge = useCallback((idx) => {
     const cur = achievements?.current
@@ -1843,7 +1843,7 @@ export default function App() {
               <AchTabs tab={achTab} setTab={setAchTab} thm={thm} isDark={isDark}/>
               <div style={{overflowY:'auto',padding:'16px 20px 32px',flex:1}}>
                 {achTab === 'all' && (achievements
-                  ? <><MonthMedalsSummary medals={achievements.monthMedals} thm={thm} isDark={isDark}/><BadgeGrid list={achievements.permanent} thm={thm} isDark={isDark}/></>
+                  ? <><MonthMedalsSummary medals={achievements.monthMedals} perfect={achievements.perfectMonths} thm={thm} isDark={isDark}/><BadgeGrid list={achievements.permanent} thm={thm} isDark={isDark}/></>
                   : <div style={{textAlign:'center',color:thm.text40,fontSize:14,padding:'24px 0'}}>{t('Загрузка...')}</div>)}
                 {achTab === 'month' && (<>
                 {/* Rank — compact */}
