@@ -11,7 +11,7 @@ input[type=number]::-webkit-inner-spin-button{-webkit-appearance:none}
 .header-logo{width:30px;height:30px;border-radius:8px;object-fit:cover}
 .header h1{font-size:20px;font-weight:700;letter-spacing:-0.3px;margin-left:9px}
 .header-left{display:flex;align-items:center}
-.streak-badge{background:rgba(255,100,0,0.12);border:1px solid rgba(255,100,0,0.25);border-radius:20px;padding:4px 11px;font-size:13px;font-weight:700;color:#FF6400}
+.streak-badge{background:rgba(var(--accent-rgb),0.12);border:1px solid rgba(var(--accent-rgb),0.3);border-radius:20px;padding:4px 11px;font-size:13px;font-weight:700;color:var(--accent)}
 .onboard-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.95);z-index:200;display:flex;align-items:center;justify-content:center;padding:24px}
 .onboard-card{background:#111;border-radius:24px;padding:32px 24px;text-align:center;max-width:360px;width:100%;border:1px solid rgba(255,255,255,0.08)}
 .onboard-emoji{font-size:60px;margin-bottom:18px;display:block}
