@@ -72,7 +72,7 @@ export function ChartExercisePicker({ names, value, onChange, theme }) {
           {variants.map(n => (
             <button key={n} onClick={() => onChange(n)} style={{
               padding: '5px 12px', borderRadius: 99, fontSize: 12, fontWeight: 600, border: 'none', cursor: 'pointer',
-              background: n === value ? '#FF9F0A' : (dark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)'),
+              background: n === value ? 'var(--accent)' : (dark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)'),
               color: n === value ? '#000' : (dark ? 'rgba(255,255,255,0.6)' : 'rgba(0,0,0,0.6)'),
             }}>{variantName(variantLabel(n, curBase))}</button>
           ))}
@@ -93,9 +93,9 @@ export function ChartExercisePicker({ names, value, onChange, theme }) {
               {list.map(b => {
                 const n = groups.get(b).length
                 return (
-                  <div key={b} className="modal-item" onClick={() => pickBase(b)} style={{ gap: 12, background: b === curBase ? 'rgba(255,159,10,0.1)' : undefined }}>
+                  <div key={b} className="modal-item" onClick={() => pickBase(b)} style={{ gap: 12, background: b === curBase ? 'rgba(var(--accent-rgb),0.1)' : undefined }}>
                     <Thumb name={b} size={40} />
-                    <span style={{ flex: 1, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', color: b === curBase ? '#FF9F0A' : undefined }}>{exName(b)}</span>
+                    <span style={{ flex: 1, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', color: b === curBase ? 'var(--accent)' : undefined }}>{exName(b)}</span>
                     {n > 1 && <span style={{ fontSize: 12, opacity: 0.4, flexShrink: 0 }}>{n} {t('вар.')}</span>}
                   </div>
                 )

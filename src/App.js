@@ -24,7 +24,22 @@ import { fetchAllRows } from './utils/db'
 import { buildCopyText, formatDateShort, formatMonth, localDateStr } from './utils/format'
 import { bestSet, e1rm, exMetric, isRepsType, recordMetric, setValue, uiSetToStored } from './utils/records'
 
-const DEFAULT_SETTINGS = { username: '', weight: '', height: '', units: 'kg', theme: 'dark', language: 'ru' }
+const DEFAULT_SETTINGS = { username: '', weight: '', height: '', units: 'kg', theme: 'dark', language: 'ru', accent: 'orange' }
+
+// Accent colours (Settings → Appearance). Every accent in the UI is var(--accent) / rgba(var(--accent-rgb), a).
+const ACCENTS = [
+  { id: 'orange', hex: '#FF9F0A', rgb: '255,159,10', name: 'Оранжевый' },
+  { id: 'green', hex: '#30D158', rgb: '48,209,88', name: 'Зелёный' },
+  { id: 'purple', hex: '#BF5AF2', rgb: '191,90,242', name: 'Фиолетовый' },
+  { id: 'blue', hex: '#0A84FF', rgb: '10,132,255', name: 'Синий' },
+  { id: 'pink', hex: '#FF375F', rgb: '255,55,95', name: 'Розовый' },
+]
+const applyAccent = (id) => {
+  const a = ACCENTS.find(x => x.id === id) || ACCENTS[0]
+  const root = document.documentElement
+  root.style.setProperty('--accent', a.hex)
+  root.style.setProperty('--accent-rgb', a.rgb)
+}
 
 // The PDF report is rendered from an HTML string — escape anything that comes from the database
 const escapeHtml = (v) => String(v ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]))
@@ -113,6 +128,8 @@ export default function App() {
   const [showStretch, setShowStretch] = useState(false)
   const [settings, setSettings] = useState(DEFAULT_SETTINGS)
   setPrefs(settings) // language and units for t() / formatters during this render
+  // accent colour as CSS variables (cheap, idempotent)
+  useEffect(() => { applyAccent(settings.accent) }, [settings.accent])
   const [showExportModal, setShowExportModal] = useState(false)
   const [exportPeriod, setExportPeriod] = useState('all')
   const [showClearConfirm, setShowClearConfirm] = useState(false)
@@ -1114,14 +1131,14 @@ export default function App() {
         </div>
         <div style={{display:'flex',alignItems:'center',gap:8}}>
           <button onClick={() => setShowWeightModal(true)} aria-label={t('Вес тела')} style={{
-            background: showWeightModal ? 'rgba(255,159,10,0.08)' : thm.btnBg,
-            border: showWeightModal ? '1.5px solid #FF9F0A' : `1px solid ${thm.btnBorder}`,
+            background: showWeightModal ? 'rgba(var(--accent-rgb),0.08)' : thm.btnBg,
+            border: showWeightModal ? '1.5px solid var(--accent)' : `1px solid ${thm.btnBorder}`,
             borderRadius:10,padding:'0',width:36,height:36,cursor:'pointer',color:thm.text70,
             fontSize:18,display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0
           }}>🧍</button>
           <button onClick={() => { const isOpen=timerSecs!==null||stopwatchRunning||timerMode==='stopwatch'; if(isOpen){setTimerSecs(null);setTimerPaused(false);setStopwatchRunning(false);setStopwatchSecs(0);setTimerMode('countdown')}else{setTimerSecs(timerDuration);setTimerPaused(true)} }} style={{
-            background: (timerSecs!==null||stopwatchRunning||timerMode==='stopwatch') ? 'rgba(255,159,10,0.08)' : thm.btnBg,
-            border: (timerSecs!==null||stopwatchRunning||timerMode==='stopwatch') ? '1.5px solid #FF9F0A' : `1px solid ${thm.btnBorder}`,
+            background: (timerSecs!==null||stopwatchRunning||timerMode==='stopwatch') ? 'rgba(var(--accent-rgb),0.08)' : thm.btnBg,
+            border: (timerSecs!==null||stopwatchRunning||timerMode==='stopwatch') ? '1.5px solid var(--accent)' : `1px solid ${thm.btnBorder}`,
             borderRadius:10,padding:'0',width:36,height:36,cursor:'pointer',
             color: (timerSecs!==null||stopwatchRunning||timerMode==='stopwatch') ? 'rgba(255,255,255,0.8)' : thm.text70,
             fontSize:18,display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0
@@ -1130,10 +1147,10 @@ export default function App() {
             background:'rgba(255,100,0,0.12)',border:'1px solid rgba(255,100,0,0.25)',
             borderRadius:10,padding:'0 10px',height:36,cursor:'pointer',
             fontSize:13,fontWeight:700,color:'#FF6400',display:'flex',alignItems:'center',flexShrink:0,whiteSpace:'nowrap'
-          }}>{streak >= 1 ? `${streak}🔥` : '🏅'}{achUnviewed && <span style={{position:'absolute',top:-3,right:-3,width:9,height:9,borderRadius:'50%',background:'#FF9F0A',border:'2px solid #000'}}/>}</button>}
+          }}>{streak >= 1 ? `${streak}🔥` : '🏅'}{achUnviewed && <span style={{position:'absolute',top:-3,right:-3,width:9,height:9,borderRadius:'50%',background:'var(--accent)',border:'2px solid #000'}}/>}</button>}
           <button onClick={() => setTab(t => t === 'settings' ? 'add' : 'settings')} style={{
-            background: tab==='settings' ? 'rgba(255,159,10,0.08)' : thm.btnBg,
-            border: tab==='settings' ? '1.5px solid #FF9F0A' : `1px solid ${thm.btnBorder}`,
+            background: tab==='settings' ? 'rgba(var(--accent-rgb),0.08)' : thm.btnBg,
+            border: tab==='settings' ? '1.5px solid var(--accent)' : `1px solid ${thm.btnBorder}`,
             borderRadius:10,padding:'0',width:36,height:36,cursor:'pointer',
             color: tab==='settings' ? 'rgba(255,255,255,0.8)' : thm.text50,fontSize:18,
             display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0
@@ -1154,23 +1171,23 @@ export default function App() {
         <div className="section">
 
           {(timerSecs !== null || stopwatchRunning || timerMode === 'stopwatch') && (
-            <div style={{background: timerMode==='stopwatch' ? 'linear-gradient(135deg,rgba(255,159,10,0.1),rgba(255,159,10,0.05))' : 'linear-gradient(135deg,rgba(255,159,10,0.1),rgba(255,159,10,0.05))',border: timerMode==='stopwatch' ? '1px solid rgba(255,159,10,0.2)' : '1px solid rgba(255,159,10,0.2)',borderRadius:20,padding:'16px 18px',marginBottom:16}}>
+            <div style={{background: timerMode==='stopwatch' ? 'linear-gradient(135deg,rgba(var(--accent-rgb),0.1),rgba(var(--accent-rgb),0.05))' : 'linear-gradient(135deg,rgba(var(--accent-rgb),0.1),rgba(var(--accent-rgb),0.05))',border: timerMode==='stopwatch' ? '1px solid rgba(var(--accent-rgb),0.2)' : '1px solid rgba(var(--accent-rgb),0.2)',borderRadius:20,padding:'16px 18px',marginBottom:16}}>
               <div style={{display:'flex',gap:8,marginBottom:12}}>
-                <button onClick={()=>{setTimerMode('countdown');setStopwatchRunning(false);setStopwatchSecs(0);if(timerSecs===null){setTimerSecs(timerDuration);setTimerPaused(true)}}} style={{flex:1,padding:'7px 0',borderRadius:10,border:'none',cursor:'pointer',fontSize:13,fontWeight:700,background:timerMode==='countdown'?'rgba(255,159,10,0.2)':'rgba(255,255,255,0.06)',color:timerMode==='countdown'?'#FF9F0A':'rgba(255,255,255,0.4)'}}>{t('⏱ Таймер')}</button>
-                <button onClick={()=>{setTimerMode('stopwatch');setTimerSecs(null);setTimerPaused(false)}} style={{flex:1,padding:'7px 0',borderRadius:10,border:'none',cursor:'pointer',fontSize:13,fontWeight:700,background:timerMode==='stopwatch'?'rgba(255,159,10,0.2)':'rgba(255,255,255,0.06)',color:timerMode==='stopwatch'?'#FF9F0A':'rgba(255,255,255,0.4)'}}>{t('⏲ Секундомер')}</button>
+                <button onClick={()=>{setTimerMode('countdown');setStopwatchRunning(false);setStopwatchSecs(0);if(timerSecs===null){setTimerSecs(timerDuration);setTimerPaused(true)}}} style={{flex:1,padding:'7px 0',borderRadius:10,border:'none',cursor:'pointer',fontSize:13,fontWeight:700,background:timerMode==='countdown'?'rgba(var(--accent-rgb),0.2)':'rgba(255,255,255,0.06)',color:timerMode==='countdown'?'var(--accent)':'rgba(255,255,255,0.4)'}}>{t('⏱ Таймер')}</button>
+                <button onClick={()=>{setTimerMode('stopwatch');setTimerSecs(null);setTimerPaused(false)}} style={{flex:1,padding:'7px 0',borderRadius:10,border:'none',cursor:'pointer',fontSize:13,fontWeight:700,background:timerMode==='stopwatch'?'rgba(var(--accent-rgb),0.2)':'rgba(255,255,255,0.06)',color:timerMode==='stopwatch'?'var(--accent)':'rgba(255,255,255,0.4)'}}>{t('⏲ Секундомер')}</button>
                 <button onClick={()=>{setTimerSecs(null);setTimerPaused(false);setStopwatchRunning(false);setStopwatchSecs(0);setTimerMode('countdown')}} style={{width:32,height:32,borderRadius:10,border:'none',cursor:'pointer',background:'rgba(255,255,255,0.06)',color:'rgba(255,255,255,0.35)',fontSize:13,display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0}}>✕</button>
               </div>
               {/* Both modes are stacked in one grid cell so the panel keeps the same height when switching */}
               <div style={{display:'grid'}}>
               <div style={{gridArea:'1/1',visibility:timerMode==='countdown'?'visible':'hidden'}} aria-hidden={timerMode!=='countdown'}>
                 <div style={{display:'flex',alignItems:'baseline',gap:8,marginBottom:12}}>
-                  <span style={{fontSize:48,fontWeight:800,color:timerPaused?'rgba(255,159,10,0.55)':'#FF9F0A',fontVariantNumeric:'tabular-nums',letterSpacing:'-2px'}}>
+                  <span style={{fontSize:48,fontWeight:800,color:timerPaused?'rgba(var(--accent-rgb),0.55)':'var(--accent)',fontVariantNumeric:'tabular-nums',letterSpacing:'-2px'}}>
                     {`${Math.floor((timerSecs||0)/60)}:${String((timerSecs||0)%60).padStart(2,'0')}`}
                   </span>
-                  {timerPaused && <span style={{fontSize:13,color:'rgba(255,159,10,0.5)',fontWeight:600}}>{t('пауза')}</span>}
+                  {timerPaused && <span style={{fontSize:13,color:'rgba(var(--accent-rgb),0.5)',fontWeight:600}}>{t('пауза')}</span>}
                 </div>
                 <div style={{display:'flex',gap:8,marginBottom:12}}>
-                  <button onClick={()=>setTimerPaused(p=>!p)} style={{flex:1,padding:'9px 0',borderRadius:12,border:'none',cursor:'pointer',fontWeight:700,fontSize:14,background:timerPaused?'#FF9F0A':'rgba(255,159,10,0.15)',color:timerPaused?'#000':'#FF9F0A'}}>
+                  <button onClick={()=>setTimerPaused(p=>!p)} style={{flex:1,padding:'9px 0',borderRadius:12,border:'none',cursor:'pointer',fontWeight:700,fontSize:14,background:timerPaused?'var(--accent)':'rgba(var(--accent-rgb),0.15)',color:timerPaused?'#000':'var(--accent)'}}>
                     {timerPaused ? t('▶ Продолжить') : t('⏸ Пауза')}
                   </button>
                   <button onClick={()=>{setTimerSecs(timerDuration);setTimerPaused(true)}} style={{flex:1,padding:'9px 0',borderRadius:12,border:'none',cursor:'pointer',fontWeight:700,fontSize:14,background:'rgba(255,255,255,0.07)',color:'rgba(255,255,255,0.7)'}}>{t('↺ Заново')}</button>
@@ -1181,12 +1198,12 @@ export default function App() {
               </div>
               <div style={{gridArea:'1/1',visibility:timerMode==='stopwatch'?'visible':'hidden'}} aria-hidden={timerMode!=='stopwatch'}>
                 <div style={{display:'flex',alignItems:'baseline',gap:8,marginBottom:12}}>
-                  <span style={{fontSize:48,fontWeight:800,color:stopwatchRunning?'#FF9F0A':'rgba(255,255,255,0.85)',fontVariantNumeric:'tabular-nums',letterSpacing:'-2px'}}>
+                  <span style={{fontSize:48,fontWeight:800,color:stopwatchRunning?'var(--accent)':'rgba(255,255,255,0.85)',fontVariantNumeric:'tabular-nums',letterSpacing:'-2px'}}>
                     {`${Math.floor(stopwatchSecs/60)}:${String(stopwatchSecs%60).padStart(2,'0')}`}
                   </span>
                 </div>
                 <div style={{display:'flex',gap:8,marginBottom:4}}>
-                  <button onClick={()=>setStopwatchRunning(r=>!r)} style={{flex:1,padding:'9px 0',borderRadius:12,border:'none',cursor:'pointer',fontWeight:700,fontSize:14,background:stopwatchRunning?'rgba(255,59,48,0.15)':'#FF9F0A',color:stopwatchRunning?'#FF453A':'#000'}}>
+                  <button onClick={()=>setStopwatchRunning(r=>!r)} style={{flex:1,padding:'9px 0',borderRadius:12,border:'none',cursor:'pointer',fontWeight:700,fontSize:14,background:stopwatchRunning?'rgba(255,59,48,0.15)':'var(--accent)',color:stopwatchRunning?'#FF453A':'#000'}}>
                     {stopwatchRunning ? t('⏸ Пауза') : t('▶ Старт')}
                   </button>
                   <button onClick={()=>{setStopwatchSecs(0);setStopwatchRunning(false)}} style={{flex:1,padding:'9px 0',borderRadius:12,border:'none',cursor:'pointer',fontWeight:700,fontSize:14,background:'rgba(255,255,255,0.07)',color:'rgba(255,255,255,0.7)'}}>{t('↺ Сброс')}</button>
@@ -1219,9 +1236,9 @@ export default function App() {
               <style>{`
                 /* soft filled waves rolling out from the button + a slow "breathing" glow on the button itself */
                 @keyframes start-wave{0%{transform:scale(0.72);opacity:0.5}100%{transform:scale(1.35);opacity:0}}
-                @keyframes start-breathe{0%,100%{transform:scale(1);box-shadow:0 0 36px rgba(255,159,10,0.35),0 0 0 0 rgba(255,159,10,0.25)}50%{transform:scale(1.035);box-shadow:0 0 64px rgba(255,159,10,0.6),0 0 0 10px rgba(255,159,10,0.08)}}
+                @keyframes start-breathe{0%,100%{transform:scale(1);box-shadow:0 0 36px rgba(var(--accent-rgb),0.35),0 0 0 0 rgba(var(--accent-rgb),0.25)}50%{transform:scale(1.035);box-shadow:0 0 64px rgba(var(--accent-rgb),0.6),0 0 0 10px rgba(var(--accent-rgb),0.08)}}
                 @keyframes start-halo{0%,100%{opacity:0.7}50%{opacity:1}}
-                .start-pulse{position:absolute;inset:0;border-radius:50%;background:radial-gradient(circle,rgba(255,159,10,0) 52%,rgba(255,159,10,0.28) 66%,rgba(255,159,10,0) 72%);animation:start-wave 3.6s cubic-bezier(0.22,0.61,0.36,1) infinite;pointer-events:none}
+                .start-pulse{position:absolute;inset:0;border-radius:50%;background:radial-gradient(circle,rgba(var(--accent-rgb),0) 52%,rgba(var(--accent-rgb),0.28) 66%,rgba(var(--accent-rgb),0) 72%);animation:start-wave 3.6s cubic-bezier(0.22,0.61,0.36,1) infinite;pointer-events:none}
                 .start-pulse.p2{animation-delay:1.2s}
                 .start-pulse.p3{animation-delay:2.4s}
                 .start-halo{animation:start-halo 3.6s ease-in-out infinite}
@@ -1229,16 +1246,16 @@ export default function App() {
                 .start-btn:active{animation-play-state:paused}
                 @media (prefers-reduced-motion: reduce){.start-pulse,.start-btn,.start-halo{animation:none}}
               `}</style>
-              <div style={{position:'relative',width:232,height:232,borderRadius:'50%',background:'rgba(255,159,10,0.07)',border:'1px solid rgba(255,159,10,0.18)',display:'flex',alignItems:'center',justifyContent:'center'}}>
+              <div style={{position:'relative',width:232,height:232,borderRadius:'50%',background:'rgba(var(--accent-rgb),0.07)',border:'1px solid rgba(var(--accent-rgb),0.18)',display:'flex',alignItems:'center',justifyContent:'center'}}>
                 <div className="start-pulse"/>
                 <div className="start-pulse p2"/>
                 <div className="start-pulse p3"/>
-                <div className="start-halo" style={{position:'relative',zIndex:1,width:196,height:196,borderRadius:'50%',background:'rgba(255,159,10,0.12)',display:'flex',alignItems:'center',justifyContent:'center'}}>
+                <div className="start-halo" style={{position:'relative',zIndex:1,width:196,height:196,borderRadius:'50%',background:'rgba(var(--accent-rgb),0.12)',display:'flex',alignItems:'center',justifyContent:'center'}}>
                   <button className="start-btn" onClick={()=>{ if (!workoutExercises.length) setWorkoutDate(localDateStr(new Date())); setWorkoutStarted(true) }}
                     onMouseDown={e=>press(e,0.95)} onMouseUp={e=>press(e,1)} onMouseLeave={e=>press(e,1)}
                     onTouchStart={e=>press(e,0.95)} onTouchEnd={e=>press(e,1)}
-                    style={{width:164,height:164,borderRadius:'50%',border:'none',cursor:'pointer',background:'#FF9F0A',color:'#000',
-                      fontSize:resume?16:20,fontWeight:900,letterSpacing:'3px',boxShadow:'0 0 48px rgba(255,159,10,0.45)',transition:'filter 0.15s'}}>
+                    style={{width:164,height:164,borderRadius:'50%',border:'none',cursor:'pointer',background:'var(--accent)',color:'#000',
+                      fontSize:resume?16:20,fontWeight:900,letterSpacing:'3px',boxShadow:'0 0 48px rgba(var(--accent-rgb),0.45)',transition:'filter 0.15s'}}>
                     {resume ? t('ПРОДОЛЖИТЬ') : t('НАЧАТЬ')}
                   </button>
                 </div>
@@ -1275,7 +1292,7 @@ export default function App() {
                       }
                       <div style={{flex:1}}>
                         <span style={{fontSize:15,fontWeight:700,color:thm.text85}}>{exName(ex.name)}</span>
-                        {ex.grip && ex.grip !== getDefaultVariant(ex.name) && <span style={{fontSize:11,color:'rgba(255,159,10,0.8)',marginLeft:6,fontWeight:600}}>({ex.grip})</span>}
+                        {ex.grip && ex.grip !== getDefaultVariant(ex.name) && <span style={{fontSize:11,color:'rgba(var(--accent-rgb),0.8)',marginLeft:6,fontWeight:600}}>({ex.grip})</span>}
                       </div>
                       <span style={{fontSize:12,color:thm.text30,marginRight:4}}>{ex.sets.filter(s=>exType2==='timed'?s.weight>0:isRepsType(exType2)?s.reps>0:(s.weight>0&&s.reps>0)).length} {t('подх.')}</span>
                       <button onClick={e=>{e.stopPropagation();setWorkoutExercises(prev=>prev.filter((_,i)=>i!==exIdx))}}
@@ -1301,7 +1318,7 @@ export default function App() {
                               {getVariantOptions(ex.name).map(g => (
                                 <button key={g} onClick={()=>setWorkoutExercises(prev=>prev.map((e,i)=>i!==exIdx?e:{...e,grip:g}))}
                                   style={{padding:'5px 12px',borderRadius:99,fontSize:12,fontWeight:600,border:'none',cursor:'pointer',
-                                    background: ex.grip===g ? '#FF9F0A' : thm.btnBg,
+                                    background: ex.grip===g ? 'var(--accent)' : thm.btnBg,
                                     color: ex.grip===g ? '#000' : 'rgba(255,255,255,0.6)'}}>
                                   {variantName(g)}
                                 </button>
@@ -1382,7 +1399,7 @@ export default function App() {
                 })}
                 {activePlans.length === 0 && (
                   <button onClick={()=>setShowPlanModal(true)} style={{width:'100%',marginBottom:10,padding:'16px 20px',borderRadius:16,border:'1px solid rgba(255,255,255,0.09)',background:'rgba(255,255,255,0.06)',cursor:'pointer',display:'flex',alignItems:'center',gap:14,textAlign:'left'}}>
-                    <div style={{width:44,height:44,borderRadius:12,background:'rgba(255,159,10,0.15)',display:'flex',alignItems:'center',justifyContent:'center',fontSize:20,flexShrink:0}}>📋</div>
+                    <div style={{width:44,height:44,borderRadius:12,background:'rgba(var(--accent-rgb),0.15)',display:'flex',alignItems:'center',justifyContent:'center',fontSize:20,flexShrink:0}}>📋</div>
                     <div style={{flex:1}}>
                       <div style={{fontSize:16,fontWeight:600,color:'#fff',marginBottom:4}}>{t('Выбрать план тренировок')}</div>
                       <div style={{fontSize:12,color:'rgba(255,255,255,0.35)',marginTop:4}}>{t('Тренируйся по программе')}</div>
@@ -1456,7 +1473,7 @@ export default function App() {
             <div className="stats-row">
               <div className="stat-card"><div className="stat-val">{stats.monthW}</div><div className="stat-lbl">{new Date().toLocaleDateString(locale(),{month:'long'})}</div></div>
               <div className="stat-card"><div className="stat-val">{stats.totalW}</div><div className="stat-lbl">{t('всего')}</div></div>
-              <div className="stat-card"><div className="stat-val" style={{color:'#FF9F0A',fontSize:18}}>{fmtVolume(stats.monthKg)}</div><div className="stat-lbl">{t('поднято за месяц')}</div></div>
+              <div className="stat-card"><div className="stat-val" style={{color:'var(--accent)',fontSize:18}}>{fmtVolume(stats.monthKg)}</div><div className="stat-lbl">{t('поднято за месяц')}</div></div>
             </div>
           )}
           <div className="prog-title">{t('💪 Нагрузка по мышцам')}</div>
@@ -1465,7 +1482,7 @@ export default function App() {
               {[[7,t('7 дней')],[30,t('30 дней')]].map(([days,label]) => (
                 <button key={days} onClick={()=>setMusclePeriod(days)} style={{
                   padding:'6px 18px',borderRadius:99,fontSize:12,fontWeight:700,cursor:'pointer',border:'none',
-                  background: musclePeriod===days ? '#FF9F0A' : (isDark ? '#2c2c2e' : '#e5e5ea'),
+                  background: musclePeriod===days ? 'var(--accent)' : (isDark ? '#2c2c2e' : '#e5e5ea'),
                   color: musclePeriod===days ? '#000' : thm.text50,
                 }}>{label}</button>
               ))}
@@ -1514,7 +1531,7 @@ export default function App() {
                 <button style={{width:'100%',background:'none',border:'none',cursor:'pointer',padding:'11px 16px',display:'flex',alignItems:'center',gap:10,textAlign:'left'}} onClick={()=>setOpenPrs(p=>({...p,[name]:!p[name]}))}>
                   {img ? <img src={img} alt={name} loading="lazy" decoding="async" style={{width:32,height:32,borderRadius:7,objectFit:'cover',flexShrink:0}} onError={e=>e.target.style.display='none'}/> : <div style={{width:32,height:32,borderRadius:7,background:thm.btnBg,display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0,fontSize:16}}>🏋️</div>}
                   <span style={{flex:1,color:thm.text85,fontSize:14,fontWeight:600}}>{exName(normalizeName(name))}</span>
-                  <span style={{color:'#FF9F0A',fontSize:14,fontWeight:700,marginRight:8}}>{pr.metric==='time' ? `${pr.time_sec} ${t('сек')}` : pr.metric==='reps' ? `${pr.reps} ${t('повт')}${pr.weight>0?` +${kgToDisplay(pr.weight)}`:''}` : `${kgToDisplay(pr.weight)} × ${pr.reps}`}</span>
+                  <span style={{color:'var(--accent)',fontSize:14,fontWeight:700,marginRight:8}}>{pr.metric==='time' ? `${pr.time_sec} ${t('сек')}` : pr.metric==='reps' ? `${pr.reps} ${t('повт')}${pr.weight>0?` +${kgToDisplay(pr.weight)}`:''}` : `${kgToDisplay(pr.weight)} × ${pr.reps}`}</span>
                   <span style={{color:thm.text25,fontSize:11,display:'inline-block',transition:'transform 0.2s',transform:isOpen?'rotate(180deg)':'none'}}>▼</span>
                 </button>
                 {isOpen && <div style={{padding:'2px 16px 12px 58px',display:'flex',gap:16,flexWrap:'wrap',alignItems:'center'}}>
@@ -1620,6 +1637,22 @@ export default function App() {
                   <button key={val} className={`settings-toggle-btn${settings.theme===val?' active':''}`}
                     onClick={()=>saveSettings({...settings,theme:val})}>{label}</button>
                 ))}
+              </div>
+            </div>
+            <div className="settings-row" style={{marginBottom:14}}>
+              <div className="settings-row-label">{t('Цвет')}</div>
+              <div style={{display:'flex',gap:10}}>
+                {ACCENTS.map(a => {
+                  const on = (settings.accent || 'orange') === a.id
+                  return (
+                    <button key={a.id} aria-label={t(a.name)} title={t(a.name)} aria-pressed={on}
+                      onClick={()=>saveSettings({...settings,accent:a.id})}
+                      style={{width:30,height:30,borderRadius:'50%',background:a.hex,cursor:'pointer',padding:0,display:'flex',alignItems:'center',justifyContent:'center',
+                        border:'none',boxShadow:on?`0 0 0 2px ${isDark?'#1c1c1e':'#fff'}, 0 0 0 4px ${a.hex}`:'none',transition:'box-shadow 0.15s'}}>
+                      {on && <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#000" strokeWidth="3.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>}
+                    </button>
+                  )
+                })}
               </div>
             </div>
             <div className="settings-row">
@@ -1772,7 +1805,7 @@ export default function App() {
                   ))}
                 </div>
                 <button onClick={()=>{ addExToWorkout(name); setWorkoutStarted(true); setTab('add'); setExDetailModal(null); window.scrollTo({ top: 0 }) }}
-                  style={{width:'100%',margin:'12px 0 4px',padding:'12px',borderRadius:14,border:'none',background:'#FF9F0A',color:'#000',fontSize:15,fontWeight:700,cursor:'pointer'}}>
+                  style={{width:'100%',margin:'12px 0 4px',padding:'12px',borderRadius:14,border:'none',background:'var(--accent)',color:'#000',fontSize:15,fontWeight:700,cursor:'pointer'}}>
                   {workoutExercises.some(e => e.name === name) ? t('✓ Уже в тренировке — добавить ещё раз') : t('＋ Добавить в тренировку')}
                 </button>
                 <ExerciseStats base={name} entry={exIndex.get(name)} achievements={achievements} thm={thm} isDark={isDark}/>
@@ -1788,7 +1821,7 @@ export default function App() {
                       <div className="ex-detail-text" style={{color:thm.text70}}>{info.benefit}</div>
                     </div>
                     <div className="ex-detail-section">
-                      <div className="ex-detail-section-lbl" style={{color:'#FF9F0A',opacity:1}}>{t('💡 Советы')}</div>
+                      <div className="ex-detail-section-lbl" style={{color:'var(--accent)',opacity:1}}>{t('💡 Советы')}</div>
                       <div className="ex-detail-text" style={{color:thm.text70}}>{info.tips}</div>
                     </div>
                   </>
@@ -1805,7 +1838,7 @@ export default function App() {
       {/* Timer Modal */}
       <AchievementCelebration item={achQueue[0]} left={achQueue.length - 1} onNext={() => setAchQueue(q => q.slice(1))}/>
       {achToast && (
-        <div className="alert-toast" onClick={() => setAchToast(null)} style={{borderColor:'rgba(255,159,10,0.3)',cursor:'pointer'}}>
+        <div className="alert-toast" onClick={() => setAchToast(null)} style={{borderColor:'rgba(var(--accent-rgb),0.3)',cursor:'pointer'}}>
           <div className="alert-toast-icon">🏅</div>
           <div>
             <div className="alert-toast-title">{t('У тебя уже {n} достижений!',{n:achToast})}</div>
@@ -1826,14 +1859,14 @@ export default function App() {
           <div>
             <div className="alert-toast-title">{t('Новый рекорд!')}</div>
             <div className="alert-toast-sub" style={{opacity:0.75}}>{prAlert.name}: {fmtRecordSet(prAlert.metric, prAlert.best, prAlert.value)}</div>
-            <div style={{fontSize:11,color:'#FF9F0A',marginTop:2}}>{t('Было:')} {fmtRecordSet(prAlert.metric, prAlert.pr, prAlert.pr.value)}</div>
+            <div style={{fontSize:11,color:'var(--accent)',marginTop:2}}>{t('Было:')} {fmtRecordSet(prAlert.metric, prAlert.pr, prAlert.pr.value)}</div>
           </div>
         </div>
       )}
 
       {/* Motivational Toast */}
       {draftRestored && (
-        <div className="alert-toast" style={{borderColor:'rgba(255,159,10,0.3)',pointerEvents:'none'}}>
+        <div className="alert-toast" style={{borderColor:'rgba(var(--accent-rgb),0.3)',pointerEvents:'none'}}>
           <div className="alert-toast-icon">💾</div>
           <div>
             <div className="alert-toast-title">{t('Тренировка восстановлена')}</div>
@@ -1842,7 +1875,7 @@ export default function App() {
         </div>
       )}
       {streakAlert && streakAlert.type === 'month' && (
-        <div className="alert-toast" style={{borderColor:'rgba(255,159,10,0.3)'}}>
+        <div className="alert-toast" style={{borderColor:'rgba(var(--accent-rgb),0.3)'}}>
           <div className="alert-toast-icon">
             {streakAlert.count>=20?'👑':streakAlert.count>=10?'🏆':streakAlert.count>=5?'⚡':'🔥'}
           </div>
@@ -1862,9 +1895,9 @@ export default function App() {
             <div style={{fontSize:13,color:thm.text50,marginBottom:20,textAlign:'center'}}>{t('Выбери период')}</div>
             {[['7d',t('Последние 7 дней')],['30d',t('Последние 30 дней')],['3m',t('Последние 3 месяца')],['6m',t('Последние 6 месяцев')],['1y',t('Последний год')],['all',t('Всё время')]].map(([val,label])=>(
               <button key={val} onClick={()=>{setExportPeriod(val);exportWorkouts(val)}} style={{
-                width:'100%',padding:'13px 16px',borderRadius:12,border:`1px solid ${exportPeriod===val?'rgba(255,159,10,0.4)':thm.border}`,
-                background:exportPeriod===val?'rgba(255,159,10,0.1)':thm.card2,
-                color:exportPeriod===val?'#FF9F0A':thm.text,fontSize:14,fontWeight:600,cursor:'pointer',
+                width:'100%',padding:'13px 16px',borderRadius:12,border:`1px solid ${exportPeriod===val?'rgba(var(--accent-rgb),0.4)':thm.border}`,
+                background:exportPeriod===val?'rgba(var(--accent-rgb),0.1)':thm.card2,
+                color:exportPeriod===val?'var(--accent)':thm.text,fontSize:14,fontWeight:600,cursor:'pointer',
                 marginBottom:8,textAlign:'left',transition:'all 0.15s'
               }}>{label}</button>
             ))}
@@ -1920,11 +1953,11 @@ export default function App() {
                   {!rank.isMax ? (
                     <div style={{marginTop:12}}>
                       <div style={{height:6,background:isDark?'rgba(255,255,255,0.1)':'rgba(0,0,0,0.08)',borderRadius:99,overflow:'hidden'}}>
-                        <div style={{height:'100%',width:`${Math.round(rank.progress*100)}%`,background:'#FF9F0A',borderRadius:99,transition:'width 0.5s ease'}}/>
+                        <div style={{height:'100%',width:`${Math.round(rank.progress*100)}%`,background:'var(--accent)',borderRadius:99,transition:'width 0.5s ease'}}/>
                       </div>
                       <div style={{fontSize:12,color:thm.text40,marginTop:6}}>{t('Ещё {w} до ранга «{rank}»',{w:workoutsN(rank.nextAt - streak), rank:t(rank.nextName)})} {RANK_LEVELS.find(r=>r.name===rank.nextName)?.icon}</div>
                     </div>
-                  ) : <div style={{fontSize:12,color:'#FF9F0A',marginTop:10,fontWeight:700}}>{t('Максимальный ранг достигнут! 🎉')}</div>}
+                  ) : <div style={{fontSize:12,color:'var(--accent)',marginTop:10,fontWeight:700}}>{t('Максимальный ранг достигнут! 🎉')}</div>}
                   {streakMotivQuote && <div style={{fontSize:12,color:thm.text50,fontStyle:'italic',marginTop:10}}>«{t(streakMotivQuote)}»</div>}
                 </div>
 
@@ -1945,7 +1978,7 @@ export default function App() {
                     {streakModalData.bestImprovement && (
                       <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',flexWrap:'wrap',gap:4}}>
                         <span style={{fontSize:14,color:thm.text70}}>{t('📈 Лучший прирост')}</span>
-                        <span style={{fontSize:14,fontWeight:600,color:'#FF9F0A',textAlign:'right',maxWidth:'55%'}}>
+                        <span style={{fontSize:14,fontWeight:600,color:'var(--accent)',textAlign:'right',maxWidth:'55%'}}>
                           {exName(streakModalData.bestImprovement.name)} +{fmtW(streakModalData.bestImprovement.diff)}
                         </span>
                       </div>
@@ -1992,7 +2025,7 @@ export default function App() {
                     <button onClick={()=>{
                       setWorkoutExercises(prev=>prev.map((e,i)=>i!==editSetModal.exIdx?e:{...e,sets:e.sets.map((ss,j)=>j!==editSetModal.setIdx?ss:{...ss,weight:editSetModal.weight,reps:editSetModal.reps})}))
                       setEditSetModal(null)
-                    }} style={{width:'100%',padding:'14px',borderRadius:14,background:'#FF9F0A',color:'#000',fontSize:16,fontWeight:700,border:'none',cursor:'pointer'}}>
+                    }} style={{width:'100%',padding:'14px',borderRadius:14,background:'var(--accent)',color:'#000',fontSize:16,fontWeight:700,border:'none',cursor:'pointer'}}>
                       {t('Сохранить')}
                     </button>
                   </div>
@@ -2080,7 +2113,7 @@ export default function App() {
                       {t('Возьми вес с которым сделаешь нужное количество повторений комфортно — не на максимуме.')}<br/><br/>
                       {t('Gym BRO запомнит и будет считать прогрессию сам.')}
                     </div>
-                    <button onClick={()=>setPlanOnboarding(false)} style={{width:'100%',padding:'14px',borderRadius:14,background:'#FF9F0A',color:'#000',fontSize:16,fontWeight:700,border:'none',cursor:'pointer'}}>
+                    <button onClick={()=>setPlanOnboarding(false)} style={{width:'100%',padding:'14px',borderRadius:14,background:'var(--accent)',color:'#000',fontSize:16,fontWeight:700,border:'none',cursor:'pointer'}}>
                       {t('Понятно, начинаем!')}
                     </button>
                   </div>
@@ -2096,7 +2129,7 @@ export default function App() {
                     <div style={{background:'#1C1C1E',borderRadius:'20px 20px 0 0',padding:24,width:'100%',maxWidth:480,paddingBottom:40,maxHeight:'85vh',overflowY:'auto'}} onClick={e=>e.stopPropagation()}>
                       <div style={{fontSize:17,fontWeight:700,color:'rgba(255,255,255,0.9)',marginBottom:4}}>{t(dayDef.label)}</div>
                       <div style={{fontSize:13,color:'rgba(255,255,255,0.4)',marginBottom:4}}>{PLAN_ICONS[plan.plan_type]} {t(PLAN_NAMES[plan.plan_type])} · {t('Неделя')} {week} · {t('тренировка')} {plan.workout_count+1}</div>
-                      <div style={{fontSize:13,color:'#FF9F0A',marginBottom:16}}>⚡ {t('Разогрей')} {t(dayDef.warmupHint)}</div>
+                      <div style={{fontSize:13,color:'var(--accent)',marginBottom:16}}>⚡ {t('Разогрей')} {t(dayDef.warmupHint)}</div>
                       {dayDef.exercises.map((ex,i) => {
                         const key = `${plan.id}:${ex.name}`
                         const pw = planWeights[key]
@@ -2105,7 +2138,7 @@ export default function App() {
                           <div key={i} style={{display:'flex',alignItems:'center',justifyContent:'space-between',padding:'10px 12px',background:'rgba(255,255,255,0.05)',borderRadius:12,marginBottom:6}}>
                             <div>
                               <span style={{fontSize:14,fontWeight:600,color:'rgba(255,255,255,0.85)'}}>{exName(ex.name)}</span>
-                              {ex.isBase && <span style={{fontSize:11,color:'#FF9F0A',marginLeft:6,fontWeight:600}}>{t('база')}</span>}
+                              {ex.isBase && <span style={{fontSize:11,color:'var(--accent)',marginLeft:6,fontWeight:600}}>{t('база')}</span>}
                             </div>
                             <span style={{fontSize:13,color:'rgba(255,255,255,0.45)',fontWeight:600}}>
                               {hasWeight ? `${fmtW(pw.working_weight)} × ${ex.reps} × ${ex.sets}` : `? × ${ex.reps} × ${ex.sets}`}
@@ -2142,7 +2175,7 @@ export default function App() {
                           setLoadingPlan(false)
                           setShowDayPreview(null)
                         }
-                      }} style={{width:'100%',marginTop:16,padding:'14px',borderRadius:14,background:'#FF9F0A',color:'#000',fontSize:16,fontWeight:700,border:'none',cursor:loadingPlan?'default':'pointer',opacity:loadingPlan?0.7:1}}>
+                      }} style={{width:'100%',marginTop:16,padding:'14px',borderRadius:14,background:'var(--accent)',color:'#000',fontSize:16,fontWeight:700,border:'none',cursor:loadingPlan?'default':'pointer',opacity:loadingPlan?0.7:1}}>
                         {loadingPlan ? t('Загружаю упражнения…') : t('Загрузить в тренировку')}
                       </button>
                       <button onClick={()=>setShowDayPreview(null)} style={{width:'100%',marginTop:8,padding:'12px',borderRadius:14,border:'none',background:'transparent',color:'rgba(255,255,255,0.4)',fontSize:14,cursor:'pointer'}}>
@@ -2192,7 +2225,7 @@ export default function App() {
         {[{id:'add',icon:'➕',label:t('Тренировка')},{id:'history',icon:'📜',label:t('История')},{id:'progress',icon:'📈',label:t('Прогресс')},{id:'exercises',icon:'📋',label:t('Упражнения')}].map(t=>(
           <div key={t.id} className="nav-item" style={{opacity:tab===t.id?1:0.62}} onClick={()=>{setTab(t.id);if(t.id!=='add'){setWorkoutStarted(false);setSelectedEx(null)}}}>
             <span className="nav-icon">{t.icon}</span>
-            <span className="nav-lbl" style={{color:tab===t.id?'#FF9F0A':thm.text}}>{t.label}</span>
+            <span className="nav-lbl" style={{color:tab===t.id?'var(--accent)':thm.text}}>{t.label}</span>
           </div>
         ))}
       </div>

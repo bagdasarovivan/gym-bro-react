@@ -5,7 +5,7 @@ import { bestSet, recordMetric } from '../utils/records'
 import { exName, fmtVolume, isEn, locale, plural, t } from '../i18n'
 
 // History tab: month strip, month summary, week separators and rich day cards.
-const ORANGE = '#FF9F0A', GREEN = '#30D158', RED = '#FF453A'
+const ORANGE = 'var(--accent)', GREEN = '#30D158', RED = '#FF453A'
 const GROUP_LABEL = Object.fromEntries([...MUSCLE_FILTERS_ROW1, ...MUSCLE_FILTERS_ROW2].map(f => [f.id, f.label]))
 const volume = (sets) => (sets || []).reduce((s, x) => s + (x.weight > 0 && x.reps > 0 ? x.weight * x.reps : 0), 0)
 const dayVolume = (ws) => ws.reduce((s, w) => s + volume(w.sets), 0)
@@ -195,7 +195,7 @@ export function HistoryView({ history, allRows, month, setMonth, year, setYear, 
                   <button onClick={() => setOpenDays(p => ({ ...p, [date]: !p[date] }))} style={{ width: '100%', background: 'none', border: 'none', cursor: 'pointer', padding: '13px 14px', textAlign: 'left', color: thm.text }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                       <span style={{ flex: 1, fontSize: 16, fontWeight: 700 }}>{dayTitle(date)}</span>
-                      {prs > 0 && <span style={{ fontSize: 11, fontWeight: 800, color: ORANGE, background: 'rgba(255,159,10,0.12)', borderRadius: 99, padding: '3px 8px' }}>🏆 {prs}</span>}
+                      {prs > 0 && <span style={{ fontSize: 11, fontWeight: 800, color: ORANGE, background: 'rgba(var(--accent-rgb),0.12)', borderRadius: 99, padding: '3px 8px' }}>🏆 {prs}</span>}
                       <span style={{ fontSize: 15, fontWeight: 800, color: ORANGE }}>{fmtVolume(dayVolume(ws))}</span>
                       <span style={{ fontSize: 11, color: thm.text30, transform: isOpen ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s' }}>▼</span>
                     </div>
@@ -237,7 +237,7 @@ export function HistoryView({ history, allRows, month, setMonth, year, setYear, 
                               {sorted.map((s, i) => {
                                 const top = s === best
                                 return (
-                                  <span key={i} className="chip" style={top ? { background: isPR ? 'rgba(255,159,10,0.18)' : 'rgba(255,159,10,0.1)', color: ORANGE, boxShadow: 'inset 0 0 0 1px rgba(255,159,10,0.35)' } : undefined}>
+                                  <span key={i} className="chip" style={top ? { background: isPR ? 'rgba(var(--accent-rgb),0.18)' : 'rgba(var(--accent-rgb),0.1)', color: ORANGE, boxShadow: 'inset 0 0 0 1px rgba(var(--accent-rgb),0.35)' } : undefined}>
                                     {top && isPR ? '🏆 ' : ''}{setChip(s)}
                                   </span>
                                 )

@@ -609,12 +609,12 @@ export function describeId(id, ach) {
     const p = ach.permanent.find(x => x.id === a); if (!p) return null
     const ti = +b
     const ti_ = tierOf(p, ti)
-    return { emoji: p.emoji, title: t(p.name), sub: p.tiers.length > 1 ? `${ti_.medal} ${t(ti_.name)} · ${p.fmt(p.tiers[ti])}` : t(p.desc), color: p.tiers.length > 1 ? ti_.color : '#FF9F0A' }
+    return { emoji: p.emoji, title: t(p.name), sub: p.tiers.length > 1 ? `${ti_.medal} ${t(ti_.name)} · ${p.fmt(p.tiers[ti])}` : t(p.desc), color: p.tiers.length > 1 ? ti_.color : 'var(--accent)' }
   }
   const m = a === ach.current.month ? ach.current : ach.archive.find(x => x.month === a)
   if (!m) return null
   if (b === 'perfect') return { emoji: '🌟', title: t('Идеальный месяц!'), sub: t('Все 5 испытаний выполнены на золото'), color: '#FFD700' }
-  if (b === 'rank') return { emoji: m.rank.icon, title: t('Ранг месяца: {rank}', { rank: t(c) }), sub: t('{w} в этом месяце', { w: workoutsN(m.visits) }), color: '#FF9F0A' }
+  if (b === 'rank') return { emoji: m.rank.icon, title: t('Ранг месяца: {rank}', { rank: t(c) }), sub: t('{w} в этом месяце', { w: workoutsN(m.visits) }), color: 'var(--accent)' }
   const ch = m.challenges.find(x => x.id === b); if (!ch) return null
   const ti = +c
   return { emoji: TIERS[ti].medal, title: t('{tier} месяца: {name}', { tier: t(TIERS[ti].name), name: t(ch.name).toLowerCase() }), sub: ch.fmt(ch.tiers[ti]), color: TIERS[ti].color }
