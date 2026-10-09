@@ -230,7 +230,7 @@ export function TodayPlanCard({ plan, thm, onStart, onOpen, full }) {
   const day = pr.days[pr.dayIdx]
   if (!day) return null
   return (
-    <div style={{ width: '100%', maxWidth: full ? 'none' : 340, marginBottom: full ? 10 : 0, display: 'flex', alignItems: 'stretch', borderRadius: 18, border: `1px solid ${full ? accA(0.35) : thm.border}`, background: thm.card, overflow: 'hidden' }}>
+    <div style={{ width: '100%', maxWidth: full ? 'none' : 340, marginBottom: full ? 10 : 0, display: 'flex', alignItems: 'stretch', borderRadius: 18, border: `1px solid ${full ? accA(0.45) : thm.border}`, background: full ? `linear-gradient(135deg, ${accA(0.16)}, ${accA(0.04)} 70%)` : thm.card, boxShadow: full ? `0 0 20px ${accA(0.08)}` : 'none', overflow: 'hidden' }}>
       <button onClick={() => onStart(plan, pr.dayIdx)} style={{ flex: 1, minWidth: 0, display: 'flex', alignItems: 'center', gap: 12, padding: '12px 14px', background: 'none', border: 'none', cursor: 'pointer', textAlign: 'left' }}>
         <span style={{ width: 44, height: 44, borderRadius: 13, background: accA(0.14), display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 22, flexShrink: 0 }}>{pr.prog?.icon}</span>
         <span style={{ flex: 1, minWidth: 0 }}>
