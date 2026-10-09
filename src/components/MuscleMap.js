@@ -4,7 +4,7 @@ import { ANATOMY_LABELS } from '../data/muscleLoad'
 import { MUSCLE_MAP_VIEWS, MUSCLE_ZONES_BY_VIEW } from '../data/muscleZones'
 import { anatomyLabel, t } from '../i18n'
 
-export function MuscleMap({ muscleScores, period = 7 }) {
+export function MuscleMap({ muscleScores, period = 7, showPercent = true }) {
   const [hovered, setHovered] = useState(null)
 
   const scoreOf = (muscle) => muscleScores[muscle]
@@ -53,7 +53,7 @@ export function MuscleMap({ muscleScores, period = 7 }) {
               {anatomyLabel(hovered, muscleNames[hovered])}
             </span>
             <span style={{fontSize:12,opacity:0.5}}>
-              {`${t(hoveredScore.label)} · ${hoveredScore.percent}%`}
+              {showPercent ? `${t(hoveredScore.label)} · ${hoveredScore.percent}%` : t(hoveredScore.label)}
             </span>
           </div>
         ) : (

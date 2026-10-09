@@ -1,6 +1,6 @@
 /* eslint-disable no-unused-vars */
 import { useState } from 'react'
-import { fmtW, locale, t } from '../i18n'
+import { fmtW, locale, plural, t } from '../i18n'
 
 export function LineChart({ data, period, setPeriod, unit, totalPoints = 0 }) {
   unit = unit || t('кг')
@@ -66,6 +66,24 @@ export function LineChart({ data, period, setPeriod, unit, totalPoints = 0 }) {
     y: padT + (1 - t) * (H - padT - padB)
   }))
 
+  // Date axis: 4 evenly spaced ticks; the year is added when the range is long
+  const longRange = t1 - t0 > 300 * 86400000
+  const fmtTick = (ms) => new Date(ms).toLocaleDateString(locale(), longRange ? { month: 'short', year: '2-digit' } : { day: 'numeric', month: 'short' })
+  const xTicks = (t1 > t0 ? [0, 1 / 3, 2 / 3, 1] : [0]).map((f, i, a) => ({
+    x: padL + f * (W - padL - padR), label: fmtTick(t0 + f * span),
+    anchor: a.length === 1 ? 'start' : i === 0 ? 'start' : i === a.length - 1 ? 'end' : 'middle',
+  }))
+  // Period caption under the chart: exact dates and how long it took
+  const days = Math.round((t1 - t0) / 86400000)
+  const months = Math.round(days / 30.44)
+  const duration = days < 60
+    ? `${days} ${plural(days, ['день', 'дня', 'дней'], ['day', 'days'])}`
+    : months < 24 ? `${months} ${plural(months, ['месяц', 'месяца', 'месяцев'], ['month', 'months'])}`
+      : `${Math.round(days / 365.25 * 10) / 10} ${t('г.')}`
+  // The year is shown only when the range is not entirely in the current year
+  const sameYear = new Date(t0).getFullYear() === new Date().getFullYear() && new Date(t1).getFullYear() === new Date().getFullYear()
+  const fmtFull = (ms) => new Date(ms).toLocaleDateString(locale(), sameYear ? { day: 'numeric', month: 'short' } : { day: 'numeric', month: 'short', year: 'numeric' })
+
   // Summary shows both directions: progress = record vs start, decline = last workout vs record.
   // A light last session therefore shows a drop without hiding the gain made over the period.
   const round1 = (v) => +v.toFixed(1)
@@ -109,6 +127,9 @@ export function LineChart({ data, period, setPeriod, unit, totalPoints = 0 }) {
               <line x1={padL} y1={g.y} x2={W-padR} y2={g.y} stroke="rgba(255,255,255,0.06)" strokeWidth="1"/>
               <text x={padL-4} y={g.y+4} textAnchor="end" fontSize="9" fill="rgba(255,255,255,0.3)">{g.val}</text>
             </g>
+          ))}
+          {xTicks.map((tk, i) => (
+            <text key={'x' + i} x={tk.x} y={H - padB + 15} textAnchor={tk.anchor} fontSize="9" fill="rgba(255,255,255,0.35)">{tk.label}</text>
           ))}
           <path d={area} fill="url(#cg2)"/>
           <path d={path} fill="none" stroke="#FF9F0A" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>
@@ -160,7 +181,10 @@ export function LineChart({ data, period, setPeriod, unit, totalPoints = 0 }) {
           )
         })()}
       </div>
-      <div style={{display:'flex',justifyContent:'space-between',marginTop:14,background:'rgba(255,255,255,0.04)',borderRadius:12,padding:'10px 14px'}}>
+      <div style={{textAlign:'center',fontSize:12,color:'rgba(255,255,255,0.45)',marginTop:2}}>
+        📅 {fmtFull(t0)} — {fmtFull(t1)} · <b style={{color:'rgba(255,255,255,0.75)'}}>{duration}</b>
+      </div>
+      <div style={{display:'flex',justifyContent:'space-between',marginTop:10,background:'rgba(255,255,255,0.04)',borderRadius:12,padding:'10px 14px'}}>
         {tiles.map(t => (
           <div key={t.label} style={{textAlign:'center',flex:1}}>
             <div style={{fontSize:14,fontWeight:700,color:t.valueColor || 'white'}}>{t.value}</div>
