@@ -14,15 +14,16 @@ import { KG_TO_LB, dispW, exInfo, exName, fmtVolume, fmtW, isEn, isLbs, locale, 
 import { LineChart } from './components/LineChart'
 import { ModalItem } from './components/ModalItem'
 import { MuscleMap } from './components/MuscleMap'
+import { PlansSheet, TodayPlanCard } from './components/Plans'
 import { ExerciseMuscleMap, ExerciseStats, ExerciseVariants, exerciseIndex } from './components/ExerciseStats'
 import { DEFAULT_FAVORITES, EXERCISES, EXERCISE_IMAGES, EXERCISE_INFO, EXERCISE_MUSCLES, EXERCISE_TYPE, LIGHT_WEIGHTS, MUSCLE_FILTERS_ROW1, MUSCLE_FILTERS_ROW2, MUSCLE_FILTER_MAP, MUSCLE_LABELS, REPS_OPTIONS, TIME_OPTIONS, VARIANT_EXERCISES, getDefaultVariant, getExImage, getVariantOptions, getWarmupSets, getWeightOptions, normalizeName } from './data/exerciseCatalog'
 import { RANK_LEVELS, RANK_QUOTES, getMotivation, getRank } from './data/motivation'
 import { calcAnatomyLoad } from './data/muscleLoad'
-import { PLAN_DAYS, PLAN_ICONS, PLAN_NAMES } from './data/plans'
+import { PLAN_DAYS } from './data/plans'
 import { CSS_ALL } from './styles/appCss'
 import { fetchAllRows } from './utils/db'
 import { buildCopyText, formatDateShort, formatMonth, localDateStr } from './utils/format'
-import { bestSet, e1rm, exMetric, isRepsType, recordMetric, setValue, uiSetToStored } from './utils/records'
+import { baseExName, bestSet, e1rm, exMetric, isRepsType, recordMetric, setValue, uiSetToStored } from './utils/records'
 
 const DEFAULT_SETTINGS = { username: '', weight: '', height: '', units: 'kg', theme: 'dark', language: 'ru', accent: 'orange' }
 
@@ -152,11 +153,10 @@ export default function App() {
   const [activePlans, setActivePlans] = useState([])
   const [planWeights, setPlanWeights] = useState({})
   const [showPlanModal, setShowPlanModal] = useState(false)
-  const [showDayPreview, setShowDayPreview] = useState(null) // {plan, dayIdx, dayDef}
   const [showRatingModal, setShowRatingModal] = useState(false)
   const [pendingRatingPlan, setPendingRatingPlan] = useState(null)
   const [planOnboarding, setPlanOnboarding] = useState(false)
-  const [confirmDeletePlan, setConfirmDeletePlan] = useState(null)
+  const [planNotice, setPlanNotice] = useState(null)   // weight changes after a plan workout
   const [editSetModal, setEditSetModal] = useState(null) // {exIdx, setIdx, weight, reps}
 
   const handleAuth = async () => {
@@ -749,14 +749,14 @@ export default function App() {
     const dayDef = days[dayIdx]
     if (!dayDef) return
 
-    const updates = []
+    const updates = [], changes = []
     for (const ex of dayDef.exercises) {
       const key = `${plan.id}:${ex.name}`
       const pw = planWeights[key]
       if (!pw) continue
       // first time with this plan exercise: start from the weight actually lifted, no progression yet
       if (!(pw.working_weight > 0)) {
-        if (liftedMap[ex.name] > 0) updates.push({ plan_id: plan.id, exercise_name: ex.name, working_weight: liftedMap[ex.name], last_rating: rating })
+        if (liftedMap[ex.name] > 0) { updates.push({ plan_id: plan.id, exercise_name: ex.name, working_weight: liftedMap[ex.name], last_rating: rating }); changes.push({ name: ex.name, from: 0, to: liftedMap[ex.name] }) }
         continue
       }
       const completedSets = completedMap[ex.name] || 0
@@ -780,6 +780,7 @@ export default function App() {
         }
       }
       if (newWeight !== pw.working_weight) {
+        changes.push({ name: ex.name, from: pw.working_weight, to: newWeight })
         updates.push({ plan_id: plan.id, exercise_name: ex.name, working_weight: newWeight, last_rating: rating })
       } else {
         updates.push({ plan_id: plan.id, exercise_name: ex.name, working_weight: pw.working_weight, last_rating: rating })
@@ -796,6 +797,8 @@ export default function App() {
     setPlanWeights(prev => { const next = { ...prev }; Object.entries(fresh).forEach(([k, w]) => { if (next[k]) next[k] = { ...next[k], working_weight: w } }); return next })
     const nextDay = (plan.current_day % plan.total_days) + 1
     await supabase.from('workout_plans').update({ current_day: nextDay, workout_count: plan.workout_count + 1 }).eq('id', plan.id)
+    setActivePlans(prev => prev.map(p => p.id === plan.id ? { ...p, current_day: nextDay, workout_count: p.workout_count + 1 } : p))
+    return changes
   }
 
   // ── Achievements ──────────────────────────────────────────────────────
@@ -910,6 +913,70 @@ export default function App() {
     }, 1000)
     return () => clearTimeout(t)
   }, [workoutExercises, prMap]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  // ── Training plans ──────────────────────────────────────────────────────
+  // Heaviest weight of the latest session of an exercise (all grips) — a starting weight for plan sets
+  const lastWorkingWeight = (name) => {
+    const rows = (allRows || []).filter(w => baseExName(normalizeName(w.exercises?.name)) === name)
+    if (!rows.length) return { weight: 0, session: null }
+    const last = rows.reduce((a, b) => (b.workout_date > a.workout_date ? b : a))
+    return { weight: Math.max(0, ...(last.sets || []).filter(x => x.reps > 0).map(x => x.weight || 0)), session: last }
+  }
+  // Load a day of a plan into today's workout and open the workout screen
+  const loadPlanDay = async (plan, dayIdx) => {
+    const dayDef = (PLAN_DAYS[plan.plan_type] || [])[dayIdx]
+    if (!dayDef || loadingPlan) return
+    setLoadingPlan(true)
+    try {
+      const newExercises = await Promise.all(dayDef.exercises.map(async ex => {
+        const key = `${plan.id}:${ex.name}`
+        let pw = planWeights[key]
+        if (!pw) {
+          const { data: inserted } = await supabase.from('plan_weights').insert({
+            user_id: user.id, plan_id: plan.id, exercise_name: ex.name,
+            working_weight: 0, target_reps: ex.reps, target_sets: ex.sets
+          }).select().single()
+          pw = inserted
+          if (pw) setPlanWeights(prev => ({ ...prev, [key]: pw }))
+        }
+        const hist = lastWorkingWeight(ex.name)
+        const wt = pw?.working_weight > 0 ? pw.working_weight : hist.weight
+        // weight is filled in, reps are left for the user: a set counts only once it was really done
+        const ty = EXERCISE_TYPE[ex.name] || 'light'
+        const sets = Array.from({ length: ex.sets }, () => ({ weight: ty === 'timed' ? 0 : wt, reps: 0, done: false }))
+        return { tempId: Date.now() + Math.random(), name: ex.name, grip: getDefaultVariant(ex.name), open: false, lastSession: hist.session, sets,
+          planId: plan.id, isBase: ex.isBase, target: { sets: ex.sets, reps: ex.reps, weight: wt } }
+      }))
+      if (newExercises[0]) newExercises[0].open = true
+      setWorkoutExercises(prev => {
+        if (!prev.length) setWorkoutDate(localDateStr(new Date()))
+        return [...prev.filter(e => !newExercises.some(n => n.name === e.name)), ...newExercises]
+      })
+      setShowPlanModal(false)
+      setTab('add'); setWorkoutStarted(true)
+      window.scrollTo({ top: 0, behavior: 'smooth' })
+    } finally {
+      setLoadingPlan(false)
+    }
+  }
+  // Start a program from the catalogue (replaces the active one)
+  const choosePlan = async (type) => {
+    const days = PLAN_DAYS[type] || []
+    for (const p of activePlans) await supabase.from('workout_plans').update({ is_active: false }).eq('id', p.id)
+    const { data: plan, error } = await supabase.from('workout_plans').insert({
+      user_id: user.id, plan_type: type, slot: 1, total_days: days.length, current_day: 1, workout_count: 0
+    }).select().single()
+    if (error || !plan) {
+      setSaveError(t('Не удалось подключить программу. Проверь интернет и попробуй ещё раз.')); setTimeout(() => setSaveError(null), 8000)
+      return false
+    }
+    setActivePlans([plan])
+    return true
+  }
+  const stopPlan = async (plan) => {
+    await supabase.from('workout_plans').update({ is_active: false }).eq('id', plan.id)
+    setActivePlans(prev => prev.filter(p => p.id !== plan.id))
+  }
 
   const saveWorkout = async () => {
     if (!workoutExercises.length) return
@@ -1268,6 +1335,10 @@ export default function App() {
                 </div>
               </div>
               <div style={{fontSize:14,color:thm.text50,textAlign:'center',maxWidth:300,lineHeight:1.4}}>{hint}</div>
+              {!resume && activePlans[0] && <TodayPlanCard plan={activePlans[0]} thm={thm} onStart={loadPlanDay} onOpen={()=>setShowPlanModal('my')}/>}
+              {!resume && !activePlans.length && (
+                <button onClick={()=>setShowPlanModal('catalog')} style={{background:'none',border:'none',color:'var(--accent)',fontSize:14,fontWeight:700,cursor:'pointer',marginTop:-14}}>📋 {t('Тренироваться по программе')} ›</button>
+              )}
             </div>
             )
           })() : (
@@ -1308,6 +1379,17 @@ export default function App() {
                     </button>
                     {isOpen && (
                       <div style={{padding:'0 14px 14px'}}>
+                        {ex.target && (() => {
+                          const doneN = ex.sets.filter(s=>exType2==='timed'?s.weight>0:isRepsType(exType2)?s.reps>0:(s.weight>0&&s.reps>0)).length
+                          const reached = doneN >= ex.target.sets
+                          return (
+                            <div style={{display:'flex',alignItems:'center',gap:8,fontSize:13,marginBottom:10,padding:'8px 10px',borderRadius:10,background:'rgba(var(--accent-rgb),0.1)',border:'1px solid rgba(var(--accent-rgb),0.25)'}}>
+                              <span>🎯</span>
+                              <span style={{flex:1,color:thm.text85,fontWeight:600}}>{t('Цель')}: {ex.target.sets}×{ex.target.reps || t('макс')}{ex.target.weight > 0 && exType2 !== 'timed' ? ` · ${fmtW(ex.target.weight)}` : ''}</span>
+                              <span style={{fontWeight:800,color:reached?'#30D158':'var(--accent)'}}>{reached ? '✓ ' : ''}{doneN}/{ex.target.sets}</span>
+                            </div>
+                          )
+                        })()}
                         {ex.lastSession && (
                           <div style={{fontSize:12,color:thm.text35,marginBottom:10,padding:'7px 10px',background:thm.card2,borderRadius:8}}>
                             💡 {t('Прошлый раз:')} {ex.lastSession.sets?.sort((a,b)=>a.set_no-b.set_no).slice(-3).map(setChip).join(' · ')}
@@ -1387,41 +1469,17 @@ export default function App() {
                 </div>
                 <span style={{color:'rgba(255,255,255,0.2)',fontSize:18}}>›</span>
               </button>
-              {/* Plan cards — only shown when no exercises added yet */}
-              {workoutExercises.length === 0 && <div style={{marginBottom:12}}>
-                {activePlans.map(plan => {
-                  const days = PLAN_DAYS[plan.plan_type] || []
-                  const dayIdx = (plan.current_day - 1) % days.length
-                  const dayDef = days[dayIdx]
-                  const week = Math.floor((plan.workout_count) / days.length) + 1
-                  return (
-                    <div key={plan.id} onClick={()=>setShowDayPreview({plan, dayIdx, dayDef})} style={{background:'rgba(255,255,255,0.06)',borderRadius:14,border:'1px solid rgba(255,255,255,0.1)',padding:'12px 14px',marginBottom:8,cursor:'pointer'}}>
-                      <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:4}}>
-                        <span style={{fontSize:15,fontWeight:700,color:'rgba(255,255,255,0.9)'}}>{PLAN_ICONS[plan.plan_type]} {t(PLAN_NAMES[plan.plan_type])}</span>
-                        <span style={{fontSize:11,color:'rgba(255,255,255,0.35)',fontWeight:600}}>{plan.slot===1?t('основной'):t('доп.')}</span>
-                      </div>
-                      <div style={{fontSize:13,color:'rgba(255,255,255,0.5)'}}>{t(dayDef?.label)} · {t('Неделя')} {week} · {t('тренировка')} {plan.workout_count+1}</div>
-                    </div>
-                  )
-                })}
+              {/* Plan — only shown when no exercises added yet */}
+              {workoutExercises.length === 0 && <div style={{marginBottom:12,display:'flex',flexDirection:'column',gap:8,alignItems:'stretch'}}>
+                {activePlans.map(plan => <TodayPlanCard key={plan.id} plan={plan} thm={thm} onStart={loadPlanDay} onOpen={()=>setShowPlanModal('my')}/>)}
                 {activePlans.length === 0 && (
-                  <button onClick={()=>setShowPlanModal(true)} style={{width:'100%',marginBottom:10,padding:'16px 20px',borderRadius:16,border:'1px solid rgba(255,255,255,0.09)',background:'rgba(255,255,255,0.06)',cursor:'pointer',display:'flex',alignItems:'center',gap:14,textAlign:'left'}}>
+                  <button onClick={()=>setShowPlanModal('catalog')} style={{width:'100%',padding:'16px 20px',borderRadius:16,border:`1px solid ${thm.border}`,background:thm.card,cursor:'pointer',display:'flex',alignItems:'center',gap:14,textAlign:'left'}}>
                     <div style={{width:44,height:44,borderRadius:12,background:'rgba(var(--accent-rgb),0.15)',display:'flex',alignItems:'center',justifyContent:'center',fontSize:20,flexShrink:0}}>📋</div>
                     <div style={{flex:1}}>
-                      <div style={{fontSize:16,fontWeight:600,color:'#fff',marginBottom:4}}>{t('Выбрать план тренировок')}</div>
-                      <div style={{fontSize:12,color:'rgba(255,255,255,0.35)',marginTop:4}}>{t('Тренируйся по программе')}</div>
+                      <div style={{fontSize:16,fontWeight:600,color:thm.text,marginBottom:4}}>{t('Тренироваться по программе')}</div>
+                      <div style={{fontSize:12,color:thm.text40,marginTop:4}}>{t('7 программ: сила, масса, ноги, рельеф…')}</div>
                     </div>
-                    <span style={{color:'rgba(255,255,255,0.2)',fontSize:18}}>›</span>
-                  </button>
-                )}
-                {activePlans.length === 1 && (
-                  <button onClick={()=>setShowPlanModal(true)} style={{width:'100%',marginBottom:8,padding:'10px 14px',borderRadius:12,border:'1px dashed rgba(255,255,255,0.15)',background:'transparent',color:'rgba(255,255,255,0.5)',fontSize:13,fontWeight:600,cursor:'pointer'}}>
-                    {t('+ Добавить второй план')}
-                  </button>
-                )}
-                {activePlans.length > 0 && (
-                  <button onClick={()=>setShowPlanModal(true)} style={{width:'100%',marginTop:2,padding:'8px 14px',borderRadius:12,border:'none',background:'transparent',color:'rgba(255,255,255,0.35)',fontSize:12,cursor:'pointer'}}>
-                    {t('⚙️ Управление планами')}
+                    <span style={{color:thm.text30,fontSize:18}}>›</span>
                   </button>
                 )}
               </div>}
@@ -1853,6 +1911,19 @@ export default function App() {
           </div>
         </div>
       )}
+      {planNotice && (
+        <div className="alert-toast" onClick={() => setPlanNotice(null)} style={{borderColor:'rgba(var(--accent-rgb),0.45)',cursor:'pointer',zIndex:3000,alignItems:'flex-start'}}>
+          <div className="alert-toast-icon">📈</div>
+          <div style={{minWidth:0}}>
+            <div className="alert-toast-title">{t('План обновлён')}</div>
+            {planNotice.slice(0, 5).map(c => (
+              <div key={c.name} className="alert-toast-sub" style={{opacity:0.8}}>
+                {exName(c.name)}: {c.from > 0 ? <>{fmtW(c.from)} → <b style={{color: c.to > c.from ? '#30D158' : '#FF9F0A'}}>{fmtW(c.to)}</b></> : <>{t('рабочий вес')} <b>{fmtW(c.to)}</b></>}
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
       {saveError && (
         <div className="alert-toast" onClick={() => setSaveError(null)} style={{borderColor:'rgba(255,69,58,0.5)',cursor:'pointer',zIndex:3000}}>
           <div className="alert-toast-icon">⚠️</div>
@@ -2039,74 +2110,9 @@ export default function App() {
                 </div>
               )}
 
-              {/* Plan selection modal */}
               {showPlanModal && (
-                <div style={{position:'fixed',inset:0,background:'rgba(0,0,0,0.8)',zIndex:1000,display:'flex',alignItems:'center',justifyContent:'center',padding:20}} onClick={()=>setShowPlanModal(false)}>
-                  <div style={{background:'#1C1C1E',borderRadius:24,padding:24,width:'100%',maxWidth:400}} onClick={e=>e.stopPropagation()}>
-                    <div style={{fontSize:19,fontWeight:700,color:'rgba(255,255,255,0.9)',marginBottom:6}}>{t('Выбери план тренировок')}</div>
-                    <div style={{fontSize:13,color:'rgba(255,255,255,0.4)',marginBottom:16}}>{t('Gym BRO будет подбирать упражнения и веса автоматически')}</div>
-                    {activePlans.length > 0 && (
-                      <div style={{marginBottom:16}}>
-                        <div style={{fontSize:11,fontWeight:700,textTransform:'uppercase',letterSpacing:'0.6px',color:'rgba(255,255,255,0.3)',marginBottom:8}}>{t('Активные планы')}</div>
-                        {activePlans.map(plan => {
-                          const days = PLAN_DAYS[plan.plan_type] || []
-                          const dayIdx = (plan.current_day - 1) % days.length
-                          const dayDef = days[dayIdx]
-                          const week = Math.floor((plan.workout_count) / days.length) + 1
-                          return (
-                            <div key={plan.id} onClick={()=>setShowPlanModal(false)} style={{display:'flex',alignItems:'center',justifyContent:'space-between',background:'rgba(255,255,255,0.06)',borderRadius:12,padding:'10px 12px',marginBottom:8,cursor:'pointer'}}>
-                              <div>
-                                <div style={{fontSize:14,fontWeight:700,color:'rgba(255,255,255,0.9)'}}>{PLAN_ICONS[plan.plan_type]} {t(PLAN_NAMES[plan.plan_type])}</div>
-                                <div style={{fontSize:12,color:'rgba(255,255,255,0.4)',marginTop:2}}>{t(dayDef?.label)} · {t('Неделя')} {week}</div>
-                              </div>
-                              <button onClick={e=>{e.stopPropagation();setConfirmDeletePlan(plan)}} style={{background:'rgba(255,59,48,0.12)',border:'none',color:'#FF453A',width:28,height:28,borderRadius:8,cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',fontSize:14,fontWeight:700,flexShrink:0}}>✕</button>
-                            </div>
-                          )
-                        })}
-                      </div>
-                    )}
-                    {activePlans.length < 2 && (
-                      <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:12}}>
-                        {['strength','mass','cut','fit'].map(type => (
-                          <button key={type} onClick={async ()=>{
-                            setShowPlanModal(false)
-                            const days = PLAN_DAYS[type]
-                            const slot = activePlans.length + 1
-                            const { data: plan } = await supabase.from('workout_plans').insert({
-                              user_id: user.id, plan_type: type, slot, total_days: days.length,
-                              current_day: 1, workout_count: 0
-                            }).select().single()
-                            if (plan) {
-                              setActivePlans(prev => [...prev, plan])
-                              setPlanOnboarding(true)
-                            }
-                          }} style={{padding:'18px 12px',borderRadius:16,border:'1px solid rgba(255,255,255,0.1)',background:'rgba(255,255,255,0.05)',cursor:'pointer',textAlign:'left'}}>
-                            <div style={{fontSize:28,marginBottom:8}}>{PLAN_ICONS[type]}</div>
-                            <div style={{fontSize:15,fontWeight:700,color:'rgba(255,255,255,0.9)'}}>{t(PLAN_NAMES[type])}</div>
-                          </button>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                </div>
-              )}
-
-              {/* Confirm delete plan modal */}
-              {confirmDeletePlan && (
-                <div style={{position:'fixed',inset:0,background:'rgba(0,0,0,0.7)',zIndex:1002,display:'flex',alignItems:'center',justifyContent:'center',padding:32}}>
-                  <div style={{background:'#1C1C1E',borderRadius:20,padding:24,width:'100%',maxWidth:320,textAlign:'center'}}>
-                    <div style={{fontSize:16,fontWeight:700,color:'rgba(255,255,255,0.9)',marginBottom:8}}>{t('Удалить план «{name}»?',{name:t(PLAN_NAMES[confirmDeletePlan.plan_type])})}</div>
-                    <div style={{fontSize:13,color:'rgba(255,255,255,0.4)',marginBottom:24}}>{t('Прогресс весов будет сохранён.')}</div>
-                    <div style={{display:'flex',gap:10}}>
-                      <button onClick={()=>setConfirmDeletePlan(null)} style={{flex:1,padding:'12px',borderRadius:12,border:'1px solid rgba(255,255,255,0.1)',background:'transparent',color:'rgba(255,255,255,0.6)',fontSize:15,fontWeight:600,cursor:'pointer'}}>{t('Отмена')}</button>
-                      <button onClick={async ()=>{
-                        await supabase.from('workout_plans').update({is_active:false}).eq('id',confirmDeletePlan.id)
-                        setActivePlans(prev => prev.filter(p => p.id !== confirmDeletePlan.id))
-                        setConfirmDeletePlan(null)
-                      }} style={{flex:1,padding:'12px',borderRadius:12,border:'none',background:'rgba(255,59,48,0.85)',color:'#fff',fontSize:15,fontWeight:700,cursor:'pointer'}}>{t('Удалить')}</button>
-                    </div>
-                  </div>
-                </div>
+                <PlansSheet thm={thm} activePlans={activePlans} planWeights={planWeights} initialView={typeof showPlanModal === 'string' ? showPlanModal : undefined}
+                  onClose={() => setShowPlanModal(false)} onStartDay={loadPlanDay} onChoose={choosePlan} onStop={stopPlan} guessWeight={n => lastWorkingWeight(n).weight}/>
               )}
 
               {/* Onboarding modal */}
@@ -2127,72 +2133,6 @@ export default function App() {
                 </div>
               )}
 
-              {/* Day preview modal */}
-              {showDayPreview && (()=>{
-                const {plan, dayIdx, dayDef} = showDayPreview
-                const week = Math.floor(plan.workout_count / (PLAN_DAYS[plan.plan_type]?.length||1)) + 1
-                return (
-                  <div style={{position:'fixed',inset:0,background:'rgba(0,0,0,0.8)',zIndex:1000,display:'flex',alignItems:'flex-end',justifyContent:'center'}} onClick={()=>setShowDayPreview(null)}>
-                    <div style={{background:'#1C1C1E',borderRadius:'20px 20px 0 0',padding:24,width:'100%',maxWidth:480,paddingBottom:40,maxHeight:'85vh',overflowY:'auto'}} onClick={e=>e.stopPropagation()}>
-                      <div style={{fontSize:17,fontWeight:700,color:'rgba(255,255,255,0.9)',marginBottom:4}}>{t(dayDef.label)}</div>
-                      <div style={{fontSize:13,color:'rgba(255,255,255,0.4)',marginBottom:4}}>{PLAN_ICONS[plan.plan_type]} {t(PLAN_NAMES[plan.plan_type])} · {t('Неделя')} {week} · {t('тренировка')} {plan.workout_count+1}</div>
-                      <div style={{fontSize:13,color:'var(--accent)',marginBottom:16}}>⚡ {t('Разогрей')} {t(dayDef.warmupHint)}</div>
-                      {dayDef.exercises.map((ex,i) => {
-                        const key = `${plan.id}:${ex.name}`
-                        const pw = planWeights[key]
-                        const hasWeight = pw && pw.working_weight > 0
-                        return (
-                          <div key={i} style={{display:'flex',alignItems:'center',justifyContent:'space-between',padding:'10px 12px',background:'rgba(255,255,255,0.05)',borderRadius:12,marginBottom:6}}>
-                            <div>
-                              <span style={{fontSize:14,fontWeight:600,color:'rgba(255,255,255,0.85)'}}>{exName(ex.name)}</span>
-                              {ex.isBase && <span style={{fontSize:11,color:'var(--accent)',marginLeft:6,fontWeight:600}}>{t('база')}</span>}
-                            </div>
-                            <span style={{fontSize:13,color:'rgba(255,255,255,0.45)',fontWeight:600}}>
-                              {hasWeight ? `${fmtW(pw.working_weight)} × ${ex.reps} × ${ex.sets}` : `? × ${ex.reps} × ${ex.sets}`}
-                            </span>
-                          </div>
-                        )
-                      })}
-                      <button disabled={loadingPlan} onClick={async ()=>{
-                        setLoadingPlan(true)
-                        try {
-                          // веса плана для всех упражнений запрашиваются параллельно, а не по очереди
-                          const newExercises = await Promise.all(dayDef.exercises.map(async ex => {
-                            const key = `${plan.id}:${ex.name}`
-                            let pw = planWeights[key]
-                            if (!pw) {
-                              const { data: inserted } = await supabase.from('plan_weights').insert({
-                                user_id: user.id, plan_id: plan.id, exercise_name: ex.name,
-                                working_weight: 0, target_reps: ex.reps, target_sets: ex.sets
-                              }).select().single()
-                              pw = inserted
-                              if (pw) setPlanWeights(prev => ({...prev, [key]: pw}))
-                            }
-                            const wt = pw?.working_weight || 0
-                            const sets = Array.from({length: ex.sets}, () => ({weight: wt, reps: ex.reps, done: false}))
-                            return {name: ex.name, grip: getDefaultVariant(ex.name), open: true, lastSession: null, sets, planId: plan.id, isBase: ex.isBase}
-                          }))
-                          setWorkoutExercises(prev => {
-                            const existing = prev.filter(e => !newExercises.some(n => n.name === e.name))
-                            return [...existing, ...newExercises]
-                          })
-                          if (!workoutStarted) setWorkoutStarted(true)
-                          window.scrollTo({ top: 0, behavior: 'smooth' })
-                        } finally {
-                          setLoadingPlan(false)
-                          setShowDayPreview(null)
-                        }
-                      }} style={{width:'100%',marginTop:16,padding:'14px',borderRadius:14,background:'var(--accent)',color:'#000',fontSize:16,fontWeight:700,border:'none',cursor:loadingPlan?'default':'pointer',opacity:loadingPlan?0.7:1}}>
-                        {loadingPlan ? t('Загружаю упражнения…') : t('Загрузить в тренировку')}
-                      </button>
-                      <button onClick={()=>setShowDayPreview(null)} style={{width:'100%',marginTop:8,padding:'12px',borderRadius:14,border:'none',background:'transparent',color:'rgba(255,255,255,0.4)',fontSize:14,cursor:'pointer'}}>
-                        {t('← Закрыть')}
-                      </button>
-                    </div>
-                  </div>
-                )
-              })()}
-
               {/* Rating modal */}
               {showRatingModal && pendingRatingPlan && (
                 <div style={{position:'fixed',inset:0,background:'rgba(0,0,0,0.85)',zIndex:1001,display:'flex',alignItems:'center',justifyContent:'center',padding:24}}>
@@ -2211,7 +2151,10 @@ export default function App() {
                               liftedMap[ex.name] = Math.max(0, ...done.map(s => s.weight || 0))
                             }
                           }
-                          try { await applyProgression(pendingRatingPlan, r.key, completedMap, liftedMap) } catch {}
+                          try {
+                            const changes = await applyProgression(pendingRatingPlan, r.key, completedMap, liftedMap)
+                            if (changes?.length) { setPlanNotice(changes); setTimeout(() => setPlanNotice(null), 9000) }
+                          } catch {}
                           setShowRatingModal(false)
                           setPendingRatingPlan(null)
                           setSaved(true)
