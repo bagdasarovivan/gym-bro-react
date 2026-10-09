@@ -1080,7 +1080,9 @@ export default function App() {
                 <button onClick={()=>{setTimerMode('stopwatch');setTimerSecs(null);setTimerPaused(false)}} style={{flex:1,padding:'7px 0',borderRadius:10,border:'none',cursor:'pointer',fontSize:13,fontWeight:700,background:timerMode==='stopwatch'?'rgba(255,159,10,0.2)':'rgba(255,255,255,0.06)',color:timerMode==='stopwatch'?'#FF9F0A':'rgba(255,255,255,0.4)'}}>⏲ Секундомер</button>
                 <button onClick={()=>{setTimerSecs(null);setTimerPaused(false);setStopwatchRunning(false);setStopwatchSecs(0);setTimerMode('countdown')}} style={{width:32,height:32,borderRadius:10,border:'none',cursor:'pointer',background:'rgba(255,255,255,0.06)',color:'rgba(255,255,255,0.35)',fontSize:13,display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0}}>✕</button>
               </div>
-              {timerMode === 'countdown' ? (<>
+              {/* Both modes are stacked in one grid cell so the panel keeps the same height when switching */}
+              <div style={{display:'grid'}}>
+              <div style={{gridArea:'1/1',visibility:timerMode==='countdown'?'visible':'hidden'}} aria-hidden={timerMode!=='countdown'}>
                 <div style={{display:'flex',alignItems:'baseline',gap:8,marginBottom:12}}>
                   <span style={{fontSize:48,fontWeight:800,color:timerPaused?'rgba(255,159,10,0.55)':'#FF9F0A',fontVariantNumeric:'tabular-nums',letterSpacing:'-2px'}}>
                     {`${Math.floor((timerSecs||0)/60)}:${String((timerSecs||0)%60).padStart(2,'0')}`}
@@ -1096,7 +1098,8 @@ export default function App() {
                 </div>
                 <div style={{fontSize:11,opacity:0.35,marginBottom:6,fontWeight:600,textTransform:'uppercase',letterSpacing:'0.5px'}}>Изменить время</div>
                 <DropdownPicker options={Array.from({length:50},(_,i)=>(i+1)*5)} value={timerDuration} onChange={v=>{setTimerDuration(v);setTimerSecs(v);setTimerPaused(true)}} unit="сек" label=""/>
-              </>) : (<>
+              </div>
+              <div style={{gridArea:'1/1',visibility:timerMode==='stopwatch'?'visible':'hidden'}} aria-hidden={timerMode!=='stopwatch'}>
                 <div style={{display:'flex',alignItems:'baseline',gap:8,marginBottom:12}}>
                   <span style={{fontSize:48,fontWeight:800,color:stopwatchRunning?'#FF9F0A':'rgba(255,255,255,0.85)',fontVariantNumeric:'tabular-nums',letterSpacing:'-2px'}}>
                     {`${Math.floor(stopwatchSecs/60)}:${String(stopwatchSecs%60).padStart(2,'0')}`}
@@ -1109,7 +1112,8 @@ export default function App() {
                   <button onClick={()=>{setStopwatchSecs(0);setStopwatchRunning(false)}} style={{flex:1,padding:'9px 0',borderRadius:12,border:'none',cursor:'pointer',fontWeight:700,fontSize:14,background:'rgba(255,255,255,0.07)',color:'rgba(255,255,255,0.7)'}}>↺ Сброс</button>
 
                 </div>
-              </>)}
+              </div>
+              </div>
             </div>
           )}
 
