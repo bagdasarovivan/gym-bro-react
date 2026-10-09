@@ -426,6 +426,30 @@ function rng(seedStr) {
 }
 const shuffled = (arr, seedStr) => { const r = rng(seedStr), a = [...arr]; for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(r() * (i + 1)); [a[i], a[j]] = [a[j], a[i]] } return a }
 
+// Every month must contain challenges whose gold needs real attendance, so a perfect month is impossible
+// without training about 10 days: at least one "10 days" challenge and at least two hard ones overall.
+const DAY10_IDS = ['visits', 'chain']                  // gold = 12 workouts / a 10-workout chain
+const HARD_IDS = ['visits', 'chain', 'weeks', 'tonnage'] // + every week with 2+ workouts, beat the best month
+export const isHardChallenge = (id) => HARD_IDS.includes(id)
+const validPick = (ids) => ids.some(x => DAY10_IDS.includes(x)) && ids.filter(x => HARD_IDS.includes(x)).length >= 2
+
+// Make a pick valid by replacing soft challenges (never those in `protect`, e.g. with a medal, if avoidable)
+function ensureHard(ids, seedStr, protect = []) {
+  const out = [...ids]
+  const replace = (pool) => {
+    const cand = shuffled(pool, seedStr).find(x => !out.includes(x))
+    if (!cand) return
+    const soft = out.map((x, i) => i).filter(i => !HARD_IDS.includes(out[i]))
+    const i = [...soft].reverse().find(i => !protect.includes(out[i])) ?? soft[soft.length - 1]
+    if (i !== undefined) out[i] = cand
+  }
+  if (!out.some(x => DAY10_IDS.includes(x))) replace(DAY10_IDS)
+  while (out.filter(x => HARD_IDS.includes(x)).length < 2 && out.some(x => !HARD_IDS.includes(x))) {
+    const before = out.join(); replace(HARD_IDS); if (out.join() === before) break
+  }
+  return out
+}
+
 // Default pick for a month: avoids last month's challenges when possible; `keep` ids stay in
 export function pickChallenges(month, seed, avoid = [], keep = []) {
   const order = shuffled(POOL_IDS, `${seed}:${month}`)
@@ -434,7 +458,7 @@ export function pickChallenges(month, seed, avoid = [], keep = []) {
     if (out.length >= CH_PER_MONTH) break
     if (!out.includes(id)) out.push(id)
   }
-  return out
+  return ensureHard(out, `${seed}:${month}:hard`, keep)
 }
 
 // Replace challenge `idx` of the current month; returns the new stored state or null when not allowed
@@ -444,8 +468,12 @@ export function swapChallenge(current, idx, seed) {
   if (!c || used >= MAX_SWAPS) return null
   const ids = current.challenges.map(x => x.id)
   const out = [...(current.out || []), c.id]
-  const cand = shuffled(POOL_IDS, `${seed}:${current.month}:swap${used + 1}`).find(x => !ids.includes(x) && !out.includes(x))
-    || POOL_IDS.find(x => !ids.includes(x))
+  // The replacement keeps the month valid (a hard challenge is replaced by a hard one when needed)
+  const fits = (x) => { const next = [...ids]; next[idx] = x; return validPick(next) }
+  const order = shuffled(POOL_IDS, `${seed}:${current.month}:swap${used + 1}`)
+  const cand = order.find(x => !ids.includes(x) && !out.includes(x) && fits(x))
+    || order.find(x => !ids.includes(x) && fits(x))
+    || order.find(x => !ids.includes(x) && !out.includes(x))
   if (!cand) return null
   ids[idx] = cand
   return { ids, swaps: used + 1, out }
@@ -493,7 +521,7 @@ function monthly(month, days, recordEventsList, routineDates, volByMonth, ids) {
     weeks: [{ emoji: '📅', name: 'Без пропусков', desc: `Недели с 2+ тренировками (в месяце ${weeks.length} нед.)`, tiers: [2, weeks.length - 1, weeks.length], fmt: v => `${v} ${t('из')} ${weeks.length}` }, goodWeeks],
     full_body: [{ emoji: '🦾', name: 'Всё тело', desc: 'Сколько групп мышц проработал', tiers: [5, 7, GROUPS.length], fmt: v => `${v} ${t('из')} ${GROUPS.length}` }, groups.size],
     routines: [{ emoji: '🤸', name: 'Разминка и растяжка', desc: 'Сколько раз сделал до конца', tiers: [4, 8, 12], fmt: times }, routines],
-    visits: [{ emoji: '🗓️', name: 'Регулярность', desc: 'Тренировок за месяц', tiers: [8, 12, 16], fmt: tr }, visits],
+    visits: [{ emoji: '🗓️', name: 'Регулярность', desc: 'Тренировок за месяц', tiers: [8, 10, 12], fmt: tr }, visits],
     sets: [{ emoji: '📋', name: 'Подходы', desc: 'Подходов за месяц', tiers: [100, 150, 200], fmt: v => `${v} ${t('подх.')}` }, setsN],
     reps: [{ emoji: '🔢', name: 'Повторения', desc: 'Повторов за месяц', tiers: [1000, 1500, 2000], fmt: reps }, repsOf(() => true)],
     new_ex: [{ emoji: '🆕', name: 'Новенькое', desc: 'Упражнений, которые делаешь впервые', tiers: [1, 2, 3], fmt: v => `${v}` }, newEx],
@@ -502,12 +530,13 @@ function monthly(month, days, recordEventsList, routineDates, volByMonth, ids) {
     pull_total: [{ emoji: '🧗', name: 'Турник', desc: 'Подтягиваний за месяц', tiers: [100, 200, 300], fmt: reps }, repsOf(it => it.base === 'Подтягивания')],
     legs: [{ emoji: '🦵', name: 'Не пропускай ноги', desc: 'Тренировок с упражнениями на ноги', tiers: [4, 6, 8], fmt: tr }, legs],
     variety: [{ emoji: '🎨', name: 'Разнообразие', desc: 'Разных упражнений за месяц', tiers: [10, 15, 20], fmt: v => `${v}` }, variety],
-    chain: [{ emoji: '⛓️', name: 'Через день', desc: 'Тренировок подряд с перерывом не больше одного дня', tiers: [4, 6, 8], fmt: tr }, chain],
+    chain: [{ emoji: '⛓️', name: 'Через день', desc: 'Тренировок подряд с перерывом не больше одного дня', tiers: [4, 7, 10], fmt: tr }, chain],
     weekend: [{ emoji: '🌤️', name: 'Выходные в зале', desc: 'Тренировок в субботу и воскресенье', tiers: [2, 4, 6], fmt: tr }, weekend],
     push_total: [{ emoji: '🫸', name: 'Отжимания', desc: 'Отжиманий от пола и на брусьях за месяц', tiers: [150, 300, 500], fmt: reps }, repsOf(it => it.base === 'Отжимания' || it.base === 'Отжимания на брусьях')],
   }
   const ch = (id) => { const [def, value] = DEFS[id]; return { id, ...def, value, tier: def.tiers.filter(x => value >= x).length } }
-  return { month, visits, rank: getRank(visits), challenges: ids.filter(id => DEFS[id]).map(ch) }
+  const challenges = ids.filter(id => DEFS[id]).map(ch)
+  return { month, visits, rank: getRank(visits), challenges, perfect: challenges.length >= CH_PER_MONTH && challenges.every(c => c.tier >= c.tiers.length) }
 }
 
 // ── Entry point ─────────────────────────────────────────────────────────────
@@ -539,10 +568,16 @@ export function computeAchievements({ rows, bodyWeights = [], routineLog = {}, t
     }
     return (idsCache[m] = ids)
   }
-  const current = monthly(thisMonth, days, events, routineDates, volByMonth, idsFor(thisMonth))
+  // A stored pick of the current month made before the hard-challenge rule is repaired (and saved again)
+  let curIds = idsFor(thisMonth), repaired = false
+  if (thisMonth >= ROTATION_START && !validPick(curIds)) {
+    const medals = monthly(thisMonth, days, events, routineDates, volByMonth, curIds).challenges.filter(c => c.tier > 0).map(c => c.id)
+    curIds = ensureHard(curIds, `${seed}:${thisMonth}:repair`, medals); repaired = true
+  }
+  const current = monthly(thisMonth, days, events, routineDates, volByMonth, curIds)
   current.swaps = monthPicks?.[thisMonth]?.swaps || 0
   current.out = monthPicks?.[thisMonth]?.out || []
-  current.needsSave = !monthPicks?.[thisMonth]?.ids?.length
+  current.needsSave = repaired || !monthPicks?.[thisMonth]?.ids?.length
   // Past months, newest first
   const archive = []
   if (days.length) {
@@ -551,6 +586,8 @@ export function computeAchievements({ rows, bodyWeights = [], routineLog = {}, t
   // Medals from monthly challenges over all months (the highest tier of each challenge counts)
   const monthMedals = [0, 0, 0]
   ;[current, ...archive].forEach(m => m.challenges.forEach(c => { if (c.tier) monthMedals[c.tier - 1]++ }))
+  // Perfect month: every challenge of the month completed to gold
+  const perfectMonths = [current, ...archive].filter(m => m.perfect).length
 
   // Ids of everything earned — used to celebrate only new ones
   const ids = []
@@ -559,8 +596,9 @@ export function computeAchievements({ rows, bodyWeights = [], routineLog = {}, t
   ;[current, ...archive].forEach(m => {
     if (m.visits) ids.push(`m:${m.month}:rank:${m.rank.name}`)
     m.challenges.forEach(c => { for (let i = 0; i < c.tier; i++) ids.push(`m:${m.month}:${c.id}:${i}`) })
+    if (m.perfect) ids.push(`m:${m.month}:perfect:0`)
   })
-  return { permanent: perm, current, archive: archive.slice(0, 12), monthMedals, ids, idDates, earnedCount: perm.reduce((s, a) => s + a.tier, 0) }
+  return { permanent: perm, current, archive: archive.slice(0, 12), monthMedals, perfectMonths, ids, idDates, earnedCount: perm.reduce((s, a) => s + a.tier, 0) }
 }
 
 // Human description of an achievement id, for the celebration screen
@@ -574,6 +612,7 @@ export function describeId(id, ach) {
   }
   const m = a === ach.current.month ? ach.current : ach.archive.find(x => x.month === a)
   if (!m) return null
+  if (b === 'perfect') return { emoji: '🌟', title: t('Идеальный месяц!'), sub: t('Все 5 испытаний выполнены на золото'), color: '#FFD700' }
   if (b === 'rank') return { emoji: m.rank.icon, title: t('Ранг месяца: {rank}', { rank: t(c) }), sub: t('{n} тренировок в этом месяце', { n: m.visits }), color: '#FF9F0A' }
   const ch = m.challenges.find(x => x.id === b); if (!ch) return null
   const ti = +c
