@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { TIERS, tierOf } from '../data/achievements'
+import { MAX_SWAPS, TIERS, tierOf } from '../data/achievements'
 import { fmtW, locale, t } from '../i18n'
 
 const ORANGE = '#FF9F0A'
@@ -35,32 +35,68 @@ function TierBar({ value, tiers, isDark }) {
   )
 }
 
-export function MonthChallenges({ month, thm, isDark }) {
+export function MonthChallenges({ month, thm, isDark, onSwap }) {
+  const swapsLeft = Math.max(0, MAX_SWAPS - (month.swaps || 0))
   return (
     <div style={card(isDark, thm)}>
-      <div style={sectionTitle(thm)}>{t('Испытания месяца')}</div>
+      <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: 8 }}>
+        <div style={sectionTitle(thm)}>{t('Испытания месяца')}</div>
+        {onSwap && <div style={{ fontSize: 11, color: thm.text40, whiteSpace: 'nowrap' }}>🔄 {t('замен: {n} из {max}', { n: swapsLeft, max: MAX_SWAPS })}</div>}
+      </div>
       <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-        {month.challenges.map(c => {
+        {month.challenges.map((c, idx) => {
           const next = c.tiers[c.tier]
+          const done = c.tier >= c.tiers.length
+          const canSwap = onSwap && swapsLeft > 0 && c.tier === 0
           return (
-            <div key={c.id}>
+            <div key={c.id} data-ch={c.id}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
                 <span style={{ fontSize: 20, width: 26, textAlign: 'center' }}>{c.emoji}</span>
-                <span style={{ flex: 1, fontSize: 14, fontWeight: 600, color: thm.text }}>{t(c.name)}</span>
-                <span style={{ fontSize: 13, fontWeight: 700, color: thm.text70 }}>{c.fmt(c.value)}</span>
-                <span style={{ fontSize: 18, width: 24, textAlign: 'right', filter: c.tier ? 'none' : 'grayscale(1)', opacity: c.tier ? 1 : 0.3 }}>{c.tier ? TIERS[c.tier - 1].medal : '🥉'}</span>
-              </div>
-              <div style={{ paddingLeft: 36 }}>
-                <TierBar value={c.value} tiers={c.tiers} isDark={isDark} />
-                <div style={{ fontSize: 11, color: thm.text40 }}>
-                  {next !== undefined ? `${TIERS[c.tier].medal} ${t(TIERS[c.tier].name).toLowerCase()} — ${c.fmt(next)}` : t('Максимум за месяц 🎉')}
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ fontSize: 14, fontWeight: 600, color: thm.text }}>{t(c.name)}</div>
+                  {!done && <div style={{ fontSize: 11, color: thm.text40, marginTop: 1 }}>{t(c.desc)}</div>}
                 </div>
+                {done
+                  ? <span style={{ fontSize: 13, fontWeight: 700, color: '#30D158', whiteSpace: 'nowrap' }}>✓ {t('Выполнено')}</span>
+                  : <span style={{ fontSize: 13, fontWeight: 700, color: thm.text70, whiteSpace: 'nowrap' }}>{c.fmt(c.value)}</span>}
+                <span style={{ fontSize: done ? 24 : 18, width: 26, textAlign: 'right', filter: c.tier ? 'none' : 'grayscale(1)', opacity: c.tier ? 1 : 0.3 }}>{c.tier ? TIERS[c.tier - 1].medal : '🥉'}</span>
               </div>
+              {!done && (
+                <div style={{ paddingLeft: 36 }}>
+                  <TierBar value={c.value} tiers={c.tiers} isDark={isDark} />
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 8 }}>
+                    <div style={{ fontSize: 11, color: thm.text40 }}>
+                      {`${TIERS[c.tier].medal} ${t(TIERS[c.tier].name).toLowerCase()} — ${c.fmt(next)}`}
+                    </div>
+                    {canSwap && (
+                      <button onClick={() => onSwap(idx)} aria-label={t('Заменить')} style={{ border: 'none', background: isDark ? 'rgba(255,255,255,0.07)' : 'rgba(0,0,0,0.05)', color: thm.text50, borderRadius: 99, padding: '3px 10px', fontSize: 11, fontWeight: 600, cursor: 'pointer', whiteSpace: 'nowrap' }}>🔄 {t('Заменить')}</button>
+                    )}
+                  </div>
+                </div>
+              )}
             </div>
           )
         })}
       </div>
-      <div style={{ fontSize: 11, color: thm.text35, marginTop: 12, lineHeight: 1.4 }}>{t('Пороги веса — от твоих прошлых месяцев: бронза — обычный месяц, серебро — +10 %, золото — побить лучший.')}</div>
+    </div>
+  )
+}
+
+// Total medals from monthly challenges, shown on top of the Records tab
+export function MonthMedalsSummary({ medals, thm, isDark }) {
+  if (!medals || !medals.some(Boolean)) return null
+  return (
+    <div style={{ ...card(isDark, thm), display: 'flex', alignItems: 'center', gap: 12 }}>
+      <div style={{ flex: 1, minWidth: 0 }}>
+        <div style={{ fontSize: 14, fontWeight: 700, color: thm.text }}>{t('Медали испытаний')}</div>
+        <div style={{ fontSize: 11, color: thm.text40, marginTop: 2 }}>{t('За все месяцы')}</div>
+      </div>
+      {[2, 1, 0].map(i => (
+        <div key={i} style={{ textAlign: 'center', minWidth: 34 }}>
+          <div style={{ fontSize: 22, lineHeight: 1, filter: medals[i] ? 'none' : 'grayscale(1)', opacity: medals[i] ? 1 : 0.3 }}>{TIERS[i].medal}</div>
+          <div style={{ fontSize: 13, fontWeight: 800, color: thm.text, marginTop: 3 }}>{medals[i]}</div>
+        </div>
+      ))}
     </div>
   )
 }

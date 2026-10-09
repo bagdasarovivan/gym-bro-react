@@ -8,13 +8,13 @@ import { WarmupModal } from './components/WarmupModal'
 import { StretchModal } from './components/StretchModal'
 import { ChartExercisePicker } from './components/ChartExercisePicker'
 import { HistoryView } from './components/History'
-import { AchTabs, AchievementCelebration, BadgeGrid, MonthArchive, MonthChallenges } from './components/Achievements'
-import { computeAchievements, describeId } from './data/achievements'
+import { AchTabs, AchievementCelebration, BadgeGrid, MonthArchive, MonthChallenges, MonthMedalsSummary } from './components/Achievements'
+import { computeAchievements, describeId, swapChallenge } from './data/achievements'
 import { KG_TO_LB, dispW, exInfo, exName, fmtVolume, fmtW, isLbs, locale, muscleLabel, num, plural, setPrefs, t, toKg, variantName, weightOptions } from './i18n'
 import { LineChart } from './components/LineChart'
 import { ModalItem } from './components/ModalItem'
 import { MuscleMap } from './components/MuscleMap'
-import { ExerciseMuscleMap, ExerciseStats, ExerciseVariants, agoLabel, bestLabel, exerciseIndex } from './components/ExerciseStats'
+import { ExerciseMuscleMap, ExerciseStats, ExerciseVariants, exerciseIndex } from './components/ExerciseStats'
 import { DEFAULT_FAVORITES, EXERCISES, EXERCISE_IMAGES, EXERCISE_INFO, EXERCISE_MUSCLES, EXERCISE_TYPE, LIGHT_WEIGHTS, MUSCLE_FILTERS_ROW1, MUSCLE_FILTERS_ROW2, MUSCLE_FILTER_MAP, MUSCLE_LABELS, EQUIPMENT_FILTERS, EXERCISE_EQUIPMENT, REPS_OPTIONS, TIME_OPTIONS, VARIANT_EXERCISES, getDefaultVariant, getExImage, getVariantOptions, getWarmupSets, getWeightOptions, normalizeName } from './data/exerciseCatalog'
 import { RANK_LEVELS, RANK_QUOTES, getMotivation, getRank } from './data/motivation'
 import { calcAnatomyLoad } from './data/muscleLoad'
@@ -87,6 +87,7 @@ export default function App() {
   // ── Achievements ──
   const [allRows, setAllRows] = useState(null)          // every workout with sets (loaded with the records)
   const [routineLog, setRoutineLog] = useState({ w: [], s: [] }) // completed warm-ups / stretches by date
+  const [monthPicks, setMonthPicks] = useState({})                // chosen monthly challenges: { 'YYYY-MM': { ids, swaps, out } }
   const [achReady, setAchReady] = useState(false)        // user_metadata (seen ids, routine log) loaded
   const achSeenRef = useRef(undefined)                   // undefined = not loaded, null = never stored, [] = ids
   const [achQueue, setAchQueue] = useState([])           // celebrations waiting to be shown
@@ -773,6 +774,7 @@ export default function App() {
       try { const { data } = await supabase.auth.getUser(); if (data?.user?.user_metadata) md = data.user.user_metadata } catch {}
       if (cancelled) return
       setRoutineLog({ w: md.routineLog?.w || [], s: md.routineLog?.s || [] })
+      setMonthPicks(md.monthCh && typeof md.monthCh === 'object' ? md.monthCh : {})
       achSeenRef.current = Array.isArray(md.achSeen) ? md.achSeen : null
       setAchReady(true)
     })()
@@ -781,9 +783,30 @@ export default function App() {
 
   const achievements = useMemo(() => {
     if (!allRows || !achReady || weightsStatus === 'loading') return null
-    try { return computeAchievements({ rows: allRows, bodyWeights, routineLog, today: localDateStr(new Date()), sex: settings.sex || 'male' }) }
+    try { return computeAchievements({ rows: allRows, bodyWeights, routineLog, today: localDateStr(new Date()), sex: settings.sex || 'male', monthPicks, seed: user?.id || '' }) }
     catch (e) { console.error('achievements', e); return null }
-  }, [allRows, achReady, bodyWeights, weightsStatus, routineLog, settings.sex])
+  }, [allRows, achReady, bodyWeights, weightsStatus, routineLog, settings.sex, monthPicks, user?.id])
+
+  // Monthly challenges: freeze the month's pick once shown, and swap one on request (max 3 per month)
+  const saveMonthPicks = useCallback((month, entry) => {
+    setMonthPicks(prev => {
+      const next = { ...prev, [month]: entry }
+      // keep the last 24 months only
+      Object.keys(next).sort().slice(0, -24).forEach(k => delete next[k])
+      supabase.auth.updateUser({ data: { monthCh: next } })
+      return next
+    })
+  }, [])
+  useEffect(() => {
+    const cur = achievements?.current
+    if (cur?.needsSave) saveMonthPicks(cur.month, { ids: cur.challenges.map(c => c.id), swaps: 0, out: [] })
+  }, [achievements, saveMonthPicks])
+  const swapMonthChallenge = useCallback((idx) => {
+    const cur = achievements?.current
+    if (!cur) return
+    const next = swapChallenge(cur, idx, user?.id || '')
+    if (next) saveMonthPicks(cur.month, next)
+  }, [achievements, saveMonthPicks, user?.id])
   // Per-exercise stats for the Exercises tab
   const exIndex = useMemo(() => exerciseIndex(allRows), [allRows])
 
@@ -1651,28 +1674,20 @@ export default function App() {
               const primaryMuscles = exMuscles?.primary || []
               const secondaryMuscles = exMuscles?.secondary || []
               const isFav = favorites.includes(name)
-              const st = exIndex.get(name)
-              const isNew = allRows && !st
               return (
-                <div key={name} className="ex-list-item" style={{background:isDark?'rgba(255,255,255,0.04)':'rgba(0,0,0,0.03)',border:`1px solid ${thm.border}`,opacity:isNew?0.6:1}}
+                <div key={name} className="ex-list-item" style={{background:isDark?'rgba(255,255,255,0.04)':'rgba(0,0,0,0.03)',border:`1px solid ${thm.border}`}}
                   onClick={()=>setExDetailModal(name)}>
                   {img
                     ? <img src={img} alt={name} className="ex-list-img" loading="lazy" decoding="async" onError={e=>{e.target.style.display='none';e.target.nextSibling.style.display='flex'}}/>
                     : null}
                   <div className="ex-list-ph" style={{display: img ? 'none' : 'flex'}}>💪</div>
                   <div style={{flex:1,minWidth:0}}>
-                    <div className="ex-list-name" style={{color:thm.text}}>{exName(name)}{isNew && <span style={{marginLeft:6,fontSize:10,fontWeight:700,padding:'2px 6px',borderRadius:99,background:'rgba(255,159,10,0.18)',color:'#FF9F0A',verticalAlign:'middle'}}>{t('НОВОЕ')}</span>}</div>
+                    <div className="ex-list-name" style={{color:thm.text}}>{exName(name)}</div>
                     <div style={{fontSize:12,marginTop:2}}>
                       <span style={{color:thm.text60}}>{primaryMuscles.slice(0,2).map(m=>muscleLabel(m, MUSCLE_LABELS[m]||m)).join(' · ')}</span>
                       {secondaryMuscles.length > 0 && <span style={{color:thm.text30,fontSize:11}}>{' · '}{secondaryMuscles.slice(0,2).map(m=>muscleLabel(m, MUSCLE_LABELS[m]||m)).join(', ')}</span>}
                     </div>
                   </div>
-                  {st && (
-                    <div style={{textAlign:'right',flexShrink:0}}>
-                      <div style={{fontSize:13,fontWeight:700,color:'#FF9F0A',whiteSpace:'nowrap'}}>{bestLabel(st)}</div>
-                      <div style={{fontSize:11,color:thm.text40,whiteSpace:'nowrap'}}>{agoLabel(st.last)}</div>
-                    </div>
-                  )}
                   <button onClick={e=>{e.stopPropagation();toggleFav(name)}} style={{background:'none',border:'none',cursor:'pointer',fontSize:20,padding:'4px 6px',flexShrink:0,lineHeight:1,color:'inherit'}}>{isFav?'⭐':'☆'}</button>
                 </div>
               )
@@ -1838,7 +1853,7 @@ export default function App() {
               <AchTabs tab={achTab} setTab={setAchTab} thm={thm} isDark={isDark}/>
               <div style={{overflowY:'auto',padding:'16px 20px 32px',flex:1}}>
                 {achTab === 'all' && (achievements
-                  ? <BadgeGrid list={achievements.permanent} thm={thm} isDark={isDark}/>
+                  ? <><MonthMedalsSummary medals={achievements.monthMedals} thm={thm} isDark={isDark}/><BadgeGrid list={achievements.permanent} thm={thm} isDark={isDark}/></>
                   : <div style={{textAlign:'center',color:thm.text40,fontSize:14,padding:'24px 0'}}>{t('Загрузка...')}</div>)}
                 {achTab === 'month' && (<>
                 {/* Rank — compact */}
@@ -1861,7 +1876,7 @@ export default function App() {
                   {streakMotivQuote && <div style={{fontSize:12,color:thm.text50,fontStyle:'italic',marginTop:10}}>«{t(streakMotivQuote)}»</div>}
                 </div>
 
-                {achievements && <MonthChallenges month={achievements.current} thm={thm} isDark={isDark}/>}
+                {achievements && <MonthChallenges month={achievements.current} thm={thm} isDark={isDark} onSwap={swapMonthChallenge}/>}
                 {/* Best of the month (totals are in the challenges above and in History) */}
                 {streakModalData && (streakModalData.bestWorkout || streakModalData.bestImprovement) && (
                 <div style={{background:isDark?'rgba(255,255,255,0.05)':'rgba(0,0,0,0.03)',borderRadius:20,padding:'16px 18px',marginBottom:12,border:`1px solid ${thm.border}`}}>

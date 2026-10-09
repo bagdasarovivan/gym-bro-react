@@ -409,7 +409,49 @@ function monthWeeks(month) {
   return out
 }
 
-function monthly(month, days, recordEventsList, routineDates, volByMonth) {
+// Challenge pool: each month gets CH_PER_MONTH of them (seeded per user and month, stored in user_metadata
+// once shown); up to MAX_SWAPS challenges without a medal can be swapped per month.
+// Months before ROTATION_START keep the original fixed set so their medals do not change.
+export const CH_PER_MONTH = 5
+export const MAX_SWAPS = 3
+export const ROTATION_START = '2026-10'
+const LEGACY_IDS = ['tonnage', 'records', 'weeks', 'full_body', 'routines']
+export const POOL_IDS = ['tonnage', 'records', 'weeks', 'full_body', 'routines', 'visits', 'sets', 'reps', 'new_ex', 'big3', 'heavy_day', 'pull_total', 'legs', 'variety', 'chain', 'weekend', 'push_total']
+
+// Small deterministic PRNG (FNV-1a hash + xorshift-multiply mix)
+function rng(seedStr) {
+  let h = 2166136261
+  for (let i = 0; i < seedStr.length; i++) { h ^= seedStr.charCodeAt(i); h = Math.imul(h, 16777619) }
+  return () => { h = Math.imul(h ^ (h >>> 15), 2246822507); h = Math.imul(h ^ (h >>> 13), 3266489909); h ^= h >>> 16; return (h >>> 0) / 4294967296 }
+}
+const shuffled = (arr, seedStr) => { const r = rng(seedStr), a = [...arr]; for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(r() * (i + 1)); [a[i], a[j]] = [a[j], a[i]] } return a }
+
+// Default pick for a month: avoids last month's challenges when possible; `keep` ids stay in
+export function pickChallenges(month, seed, avoid = [], keep = []) {
+  const order = shuffled(POOL_IDS, `${seed}:${month}`)
+  const out = [...keep]
+  for (const id of order.filter(x => !avoid.includes(x)).concat(order.filter(x => avoid.includes(x)))) {
+    if (out.length >= CH_PER_MONTH) break
+    if (!out.includes(id)) out.push(id)
+  }
+  return out
+}
+
+// Replace challenge `idx` of the current month; returns the new stored state or null when not allowed
+export function swapChallenge(current, idx, seed) {
+  const used = current.swaps || 0
+  const c = current.challenges[idx]
+  if (!c || c.tier > 0 || used >= MAX_SWAPS) return null
+  const ids = current.challenges.map(x => x.id)
+  const out = [...(current.out || []), c.id]
+  const cand = shuffled(POOL_IDS, `${seed}:${current.month}:swap${used + 1}`).find(x => !ids.includes(x) && !out.includes(x))
+    || POOL_IDS.find(x => !ids.includes(x))
+  if (!cand) return null
+  ids[idx] = cand
+  return { ids, swaps: used + 1, out }
+}
+
+function monthly(month, days, recordEventsList, routineDates, volByMonth, ids) {
   const mDays = days.filter(d => d.date.startsWith(month))
   const visits = mDays.length
   const vol = volByMonth[month] || 0
@@ -421,25 +463,57 @@ function monthly(month, days, recordEventsList, routineDates, volByMonth) {
   days.forEach(d => { const k = weekKey(d.date); if (weeks.includes(k) && !d.date.startsWith(month)) perWeek[k] = (perWeek[k] || 0) + 1 })
   const goodWeeks = weeks.filter(k => (perWeek[k] || 0) >= 2).length
   const groups = new Set(); mDays.forEach(d => d.items.forEach(it => groupsOf(it.name).forEach(g => groups.add(g))))
-  const recs = recordEventsList.filter(e => e.date.startsWith(month)).length
+  const mEvents = recordEventsList.filter(e => e.date.startsWith(month))
   const routines = routineDates.filter(d => d.startsWith(month)).length
 
-  const ch = (def, value) => ({ ...def, value, tier: def.tiers.filter(t => value >= t).length })
-  return {
-    month, visits, rank: getRank(visits),
-    challenges: [
-      ch({ id: 'tonnage', emoji: '🏋️', name: 'Поднятый вес', desc: 'Бронза — твой обычный месяц, серебро — +10 %, золото — побить лучший месяц', tiers: tonnageTiers(prevMonths.map(m => volByMonth[m])), fmt: tons }, vol),
-      ch({ id: 'records', emoji: '🏆', name: 'Рекорды', desc: 'Сколько рекордов поставил за месяц', tiers: [1, 3, 5], fmt: v => `${v} ${t('рек.')}` }, recs),
-      ch({ id: 'weeks', emoji: '📅', name: 'Без пропусков', desc: `Недели с 2+ тренировками (в месяце ${weeks.length} нед.)`, tiers: [2, weeks.length - 1, weeks.length], fmt: v => `${v} ${t('из')} ${weeks.length}` }, goodWeeks),
-      ch({ id: 'full_body', emoji: '🦾', name: 'Всё тело', desc: 'Сколько групп мышц проработал', tiers: [5, 7, GROUPS.length], fmt: v => `${v} ${t('из')} ${GROUPS.length}` }, groups.size),
-      ch({ id: 'routines', emoji: '🤸', name: 'Разминка и растяжка', desc: 'Сколько раз сделал до конца', tiers: [4, 8, 12], fmt: v => `${v} ${plural(v, ['раз', 'раза', 'раз'], ['time', 'times'])}` }, routines),
-    ],
+  const repsOf = (pred) => mDays.reduce((s, d) => s + d.items.filter(pred).reduce((a, it) => a + it.sets.reduce((q, x) => q + (x.reps || 0), 0), 0), 0)
+  const setsN = mDays.reduce((s, d) => s + d.items.reduce((a, it) => a + it.sets.filter(x => (x.reps || 0) > 0 || (x.time_sec || 0) > 0).length, 0), 0)
+  const firstSeen = {}
+  days.forEach(d => d.items.forEach(it => { if (!firstSeen[it.base]) firstSeen[it.base] = d.date }))
+  const newEx = Object.values(firstSeen).filter(d => d.startsWith(month)).length
+  const big3 = new Set(mEvents.filter(e => ['Жим лёжа', 'Приседания', 'Становая тяга'].includes(e.name)).map(e => e.name)).size
+  const dayVols = mDays.map(d => d.items.reduce((a, it) => a + volume(it.sets), 0))
+  const prevDayVols = days.filter(d => d.date < month).map(d => d.items.reduce((a, it) => a + volume(it.sets), 0)).filter(v => v > 0).sort((x, y) => x - y)
+  const q = (f) => prevDayVols[Math.min(prevDayVols.length - 1, Math.floor(prevDayVols.length * f))]
+  const heavyTiers = prevDayVols.length >= 5
+    ? [round100(q(0.5)), round100(q(0.8)), round100(prevDayVols[prevDayVols.length - 1]) + 100]
+    : [5000, 8000, 12000]
+  let chain = 0
+  { let n = 0; mDays.forEach((d, i) => { n = i && (parse(d.date) - parse(mDays[i - 1].date)) / DAY <= 2 ? n + 1 : 1; chain = Math.max(chain, n) }) }
+  const weekend = mDays.filter(d => [0, 6].includes(parse(d.date).getDay())).length
+  const variety = new Set(mDays.flatMap(d => d.items.map(it => it.base))).size
+  const legs = mDays.filter(d => d.items.some(it => groupsOf(it.name).includes('legs'))).length
+  const times = v => `${v} ${plural(v, ['раз', 'раза', 'раз'], ['time', 'times'])}`
+  const tr = v => `${v} ${t('тр.')}`
+  const reps = v => `${v} ${t('повт')}`
+
+  const DEFS = {
+    tonnage: [{ emoji: '🏋️', name: 'Поднятый вес', desc: 'Бронза — твой обычный месяц, серебро — +10 %, золото — побить лучший месяц', tiers: tonnageTiers(prevMonths.map(m => volByMonth[m])), fmt: tons }, vol],
+    records: [{ emoji: '🏆', name: 'Рекорды', desc: 'Сколько рекордов поставил за месяц', tiers: [1, 3, 5], fmt: v => `${v} ${t('рек.')}` }, mEvents.length],
+    weeks: [{ emoji: '📅', name: 'Без пропусков', desc: `Недели с 2+ тренировками (в месяце ${weeks.length} нед.)`, tiers: [2, weeks.length - 1, weeks.length], fmt: v => `${v} ${t('из')} ${weeks.length}` }, goodWeeks],
+    full_body: [{ emoji: '🦾', name: 'Всё тело', desc: 'Сколько групп мышц проработал', tiers: [5, 7, GROUPS.length], fmt: v => `${v} ${t('из')} ${GROUPS.length}` }, groups.size],
+    routines: [{ emoji: '🤸', name: 'Разминка и растяжка', desc: 'Сколько раз сделал до конца', tiers: [4, 8, 12], fmt: times }, routines],
+    visits: [{ emoji: '🗓️', name: 'Регулярность', desc: 'Тренировок за месяц', tiers: [8, 12, 16], fmt: tr }, visits],
+    sets: [{ emoji: '📋', name: 'Подходы', desc: 'Подходов за месяц', tiers: [100, 150, 200], fmt: v => `${v} ${t('подх.')}` }, setsN],
+    reps: [{ emoji: '🔢', name: 'Повторения', desc: 'Повторов за месяц', tiers: [1000, 1500, 2000], fmt: reps }, repsOf(() => true)],
+    new_ex: [{ emoji: '🆕', name: 'Новенькое', desc: 'Упражнений, которые делаешь впервые', tiers: [1, 2, 3], fmt: v => `${v}` }, newEx],
+    big3: [{ emoji: '🏛️', name: 'Большая тройка', desc: 'Рекорды в жиме, приседе и становой: сколько из трёх', tiers: [1, 2, 3], fmt: v => `${v} ${t('из')} 3` }, big3],
+    heavy_day: [{ emoji: '🚛', name: 'Тяжёлый день', desc: 'Тоннаж за одну тренировку; пороги — от твоих прошлых тренировок', tiers: heavyTiers, fmt: tons }, Math.max(0, ...dayVols)],
+    pull_total: [{ emoji: '🧗', name: 'Турник', desc: 'Подтягиваний за месяц', tiers: [100, 200, 300], fmt: reps }, repsOf(it => it.base === 'Подтягивания')],
+    legs: [{ emoji: '🦵', name: 'Не пропускай ноги', desc: 'Тренировок с упражнениями на ноги', tiers: [4, 6, 8], fmt: tr }, legs],
+    variety: [{ emoji: '🎨', name: 'Разнообразие', desc: 'Разных упражнений за месяц', tiers: [10, 15, 20], fmt: v => `${v}` }, variety],
+    chain: [{ emoji: '⛓️', name: 'Через день', desc: 'Тренировок подряд с перерывом не больше одного дня', tiers: [4, 6, 8], fmt: tr }, chain],
+    weekend: [{ emoji: '🌤️', name: 'Выходные в зале', desc: 'Тренировок в субботу и воскресенье', tiers: [2, 4, 6], fmt: tr }, weekend],
+    push_total: [{ emoji: '🫸', name: 'Отжимания', desc: 'Отжиманий от пола и на брусьях за месяц', tiers: [150, 300, 500], fmt: reps }, repsOf(it => it.base === 'Отжимания' || it.base === 'Отжимания на брусьях')],
   }
+  const ch = (id) => { const [def, value] = DEFS[id]; return { id, ...def, value, tier: def.tiers.filter(x => value >= x).length } }
+  return { month, visits, rank: getRank(visits), challenges: ids.filter(id => DEFS[id]).map(ch) }
 }
 
 // ── Entry point ─────────────────────────────────────────────────────────────
 // routineLog: { w: ['YYYY-MM-DD', ...], s: [...] } — completed warm-ups / stretches
-export function computeAchievements({ rows, bodyWeights = [], routineLog = {}, today, sex = 'male' }) {
+// monthPicks: { 'YYYY-MM': { ids, swaps, out } } stored challenge choice per month; seed: per-user string
+export function computeAchievements({ rows, bodyWeights = [], routineLog = {}, today, sex = 'male', monthPicks = {}, seed = '' }) {
   const days = buildDays(rows)
   const bw = [...(bodyWeights || [])].sort((a, b) => a.measured_on.localeCompare(b.measured_on))
   const routineDates = [...(routineLog.w || []), ...(routineLog.s || [])].sort()
@@ -449,12 +523,34 @@ export function computeAchievements({ rows, bodyWeights = [], routineLog = {}, t
   days.forEach(d => { const m = d.date.slice(0, 7); volByMonth[m] = (volByMonth[m] || 0) + d.items.reduce((s, it) => s + volume(it.sets), 0) })
   const { events } = recordEvents(days)
   const thisMonth = today.slice(0, 7)
-  const current = monthly(thisMonth, days, events, routineDates, volByMonth)
-  // Past months, newest first (up to 12)
+  // Challenge ids of a month: stored choice, else the legacy set (old months) or a seeded pick
+  const prevMonth = (m) => fmtDate(new Date(+m.slice(0, 4), +m.slice(5, 7) - 2, 1)).slice(0, 7)
+  const idsCache = {}
+  const idsFor = (m) => {
+    if (idsCache[m]) return idsCache[m]
+    const stored = monthPicks?.[m]?.ids
+    let ids
+    if (Array.isArray(stored) && stored.length) ids = stored
+    else if (m < ROTATION_START) ids = LEGACY_IDS
+    else {
+      // First rotating month: keep the old challenges that already have a medal
+      const keep = m === ROTATION_START ? monthly(m, days, events, routineDates, volByMonth, LEGACY_IDS).challenges.filter(c => c.tier > 0).map(c => c.id) : []
+      ids = pickChallenges(m, seed, m > ROTATION_START ? idsFor(prevMonth(m)) : LEGACY_IDS, keep)
+    }
+    return (idsCache[m] = ids)
+  }
+  const current = monthly(thisMonth, days, events, routineDates, volByMonth, idsFor(thisMonth))
+  current.swaps = monthPicks?.[thisMonth]?.swaps || 0
+  current.out = monthPicks?.[thisMonth]?.out || []
+  current.needsSave = !monthPicks?.[thisMonth]?.ids?.length
+  // Past months, newest first
   const archive = []
   if (days.length) {
-    for (let m = days[0].date.slice(0, 7); m < thisMonth; m = fmtDate(new Date(+m.slice(0, 4), +m.slice(5, 7), 1)).slice(0, 7)) archive.unshift(monthly(m, days, events, routineDates, volByMonth))
+    for (let m = days[0].date.slice(0, 7); m < thisMonth; m = fmtDate(new Date(+m.slice(0, 4), +m.slice(5, 7), 1)).slice(0, 7)) archive.unshift(monthly(m, days, events, routineDates, volByMonth, idsFor(m)))
   }
+  // Medals from monthly challenges over all months (the highest tier of each challenge counts)
+  const monthMedals = [0, 0, 0]
+  ;[current, ...archive].forEach(m => m.challenges.forEach(c => { if (c.tier) monthMedals[c.tier - 1]++ }))
 
   // Ids of everything earned — used to celebrate only new ones
   const ids = []
@@ -464,7 +560,7 @@ export function computeAchievements({ rows, bodyWeights = [], routineLog = {}, t
     if (m.visits) ids.push(`m:${m.month}:rank:${m.rank.name}`)
     m.challenges.forEach(c => { for (let i = 0; i < c.tier; i++) ids.push(`m:${m.month}:${c.id}:${i}`) })
   })
-  return { permanent: perm, current, archive: archive.slice(0, 12), ids, idDates, earnedCount: perm.reduce((s, a) => s + a.tier, 0) }
+  return { permanent: perm, current, archive: archive.slice(0, 12), monthMedals, ids, idDates, earnedCount: perm.reduce((s, a) => s + a.tier, 0) }
 }
 
 // Human description of an achievement id, for the celebration screen
