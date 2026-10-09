@@ -18,7 +18,7 @@ export const TIERS = [
 // Tier look (name/colour/medal) of an achievement: sport-rank badges carry their own
 export const tierOf = (a, i) => (a.tierInfo ? a.tierInfo[i] : TIERS[i])
 // Colours for sport ranks, from youth ranks to МСМК
-const RANK_COLORS = { 'III юн': '#8FA3B8', 'II юн': '#9DB4CC', 'I юн': '#AEC6E0', III: '#CD7F32', II: '#C0C0C0', I: '#FFD700', КМС: '#7FDBDA', МС: '#B9F2FF', МСМК: '#FF6B6B' }
+const RANK_COLORS = { 'III юн': '#8FA3B8', 'II юн': '#9DB4CC', 'I юн': '#AEC6E0', III: '#CD7F32', II: '#C0C0C0', I: '#FFD700', КМС: '#7FDBDA', МС: '#B9F2FF', МСМК: '#FF6B6B', Элита: '#C77DFF' }
 
 const DAY = 86400000
 const parse = (d) => new Date(d + 'T12:00:00')
@@ -144,7 +144,8 @@ function permanent(days, bodyWeights, routineDates, sex) {
   { let b = 0; days.forEach(d => d.items.forEach(it => { if (it.base !== 'Подтягивания') return; it.sets.forEach(x => { if ((x.reps || 0) > b) { b = x.reps; pull.push({ date: d.date, value: b }) } }) })) }
   add({ id: 'pullups', group: 'Сила', emoji: '🧗', name: 'Турникмен', desc: 'Подтягиваний за один подход', tiers: [10, 15, 20, 25], fmt: v => `${v} ${t('повт')}` }, pull)
 
-  // Sport ranks (ЕВСК 2026) as medal badges: tiers are the norms of the weight class of the latest weigh-in
+  // Sport ranks as medal badges: tiers are the norms of the weight class of the latest weigh-in
+  // (ЕВСК 2026 for bench and total, specialised federations for the other lifts — see standards.js)
   if (bodyWeights?.length) {
     const std = STANDARDS[sex === 'female' ? 'female' : 'male']
     const body = bodyWeights[bodyWeights.length - 1].weight
@@ -154,14 +155,28 @@ function permanent(days, bodyWeights, routineDates, sex) {
       const cur = { b: 0, s: 0, d: 0 }
       ev.forEach(p => { cur[p.k] = p.value; if (cur.b && cur.s && cur.d) fullTotal.push({ date: p.date, value: cur.b + cur.s + cur.d }) })
     }
+    // Heaviest weight (extra weight for bodyweight moves) across all variants of an exercise
+    const bestByBase = (base) => {
+      let b = 0; const s = []
+      days.forEach(d => d.items.forEach(it => {
+        if (it.base !== base) return
+        it.sets.forEach(x => { if (x.reps > 0 && x.weight > b) { b = x.weight; s.push({ date: d.date, value: b }) } })
+      }))
+      return s
+    }
     const rankBadge = (id, name, desc, series, rows) => {
       const row = categoryFor(rows, body)
       const ranks = RANKS.filter(r => row.norms[r] != null)
       add({ id, group: 'Разряды', emoji: '🎖', name, desc, cat: row.label, bodyWeight: body,
         tiers: ranks.map(r => row.norms[r]), tierInfo: ranks.map(r => ({ name: RANK_NAMES[r], color: RANK_COLORS[r], medal: '🎖' })), fmt: kg }, series)
     }
-    rankBadge('rank_bench', 'Разряд в жиме лёжа', 'Разрядные нормативы ЕВСК 2026 по классическому жиму лёжа для твоей весовой категории. Засчитывается реально поднятый вес.', bench, std.bench)
     rankBadge('rank_total', 'Разряд по сумме троеборья', 'Разрядные нормативы ЕВСК 2026 по сумме классического троеборья (присед + жим + становая) для твоей весовой категории.', fullTotal, std.total)
+    rankBadge('rank_bench', 'Разряд в жиме лёжа', 'Разрядные нормативы ЕВСК 2026 по классическому жиму лёжа для твоей весовой категории. Засчитывается реально поднятый вес.', bench, std.bench)
+    rankBadge('rank_squat', 'Разряд в приседе', 'Нормативы ISF (федерация стритлифтинга России), приседания без экипировки, для твоей весовой категории.', squat, std.squat)
+    rankBadge('rank_deadlift', 'Разряд в становой тяге', 'Нормативы WRPF (дивизион с допинг-контролем), становая тяга без экипировки, для твоей весовой категории.', dead, std.deadlift)
+    rankBadge('rank_pullup', 'Разряд в подтягиваниях с весом', 'Нормативы ISF по подтягиваниям с отягощением (классика) для твоей весовой категории. Считается дополнительный вес, любой хват.', bestByBase('Подтягивания'), std.pullup)
+    rankBadge('rank_dip', 'Разряд в отжиманиях на брусьях', 'Нормативы ISF по отжиманиям на брусьях с отягощением (классика) для твоей весовой категории. Считается дополнительный вес.', bestByBase('Отжимания на брусьях'), std.dip)
+    rankBadge('rank_curl', 'Разряд в подъёме на бицепс', 'Нормативы WRPF (дивизион с допинг-контролем) по строгому подъёму штанги на бицепс для твоей весовой категории.', bestByBase('Подъём штанги на бицепс'), std.curl)
   }
 
   // Relative to body weight
