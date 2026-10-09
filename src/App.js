@@ -7,6 +7,8 @@ import { WeightModal } from './components/WeightModal'
 import { WarmupModal } from './components/WarmupModal'
 import { StretchModal } from './components/StretchModal'
 import { ChartExercisePicker } from './components/ChartExercisePicker'
+import { AchTabs, AchievementCelebration, BadgeGrid, MonthArchive, MonthChallenges } from './components/Achievements'
+import { computeAchievements, describeId } from './data/achievements'
 import { LineChart } from './components/LineChart'
 import { ModalItem } from './components/ModalItem'
 import { MuscleMap } from './components/MuscleMap'
@@ -78,6 +80,15 @@ export default function App() {
   const [stopwatchRunning, setStopwatchRunning] = useState(false)
   const stopwatchRef = useRef(null)
   const [prAlert, setPrAlert] = useState(null)
+  // ── Achievements ──
+  const [allRows, setAllRows] = useState(null)          // every workout with sets (loaded with the records)
+  const [routineLog, setRoutineLog] = useState({ w: [], s: [] }) // completed warm-ups / stretches by date
+  const [achReady, setAchReady] = useState(false)        // user_metadata (seen ids, routine log) loaded
+  const achSeenRef = useRef(undefined)                   // undefined = not loaded, null = never stored, [] = ids
+  const [achQueue, setAchQueue] = useState([])           // celebrations waiting to be shown
+  const [achToast, setAchToast] = useState(null)
+  const [achTab, setAchTab] = useState('month')
+  const [achUnviewed, setAchUnviewed] = useState(false)
   const [streakAlert, setStreakAlert] = useState(null)
   const [workoutStarted, setWorkoutStarted] = useState(false)
   const [workoutDate, setWorkoutDate] = useState(() => localDateStr(new Date()))
@@ -294,7 +305,7 @@ export default function App() {
   }
 
   const openStreakModal = async () => {
-    setShowStreakModal(true)
+    setShowStreakModal(true); setAchUnviewed(false)
     setStreakModalData(null)
     setStreakQuote(Math.floor(Math.random() * GREAT_QUOTES.length))
     const rankNow = getRank(streak)
@@ -541,6 +552,7 @@ export default function App() {
       // Рекорды по всей истории. Каждая вариация («Жим лёжа (Узкий)») — отдельный рекорд, как и на графике.
       // Record for weight exercises = best estimated 1RM (100×5 beats 100×1); plank — time, ab wheel — reps.
       const pData = await fetchAllRows(() => supabase.from('workouts').select('id,workout_date,exercises(name),sets(weight,reps,time_sec)').eq('user_id', user.id).order('id'))
+      if (!cancelled) setAllRows(pData)
       const map = {}
       pData.forEach(w => {
         const name = normalizeName(w.exercises?.name); if (!name) return
@@ -743,6 +755,58 @@ export default function App() {
 
     const nextDay = (plan.current_day % plan.total_days) + 1
     await supabase.from('workout_plans').update({ current_day: nextDay, workout_count: plan.workout_count + 1 }).eq('id', plan.id)
+  }
+
+  // ── Achievements ──────────────────────────────────────────────────────
+  // Seen ids and the routine log live in user_metadata so celebrations don't repeat on another device.
+  useEffect(() => {
+    if (!user) return
+    let cancelled = false
+    achSeenRef.current = undefined; setAchReady(false); setAllRows(null)
+    ;(async () => {
+      let md = user.user_metadata || {}
+      try { const { data } = await supabase.auth.getUser(); if (data?.user?.user_metadata) md = data.user.user_metadata } catch {}
+      if (cancelled) return
+      setRoutineLog({ w: md.routineLog?.w || [], s: md.routineLog?.s || [] })
+      achSeenRef.current = Array.isArray(md.achSeen) ? md.achSeen : null
+      setAchReady(true)
+    })()
+    return () => { cancelled = true }
+  }, [user])
+
+  const achievements = useMemo(() => {
+    if (!allRows || !achReady || weightsStatus === 'loading') return null
+    try { return computeAchievements({ rows: allRows, bodyWeights, routineLog, today: localDateStr(new Date()) }) }
+    catch (e) { console.error('achievements', e); return null }
+  }, [allRows, achReady, bodyWeights, weightsStatus, routineLog])
+
+  // Celebrate newly earned ones. On the very first run everything already earned is marked as seen quietly.
+  useEffect(() => {
+    if (!achievements || achSeenRef.current === undefined) return
+    const first = achSeenRef.current === null
+    const seen = new Set(achSeenRef.current || [])
+    const fresh = achievements.ids.filter(id => !seen.has(id))
+    if (!fresh.length && !first) return
+    const next = [...seen, ...fresh]
+    achSeenRef.current = next
+    supabase.auth.updateUser({ data: { achSeen: next } })
+    if (first) {
+      if (achievements.earnedCount) { setAchToast(achievements.earnedCount); setTimeout(() => setAchToast(null), 5000) }
+      return
+    }
+    const cur = achievements.current.month
+    const items = fresh.filter(id => id.startsWith('p:') || id.startsWith(`m:${cur}:`)).map(id => describeId(id, achievements)).filter(Boolean)
+    if (items.length) {
+      setAchQueue(q => [...q, ...items]); setAchUnviewed(true)
+      if (navigator.vibrate) navigator.vibrate([80, 40, 80, 40, 200])
+    }
+  }, [achievements])
+
+  const logRoutine = (type) => {
+    const next = { w: [...routineLog.w], s: [...routineLog.s] }
+    next[type].push(localDateStr(new Date()))
+    setRoutineLog(next)
+    supabase.auth.updateUser({ data: { routineLog: next } })
   }
 
   // ── Live personal records ─────────────────────────────────────────────
@@ -982,11 +1046,11 @@ export default function App() {
             color: (timerSecs!==null||stopwatchRunning||timerMode==='stopwatch') ? 'rgba(255,255,255,0.8)' : thm.text70,
             fontSize:18,display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0
           }}>⏱</button>
-          {streak >= 1 && <button onClick={openStreakModal} style={{
+          {(streak >= 1 || achievements) && <button onClick={openStreakModal} aria-label="Достижения" style={{position:'relative',
             background:'rgba(255,100,0,0.12)',border:'1px solid rgba(255,100,0,0.25)',
             borderRadius:10,padding:'0 10px',height:36,cursor:'pointer',
             fontSize:13,fontWeight:700,color:'#FF6400',display:'flex',alignItems:'center',flexShrink:0,whiteSpace:'nowrap'
-          }}>{streak}🔥</button>}
+          }}>{streak >= 1 ? `${streak}🔥` : '🏅'}{achUnviewed && <span style={{position:'absolute',top:-3,right:-3,width:9,height:9,borderRadius:'50%',background:'#FF9F0A',border:'2px solid #000'}}/>}</button>}
           <button onClick={() => setTab(t => t === 'settings' ? 'add' : 'settings')} style={{
             background: tab==='settings' ? 'rgba(255,159,10,0.08)' : thm.btnBg,
             border: tab==='settings' ? '1.5px solid #FF9F0A' : `1px solid ${thm.btnBorder}`,
@@ -997,10 +1061,10 @@ export default function App() {
         </div>
       </div>
       {showWarmup && (
-        <WarmupModal onClose={() => setShowWarmup(false)}/>
+        <WarmupModal onClose={() => setShowWarmup(false)} onComplete={() => logRoutine('w')}/>
       )}
       {showStretch && (
-        <StretchModal onClose={() => setShowStretch(false)}/>
+        <StretchModal onClose={() => setShowStretch(false)} onComplete={() => logRoutine('s')}/>
       )}
       {showWeightModal && (
         <WeightModal entries={bodyWeights} status={weightsStatus} onAdd={addWeighIn} onDelete={deleteWeighIn} onClose={() => setShowWeightModal(false)}/>
@@ -1675,6 +1739,16 @@ export default function App() {
       })()}
 
       {/* Timer Modal */}
+      <AchievementCelebration item={achQueue[0]} left={achQueue.length - 1} onNext={() => setAchQueue(q => q.slice(1))}/>
+      {achToast && (
+        <div className="alert-toast" onClick={() => setAchToast(null)} style={{borderColor:'rgba(255,159,10,0.3)',cursor:'pointer'}}>
+          <div className="alert-toast-icon">🏅</div>
+          <div>
+            <div className="alert-toast-title">У тебя уже {achToast} достижений!</div>
+            <div className="alert-toast-sub">Загляни в 🔥 — там всё по истории тренировок</div>
+          </div>
+        </div>
+      )}
       {/* PR Alert Toast */}
       {prAlert && (
         <div className="alert-toast" onClick={()=>setPrAlert(null)} style={{borderColor:'rgba(255,200,0,0.3)',cursor:'pointer'}}>
@@ -1751,21 +1825,20 @@ export default function App() {
       {showStreakModal && (() => {
         const rank = getRank(streak)
         const greatQ = GREAT_QUOTES[streakQuote]
-        function fMonth(m) {
-          const [y,mo] = m.split('-')
-          const s = new Date(parseInt(y), parseInt(mo)-1).toLocaleDateString('ru',{month:'long',year:'numeric'})
-          return s.charAt(0).toUpperCase()+s.slice(1)
-        }
         return (
           <div className="modal-overlay" onClick={e=>{if(e.target===e.currentTarget)setShowStreakModal(false)}}>
             <div className="modal" style={{background:thm.modalBg,maxHeight:'88dvh'}}>
               <div className="modal-handle" style={{background:isDark?'rgba(255,255,255,0.15)':'rgba(0,0,0,0.12)'}}/>
               <div style={{padding:'16px 20px 0',display:'flex',justifyContent:'space-between',alignItems:'center',flexShrink:0}}>
-                <span style={{fontSize:17,fontWeight:700,color:thm.text}}>Статистика месяца</span>
+                <span style={{fontSize:17,fontWeight:700,color:thm.text}}>Достижения</span>
                 <button onClick={()=>setShowStreakModal(false)} style={{background:'none',border:'none',fontSize:22,cursor:'pointer',color:thm.text50,lineHeight:1}}>×</button>
               </div>
+              <AchTabs tab={achTab} setTab={setAchTab} thm={thm} isDark={isDark}/>
               <div style={{overflowY:'auto',padding:'16px 20px 32px',flex:1}}>
-
+                {achTab === 'all' && (achievements
+                  ? <BadgeGrid list={achievements.permanent} thm={thm} isDark={isDark}/>
+                  : <div style={{textAlign:'center',color:thm.text40,fontSize:14,padding:'24px 0'}}>Загрузка...</div>)}
+                {achTab === 'month' && (<>
                 {/* Rank block */}
                 <div style={{background:isDark?'rgba(255,255,255,0.05)':'rgba(0,0,0,0.03)',borderRadius:20,padding:'24px 20px',marginBottom:12,border:`1px solid ${thm.border}`,textAlign:'center'}}>
                   <div style={{fontSize:56,marginBottom:8}}>{rank.icon}</div>
@@ -1787,6 +1860,7 @@ export default function App() {
                   </div>
                 </div>
 
+                {achievements && <MonthChallenges month={achievements.current} thm={thm} isDark={isDark}/>}
                 {/* Month stats */}
                 <div style={{background:isDark?'rgba(255,255,255,0.05)':'rgba(0,0,0,0.03)',borderRadius:20,padding:'18px 20px',marginBottom:12,border:`1px solid ${thm.border}`}}>
                   <div style={{fontSize:13,fontWeight:700,textTransform:'uppercase',letterSpacing:'0.8px',color:thm.text40,marginBottom:14}}>Статистика месяца</div>
@@ -1826,29 +1900,10 @@ export default function App() {
                   )}
                 </div>
 
-                {/* Past 3 months */}
-                {streakModalData && streakModalData.past3.some(m=>m.count>0) && (
-                  <div style={{background:isDark?'rgba(255,255,255,0.05)':'rgba(0,0,0,0.03)',borderRadius:20,padding:'18px 20px',border:`1px solid ${thm.border}`}}>
-                    <div style={{fontSize:13,fontWeight:700,textTransform:'uppercase',letterSpacing:'0.8px',color:thm.text40,marginBottom:14}}>Прошлые месяцы</div>
-                    <div style={{display:'flex',flexDirection:'column',gap:10}}>
-                      {streakModalData.past3.map(m => {
-                        const r = getRank(m.count)
-                        return (
-                          <div key={m.month} style={{display:'flex',alignItems:'center',justifyContent:'space-between'}}>
-                            <div style={{display:'flex',alignItems:'center',gap:8}}>
-                              <span style={{fontSize:20}}>{m.count>0?r.icon:'💤'}</span>
-                              <div>
-                                <div style={{fontSize:13,color:thm.text70}}>{fMonth(m.month)}</div>
-                                <div style={{fontSize:12,color:thm.text40}}>{m.count>0?r.name:'Нет тренировок'}</div>
-                              </div>
-                            </div>
-                            <div style={{fontSize:15,fontWeight:700,color:thm.text}}>{m.count} <span style={{fontSize:12,color:thm.text40,fontWeight:500}}>тр.</span></div>
-                          </div>
-                        )
-                      })}
-                    </div>
-                  </div>
-                )}
+                {achievements
+                  ? <MonthArchive archive={achievements.archive} thm={thm} isDark={isDark}/>
+                  : null}
+                </>)}
               </div>
             </div>
           </div>

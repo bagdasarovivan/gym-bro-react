@@ -42,7 +42,7 @@ const durationLabel = (m) => m.sec ? (m.sides ? `${m.sec} сек × 2` : `${m.se
 // Guided routine (warm-up, stretching): overview → step-by-step player → done.
 // plan: { blocks:[{title,subtitle,moves:[id]}], steps:[{id,name,emoji,cue,sec|reps,sides?,block}], totalMin }
 // A step with `sides` runs `sec` per side; the player vibrates and says when to switch.
-export function RoutinePlayer({ plan, title, imgDir, summary, startLabel, done, onClose }) {
+export function RoutinePlayer({ plan, title, imgDir, summary, startLabel, done, onClose, onComplete }) {
   const [phase, setPhase] = useState('overview') // overview | run | done
   const [idx, setIdx] = useState(0)
   const [left, setLeft] = useState(0)
@@ -73,7 +73,7 @@ export function RoutinePlayer({ plan, title, imgDir, summary, startLabel, done, 
   }, [left]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const next = () => {
-    if (idx + 1 >= plan.steps.length) { setPhase('done'); if (navigator.vibrate) navigator.vibrate([100, 50, 100, 50, 300]) }
+    if (idx + 1 >= plan.steps.length) { setPhase('done'); onComplete?.(); if (navigator.vibrate) navigator.vibrate([100, 50, 100, 50, 300]) }
     else setIdx(i => i + 1)
   }
   const prev = () => setIdx(i => Math.max(0, i - 1))
