@@ -10,7 +10,7 @@ import { ChartExercisePicker } from './components/ChartExercisePicker'
 import { HistoryView } from './components/History'
 import { AchTabs, AchievementCelebration, BadgeGrid, MonthArchive, MonthChallenges, MonthMedalsSummary } from './components/Achievements'
 import { computeAchievements, describeId, swapChallenge } from './data/achievements'
-import { KG_TO_LB, dispW, exInfo, exName, fmtVolume, fmtW, isLbs, locale, muscleLabel, num, plural, setPrefs, workoutsN, t, toKg, variantName, weightOptions } from './i18n'
+import { KG_TO_LB, dispW, exInfo, exName, fmtVolume, fmtW, isEn, isLbs, locale, muscleLabel, num, plural, setPrefs, workoutsN, t, toKg, variantName, weightOptions } from './i18n'
 import { LineChart } from './components/LineChart'
 import { ModalItem } from './components/ModalItem'
 import { MuscleMap } from './components/MuscleMap'
@@ -1197,41 +1197,47 @@ export default function App() {
             </div>
           )}
 
-          {!workoutStarted ? (
-            <div style={{display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',flex:1,paddingTop:'20vh',paddingBottom:40,gap:44}}>
+          {!workoutStarted ? (() => {
+            // Start screen: date, glowing round button and which workout of the month this will be
+            const todayStr = localDateStr(new Date())
+            const trainedToday = (allRows || []).some(w => w.workout_date === todayStr)
+            const RU_MONTH_IN = ['январе','феврале','марте','апреле','мае','июне','июле','августе','сентябре','октябре','ноябре','декабре']
+            const monthIn = isEn() ? new Date().toLocaleDateString('en-US', { month: 'long' }) : RU_MONTH_IN[new Date().getMonth()]
+            const resume = workoutExercises.length > 0
+            const hint = resume ? t('Тренировка не сохранена — продолжи')
+              : trainedToday ? t('Сегодня уже была тренировка — можно добавить ещё')
+              : t('Это будет {n}-я тренировка в {month}', { n: streak + 1, month: monthIn })
+            const press = (e, v) => { e.currentTarget.style.transform = `scale(${v})` }
+            return (
+            <div style={{display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',flex:1,paddingTop:'14vh',paddingBottom:40,gap:36}}>
               <div style={{textAlign:'center'}}>
-                <div style={{fontSize:12,color:thm.text28,fontWeight:600,textTransform:'uppercase',letterSpacing:'1.5px',marginBottom:14}}>
+                <div style={{fontSize:13,color:thm.text50,fontWeight:600,textTransform:'uppercase',letterSpacing:'2px'}}>
                   {new Date().toLocaleDateString(locale(),{weekday:'long',day:'numeric',month:'long'})}
                 </div>
-                <div style={{fontSize:26,fontWeight:700,color:thm.text70,letterSpacing:'-0.3px'}}>{t('Тренировка')}</div>
+                <div style={{fontSize:30,fontWeight:800,color:thm.text,letterSpacing:'-0.5px',marginTop:10}}>{resume ? t('Продолжим?') : t('Время тренироваться')}</div>
               </div>
-              <div style={{position:'relative',display:'flex',alignItems:'center',justifyContent:'center'}}>
-                <style>{`
-                  @keyframes pulse-ring{0%{transform:scale(1);opacity:0.15}70%{transform:scale(1.4);opacity:0}100%{transform:scale(1.4);opacity:0}}
-                  .pr1{position:absolute;width:150px;height:150px;border-radius:50%;border:1px solid rgba(255,255,255,0.4);animation:pulse-ring 2.4s ease-out infinite;pointer-events:none}
-                  .pr2{animation-delay:1.2s!important}
-                  .start-btn:active{transform:scale(0.95)!important}
-                `}</style>
-                <div className="pr1"/>
-                <div className="pr1 pr2"/>
-                <button className="start-btn" onClick={()=>{ if (!workoutExercises.length) setWorkoutDate(localDateStr(new Date())); setWorkoutStarted(true) }} style={{
-                  width:150,height:150,borderRadius:'50%',cursor:'pointer',zIndex:1,
-                  background:'rgba(255,255,255,0.05)',border:'1px solid rgba(255,255,255,0.15)',
-                  display:'flex',alignItems:'center',justifyContent:'center',
-                  transition:'transform 0.15s,background 0.2s,border-color 0.2s',
-                }}
-                  onMouseEnter={e=>{e.currentTarget.style.background='rgba(255,255,255,0.09)';e.currentTarget.style.borderColor='rgba(255,255,255,0.28)'}}
-                  onMouseLeave={e=>{e.currentTarget.style.background='rgba(255,255,255,0.05)';e.currentTarget.style.borderColor='rgba(255,255,255,0.15)'}}
-                  onMouseDown={e=>e.currentTarget.style.transform='scale(0.95)'}
-                  onMouseUp={e=>e.currentTarget.style.transform='scale(1)'}
-                  onTouchStart={e=>e.currentTarget.style.transform='scale(0.95)'}
-                  onTouchEnd={e=>e.currentTarget.style.transform='scale(1)'}
-                >
-                  <span style={{fontSize:13,fontWeight:700,color:thm.text70,letterSpacing:'3px',textTransform:'uppercase'}}>{workoutExercises.length>0?t('ПРОДОЛЖИТЬ'):t('НАЧАТЬ')}</span>
-                </button>
+              <style>{`
+                @keyframes start-pulse{0%{transform:scale(1);opacity:0.55}70%{transform:scale(1.22);opacity:0}100%{transform:scale(1.22);opacity:0}}
+                .start-pulse{position:absolute;inset:0;border-radius:50%;border:1.5px solid rgba(255,159,10,0.5);animation:start-pulse 2.6s ease-out infinite;pointer-events:none}
+                .start-pulse.p2{animation-delay:1.3s}
+              `}</style>
+              <div style={{position:'relative',width:232,height:232,borderRadius:'50%',background:'rgba(255,159,10,0.07)',border:'1px solid rgba(255,159,10,0.18)',display:'flex',alignItems:'center',justifyContent:'center'}}>
+                <div className="start-pulse"/>
+                <div className="start-pulse p2"/>
+                <div style={{width:196,height:196,borderRadius:'50%',background:'rgba(255,159,10,0.12)',display:'flex',alignItems:'center',justifyContent:'center'}}>
+                  <button className="start-btn" onClick={()=>{ if (!workoutExercises.length) setWorkoutDate(localDateStr(new Date())); setWorkoutStarted(true) }}
+                    onMouseDown={e=>press(e,0.95)} onMouseUp={e=>press(e,1)} onMouseLeave={e=>press(e,1)}
+                    onTouchStart={e=>press(e,0.95)} onTouchEnd={e=>press(e,1)}
+                    style={{width:164,height:164,borderRadius:'50%',border:'none',cursor:'pointer',background:'#FF9F0A',color:'#000',
+                      fontSize:resume?16:20,fontWeight:900,letterSpacing:'3px',boxShadow:'0 0 48px rgba(255,159,10,0.45)',transition:'transform 0.15s'}}>
+                    {resume ? t('ПРОДОЛЖИТЬ') : t('НАЧАТЬ')}
+                  </button>
+                </div>
               </div>
+              <div style={{fontSize:14,color:thm.text50,textAlign:'center',maxWidth:300,lineHeight:1.4}}>{hint}</div>
             </div>
-          ) : (
+            )
+          })() : (
             <>
               <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:16}}>
                 <button onClick={()=>{setWorkoutStarted(false);setSaved(false)}} className="back-btn">{t('← Назад')}</button>
