@@ -410,7 +410,7 @@ function monthWeeks(month) {
 }
 
 // Challenge pool: each month gets CH_PER_MONTH of them (seeded per user and month, stored in user_metadata
-// once shown); up to MAX_SWAPS challenges without a medal can be swapped per month.
+// once shown); up to MAX_SWAPS challenges can be swapped per month.
 // Months before ROTATION_START keep the original fixed set so their medals do not change.
 export const CH_PER_MONTH = 5
 export const MAX_SWAPS = 3
@@ -441,7 +441,7 @@ export function pickChallenges(month, seed, avoid = [], keep = []) {
 export function swapChallenge(current, idx, seed) {
   const used = current.swaps || 0
   const c = current.challenges[idx]
-  if (!c || c.tier > 0 || used >= MAX_SWAPS) return null
+  if (!c || used >= MAX_SWAPS) return null
   const ids = current.challenges.map(x => x.id)
   const out = [...(current.out || []), c.id]
   const cand = shuffled(POOL_IDS, `${seed}:${current.month}:swap${used + 1}`).find(x => !ids.includes(x) && !out.includes(x))
