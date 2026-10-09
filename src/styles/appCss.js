@@ -144,7 +144,7 @@ input[type=number]::-webkit-inner-spin-button{-webkit-appearance:none}
 .nav-lbl{font-size:10px;font-weight:600;letter-spacing:0.2px}
 @media(max-width:480px){.nav-bar{width:100%}}
 .timer-modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:150;display:flex;align-items:flex-end;justify-content:center;backdrop-filter:blur(8px);animation:fov 0.2s ease}
-.timer-modal{background:#1c1c1e;border-radius:24px 24px 0 0;width:100%;max-width:480px;padding:0 0 40px;animation:sup 0.3s cubic-bezier(0.34,1.1,0.64,1)}
+.timer-modal{background:#1c1c1e;color:#fff;border-radius:24px 24px 0 0;width:100%;max-width:480px;padding:0 0 40px;animation:sup 0.3s cubic-bezier(0.34,1.1,0.64,1)}
 .timer-tabs{display:flex;border-bottom:1px solid rgba(255,255,255,0.06);margin-bottom:24px}
 .timer-tab{flex:1;padding:14px;background:none;border:none;color:rgba(255,255,255,0.4);font-size:14px;font-weight:600;cursor:pointer;transition:all 0.15s;position:relative}
 .timer-tab.active{color:white}
@@ -157,7 +157,7 @@ input[type=number]::-webkit-inner-spin-button{-webkit-appearance:none}
 .timer-ctrl-btn.primary{background:#FF9F0A;color:#000}
 .timer-ctrl-btn.secondary{background:#2c2c2e;color:white}
 .timer-ctrl-btn.danger{background:rgba(255,59,48,0.15);color:#FF453A}
-.alert-toast{position:fixed;top:80px;left:50%;transform:translateX(-50%);z-index:300;background:#1c1c1e;border-radius:20px;padding:16px 20px;display:flex;align-items:center;gap:12px;box-shadow:0 8px 32px rgba(0,0,0,0.5);border:1px solid rgba(255,255,255,0.08);animation:toastIn 0.4s cubic-bezier(0.34,1.2,0.64,1);min-width:280px;max-width:360px}
+.alert-toast{position:fixed;top:80px;left:50%;transform:translateX(-50%);z-index:300;background:#1c1c1e;color:#fff;border-radius:20px;padding:16px 20px;display:flex;align-items:center;gap:12px;box-shadow:0 8px 32px rgba(0,0,0,0.5);border:1px solid rgba(255,255,255,0.08);animation:toastIn 0.4s cubic-bezier(0.34,1.2,0.64,1);min-width:280px;max-width:360px}
 @keyframes toastIn{from{opacity:0;transform:translateX(-50%) translateY(-20px)}to{opacity:1;transform:translateX(-50%) translateY(0)}}
 .alert-toast-icon{font-size:32px;flex-shrink:0}
 .alert-toast-title{font-size:15px;font-weight:800;margin-bottom:2px}

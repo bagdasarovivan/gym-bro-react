@@ -66,7 +66,9 @@ export function HistoryView({ history, allRows, month, setMonth, year, setYear, 
   const prevM = prevMonthKey(active)
   const today = new Date()
   const isCurrent = active === `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}`
-  const cutDay = String(today.getDate()).padStart(2, '0')
+  // same days of the previous month, capped at its length (31 Oct → 1–30 Sep)
+  const prevLen = new Date(+prevM.slice(0, 4), +prevM.slice(5, 7), 0).getDate()
+  const cutDay = String(Math.min(today.getDate(), prevLen)).padStart(2, '0')
   const prevRows = rows.filter(w => w.workout_date.startsWith(prevM) && (!isCurrent || w.workout_date.slice(8, 10) <= cutDay))
   const volNow = dayVolume(inMonth), volPrev = dayVolume(prevRows)
   const daysNow = dates.length, daysPrev = new Set(prevRows.map(w => w.workout_date)).size

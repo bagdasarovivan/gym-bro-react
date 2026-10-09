@@ -10,7 +10,7 @@ import { ChartExercisePicker } from './components/ChartExercisePicker'
 import { HistoryView } from './components/History'
 import { AchTabs, AchievementCelebration, BadgeGrid, MonthArchive, MonthChallenges, MonthMedalsSummary } from './components/Achievements'
 import { computeAchievements, describeId, swapChallenge } from './data/achievements'
-import { KG_TO_LB, dispW, exInfo, exName, fmtVolume, fmtW, isLbs, locale, muscleLabel, num, plural, setPrefs, t, toKg, variantName, weightOptions } from './i18n'
+import { KG_TO_LB, dispW, exInfo, exName, fmtVolume, fmtW, isLbs, locale, muscleLabel, num, plural, setPrefs, workoutsN, t, toKg, variantName, weightOptions } from './i18n'
 import { LineChart } from './components/LineChart'
 import { ModalItem } from './components/ModalItem'
 import { MuscleMap } from './components/MuscleMap'
@@ -46,7 +46,9 @@ export default function App() {
   const [showOnboard, setShowOnboard] = useState(false)
   const [selectedEx, setSelectedEx] = useState(null)
   const [sets, setSets] = useState([{ weight: 0, reps: 0 }])
-  const [saved, setSaved] = useState(false)
+  const [saved, setSaved] = useState(false)             // save button state only
+  const [dataVersion, setDataVersion] = useState(0)     // bump to refetch data after saving / editing / deleting
+  const [saveError, setSaveError] = useState(null)
   const [saving, setSaving] = useState(false)
   const savingRef = useRef(false)
   const [streak, setStreak] = useState(0)
@@ -150,6 +152,7 @@ export default function App() {
     setFavorites(DEFAULT_FAVORITES)
     setHistory([]); setPrs([]); setStats(null)
     setSettings(DEFAULT_SETTINGS)
+    setWorkoutExercises([]); setWorkoutStarted(false); setSelectedEx(null)
   }
 
   // Settings are stored in the account (Supabase auth user_metadata), so they are the same on
@@ -307,7 +310,7 @@ export default function App() {
       await supabase.from('sets').delete().eq('workout_id', id)
     }
     await supabase.from('workouts').delete().eq('user_id', user.id)
-    setHistory([]); setPrs([]); setStats(null); setSaved(p => !p)
+    setHistory([]); setPrs([]); setStats(null); setDataVersion(v => v + 1)
   }
 
   const openStreakModal = async () => {
@@ -342,11 +345,9 @@ export default function App() {
         if (s.weight > 0 && s.reps > 0) {
           const est = s.weight * (1 + s.reps / 30)
           if (!allTimePR[name] || est > allTimePR[name].est) allTimePR[name] = { est, weight:s.weight, reps:s.reps, date:w.workout_date }
-          if (!w.workout_date.startsWith(thisM)) {
-            if (!beforePR[name] || est > beforePR[name].est) beforePR[name] = { est, weight:s.weight }
-          } else {
-            if (!monthPRmap[name] || est > monthPRmap[name].est) monthPRmap[name] = { est, weight:s.weight }
-          }
+          // «Лучший прирост» compares the heaviest weight lifted before this month and in this month
+          const bucket = w.workout_date.startsWith(thisM) ? monthPRmap : beforePR
+          if (!bucket[name] || s.weight > bucket[name].weight) bucket[name] = { weight: s.weight }
         }
       })
     })
@@ -402,6 +403,9 @@ export default function App() {
         setWorkoutStarted(true)
         setDraftRestored(true)
         setTimeout(() => setDraftRestored(false), 3500)
+      } else {
+        // no draft for this account: never keep another account's workout in progress
+        setWorkoutExercises([]); setWorkoutStarted(false)
       }
     } catch {}
     draftReadyRef.current = true
@@ -484,7 +488,7 @@ export default function App() {
       setStreak(monthCount)
     }
     load()
-  }, [saved, user])
+  }, [dataVersion, user])
 
   useEffect(() => {
     async function loadPlans() {
@@ -502,7 +506,7 @@ export default function App() {
       }
     }
     loadPlans()
-  }, [user, saved])
+  }, [user, dataVersion])
 
   // История за последние 12 месяцев. Раньше был limit(200) записей (= упражнений),
   // что давало лишь ~4–5 месяцев. Грузим порциями, т.к. Supabase отдаёт максимум 1000 строк за запрос.
@@ -510,7 +514,7 @@ export default function App() {
     // нужна и на «Прогрессе» — карта мышц считается по истории
     if ((tab !== 'history' && tab !== 'progress') || !user) return
     let cancelled = false
-    const since = new Date(); since.setMonth(since.getMonth() - 11); since.setDate(1)
+    const since = new Date(); since.setDate(1); since.setMonth(since.getMonth() - 11)
     const sinceStr = `${since.getFullYear()}-${String(since.getMonth()+1).padStart(2,'0')}-01`
     const PAGE = 1000
     ;(async () => {
@@ -527,7 +531,7 @@ export default function App() {
       if (!cancelled) setHistory(all)
     })()
     return () => { cancelled = true }
-  }, [tab, saved, user])
+  }, [tab, dataVersion, user])
 
   useEffect(() => {
     if (tab !== 'progress' || !user) return
@@ -547,7 +551,7 @@ export default function App() {
     let cancelled = false
     load()
     return () => { cancelled = true }
-  }, [tab, user, saved])
+  }, [tab, user, dataVersion])
 
   // All-time records. Loaded on sign-in (not only on Progress) so the workout screen can spot a new record live.
   useEffect(() => {
@@ -573,7 +577,7 @@ export default function App() {
     }
     load()
     return () => { cancelled = true }
-  }, [user, saved])
+  }, [user, dataVersion])
 
   useEffect(() => {
     if (tab !== 'progress' || !user) return
@@ -582,7 +586,7 @@ export default function App() {
       const end = `${calYear}-${String(calMonth+1).padStart(2,'0')}-${new Date(calYear,calMonth+1,0).getDate()}`
       const { data } = await supabase.from('workouts').select('workout_date,sets(weight,reps)').eq('user_id', user.id).gte('workout_date',start).lte('workout_date',end)
       const map = {}
-      data?.forEach(w => { const d=new Date(w.workout_date).getDate(); if(!map[d]) map[d]=0; w.sets?.forEach(s => { if(s.weight>0&&s.reps>0) map[d]+=s.weight*s.reps }) })
+      data?.forEach(w => { const d=Number(w.workout_date.slice(8,10)); if(!map[d]) map[d]=0; w.sets?.forEach(s => { if(s.weight>0&&s.reps>0) map[d]+=s.weight*s.reps }) })
       setCalData(map)
     }
     load()
@@ -630,14 +634,14 @@ export default function App() {
     let cancelled = false
     load()
     return () => { cancelled = true }
-  }, [chartEx, tab, user, saved])
+  }, [chartEx, tab, user, dataVersion])
 
   useEffect(() => {
     if (!selectedEx || !user) return
     async function load() {
-      let { data: ex } = await supabase.from('exercises').select('id').eq('name',selectedEx).single()
+      let { data: ex } = await supabase.from('exercises').select('id').eq('name',selectedEx).order('id').limit(1).maybeSingle()
       if (!ex) { setLastSession(null); return }
-      const { data } = await supabase.from('workouts').select('workout_date,sets(set_no,weight,reps,time_sec)').eq('exercise_id',ex.id).eq('user_id', user.id).order('workout_date',{ascending:false}).limit(1).single()
+      const { data } = await supabase.from('workouts').select('workout_date,sets(set_no,weight,reps,time_sec)').eq('exercise_id',ex.id).eq('user_id', user.id).order('workout_date',{ascending:false}).limit(1).maybeSingle()
       setLastSession(data || null)
     }
     load()
@@ -646,7 +650,7 @@ export default function App() {
   useEffect(() => {
     if (timerSecs === null || timerPaused) { clearInterval(timerRef.current); return }
     if (timerSecs <= 0) { setTimerSecs(null); setTimerPaused(false); if (navigator.vibrate) navigator.vibrate([200,100,200,100,400]); return }
-    timerRef.current = setInterval(() => setTimerSecs(s => s<=1?null:s-1), 1000)
+    timerRef.current = setInterval(() => setTimerSecs(s => (s === null ? null : s - 1)), 1000)
     return () => clearInterval(timerRef.current)
   }, [timerSecs, timerPaused])
 
@@ -715,7 +719,7 @@ export default function App() {
     return 2
   }
 
-  const applyProgression = async (plan, rating, completedMap) => {
+  const applyProgression = async (plan, rating, completedMap, liftedMap = {}) => {
     const days = PLAN_DAYS[plan.plan_type] || []
     const dayIdx = (plan.current_day - 1) % days.length
     const dayDef = days[dayIdx]
@@ -725,7 +729,12 @@ export default function App() {
     for (const ex of dayDef.exercises) {
       const key = `${plan.id}:${ex.name}`
       const pw = planWeights[key]
-      if (!pw || pw.working_weight === 0) continue
+      if (!pw) continue
+      // first time with this plan exercise: start from the weight actually lifted, no progression yet
+      if (!(pw.working_weight > 0)) {
+        if (liftedMap[ex.name] > 0) updates.push({ plan_id: plan.id, exercise_name: ex.name, working_weight: liftedMap[ex.name], last_rating: rating })
+        continue
+      }
       const completedSets = completedMap[ex.name] || 0
       const allCompleted = completedSets >= ex.sets
       let newWeight = pw.working_weight
@@ -753,11 +762,14 @@ export default function App() {
       }
     }
 
+    const fresh = {}
     for (const u of updates) {
+      fresh[`${u.plan_id}:${u.exercise_name}`] = u.working_weight
       await supabase.from('plan_weights').update({ working_weight: u.working_weight, last_rating: u.last_rating, updated_at: new Date().toISOString() })
         .eq('user_id', user.id).eq('plan_id', u.plan_id).eq('exercise_name', u.exercise_name)
     }
 
+    setPlanWeights(prev => { const next = { ...prev }; Object.entries(fresh).forEach(([k, w]) => { if (next[k]) next[k] = { ...next[k], working_weight: w } }); return next })
     const nextDay = (plan.current_day % plan.total_days) + 1
     await supabase.from('workout_plans').update({ current_day: nextDay, workout_count: plan.workout_count + 1 }).eq('id', plan.id)
   }
@@ -879,36 +891,58 @@ export default function App() {
     if (!workoutExercises.length) return
     if (savingRef.current) return
     savingRef.current = true
-    setSaving(true)
+    setSaving(true); setSaveError(null)
+    // Every Supabase call is checked: exercises that failed stay on screen (and in the draft) so the
+    // user can retry; exercises that were saved are removed so a retry does not duplicate them.
+    const savedItems = new Set(), failed = []
     for (const exItem of workoutExercises) {
       const exType = EXERCISE_TYPE[exItem.name] || 'light'
       const exIsTimed = exType === 'timed'
       const filled = exItem.sets.filter(s => exIsTimed ? s.weight > 0 : isRepsType(exType) ? s.reps > 0 : (s.weight > 0 && s.reps > 0))
-      if (!filled.length) continue
+      if (!filled.length) { savedItems.add(exItem); continue }
       const saveName = exSaveName(exItem)
-      let { data: ex } = await supabase.from('exercises').select('id').eq('name', saveName).single()
-      if (!ex) {
-        const { data: inserted } = await supabase.from('exercises').insert({ name: saveName }).select().single()
-        ex = inserted
+      try {
+        let { data: ex, error: e1 } = await supabase.from('exercises').select('id').eq('name', saveName).order('id').limit(1).maybeSingle()
+        if (e1) throw e1
+        if (!ex) {
+          const { data: inserted, error: e2 } = await supabase.from('exercises').insert({ name: saveName }).select().single()
+          if (e2) throw e2
+          ex = inserted
+        }
+        if (!ex) throw new Error('exercise')
+        const { data: w, error: e3 } = await supabase.from('workouts').insert({ workout_date: workoutDate, exercise_id: ex.id, user_id: user.id }).select().single()
+        if (e3 || !w) throw e3 || new Error('workout')
+        const { error: e4 } = await supabase.from('sets').insert(filled.map((s,i) => ({
+          workout_id: w.id, set_no: i+1,
+          weight: exIsTimed ? (s.timedWeight||0) : (s.weight||0),
+          reps: exIsTimed ? 0 : (s.reps||0),
+          time_sec: exIsTimed ? (s.weight||0) : null
+        })))
+        if (e4) { await supabase.from('workouts').delete().eq('id', w.id); throw e4 }
+        savedItems.add(exItem)
+      } catch {
+        failed.push(exItem)
       }
-      if (!ex) continue
-      const { data: w } = await supabase.from('workouts').insert({ workout_date: workoutDate, exercise_id: ex.id, user_id: user.id }).select().single()
-      if (!w) { savingRef.current = false; continue }
-      await supabase.from('sets').insert(filled.map((s,i) => ({
-        workout_id: w.id, set_no: i+1,
-        weight: exIsTimed ? (s.timedWeight||0) : (s.weight||0),
-        reps: exIsTimed ? 0 : (s.reps||0),
-        time_sec: exIsTimed ? (s.weight||0) : null
-      })))
     }
-    const thisM2 = localDateStr(new Date()).slice(0,7)
-    const { data: sessData } = await supabase.from('workouts').select('workout_date').eq('user_id', user.id).gte('workout_date', thisM2 + '-01')
-    const monthCount = new Set((sessData || []).map(w => w.workout_date)).size
-    setStreak(monthCount)
-    setStreakAlert({ type: 'month', count: monthCount, msg: getMotivation(monthCount) })
-    setTimeout(() => setStreakAlert(null), 4500)
     savingRef.current = false
     setSaving(false)
+    if (savedItems.size) setDataVersion(v => v + 1)
+    if (failed.length) {
+      setWorkoutExercises(prev => prev.filter(e => !savedItems.has(e)))
+      setSaveError(t('Не удалось сохранить: {list}. Проверь интернет и нажми «Сохранить» ещё раз.', { list: failed.map(e => exName(e.name)).join(', ') }))
+      setTimeout(() => setSaveError(null), 8000)
+      return
+    }
+    // everything is in the database: drop the draft right away (a reload must not restore and re-save it)
+    try { localStorage.removeItem('gymBroDraft_' + user.id) } catch {}
+    try {
+      const thisM2 = localDateStr(new Date()).slice(0,7)
+      const { data: sessData } = await supabase.from('workouts').select('workout_date').eq('user_id', user.id).gte('workout_date', thisM2 + '-01')
+      const monthCount = new Set((sessData || []).map(w => w.workout_date)).size
+      setStreak(monthCount)
+      setStreakAlert({ type: 'month', count: monthCount, msg: getMotivation(monthCount) })
+      setTimeout(() => setStreakAlert(null), 4500)
+    } catch {}
     // Check if any plan exercises were in this workout
     const planEx = workoutExercises.find(e => e.planId)
     if (planEx) {
@@ -927,7 +961,7 @@ export default function App() {
     if (!window.confirm(t('Удалить это упражнение из тренировки?'))) return
     await supabase.from('sets').delete().eq('workout_id', workoutId)
     await supabase.from('workouts').delete().eq('id', workoutId)
-    setSaved(p => !p)
+    setDataVersion(v => v + 1)
   }
 
   const deleteDay = async (date, workouts) => {
@@ -937,7 +971,7 @@ export default function App() {
       await supabase.from('sets').delete().eq('workout_id', id)
       await supabase.from('workouts').delete().eq('id', id)
     }
-    setSaved(p => !p)
+    setDataVersion(v => v + 1)
   }
 
   const copyDay = async (date, workouts) => {
@@ -951,10 +985,18 @@ export default function App() {
     setCalDayModal({ date: dateStr, workouts: data || [] })
   }
 
-  const saveEdit = async (workoutId, newSets) => {
-    await supabase.from('sets').delete().eq('workout_id', workoutId)
-    await supabase.from('sets').insert(newSets.map((s,i) => ({ workout_id:workoutId, set_no:i+1, weight:parseFloat(s.weight)||0, reps:parseInt(s.reps)||0, time_sec: s.time_sec != null ? parseFloat(s.time_sec)||0 : null })))
-    setEditModal(null); setSaved(p => !p)
+  // changes: [{ workoutId, sets }] — only the exercises that were edited
+  const saveEdit = async (changes) => {
+    let ok = true
+    for (const { workoutId, sets: newSets } of changes) {
+      const { error: e1 } = await supabase.from('sets').delete().eq('workout_id', workoutId)
+      if (e1) { ok = false; continue }
+      const rows = newSets.map((s,i) => ({ workout_id:workoutId, set_no:i+1, weight:parseFloat(s.weight)||0, reps:parseInt(s.reps)||0, time_sec: s.time_sec != null ? parseFloat(s.time_sec)||0 : null }))
+      if (rows.length) { const { error: e2 } = await supabase.from('sets').insert(rows); if (e2) ok = false }
+    }
+    setDataVersion(v => v + 1)
+    if (ok) setEditModal(null)
+    else { setSaveError(t('Не удалось сохранить изменения. Проверь интернет и попробуй ещё раз.')); setTimeout(() => setSaveError(null), 8000) }
   }
 
   const filtered = useMemo(() => {
@@ -1220,7 +1262,7 @@ export default function App() {
                         <span style={{fontSize:15,fontWeight:700,color:thm.text85}}>{exName(ex.name)}</span>
                         {ex.grip && ex.grip !== getDefaultVariant(ex.name) && <span style={{fontSize:11,color:'rgba(255,159,10,0.8)',marginLeft:6,fontWeight:600}}>({ex.grip})</span>}
                       </div>
-                      <span style={{fontSize:12,color:thm.text30,marginRight:4}}>{ex.sets.filter(s=>isRepsType(exType2)?s.reps>0:(s.weight>0&&s.reps>0)).length} {t('подх.')}</span>
+                      <span style={{fontSize:12,color:thm.text30,marginRight:4}}>{ex.sets.filter(s=>exType2==='timed'?s.weight>0:isRepsType(exType2)?s.reps>0:(s.weight>0&&s.reps>0)).length} {t('подх.')}</span>
                       <button onClick={e=>{e.stopPropagation();setWorkoutExercises(prev=>prev.filter((_,i)=>i!==exIdx))}}
                         style={{background:'rgba(255,59,48,0.1)',border:'none',borderRadius:8,padding:'4px 8px',color:'#FF453A',cursor:'pointer',fontSize:12,fontWeight:700,marginRight:4}}>✕</button>
                       <span style={{color:thm.text40,fontSize:20,display:'inline-block',transform:isOpen?'rotate(180deg)':'none',transition:'transform 0.2s',padding:'2px 8px',minWidth:32,textAlign:'center'}}>▼</span>
@@ -1408,8 +1450,8 @@ export default function App() {
               {[[7,t('7 дней')],[30,t('30 дней')]].map(([days,label]) => (
                 <button key={days} onClick={()=>setMusclePeriod(days)} style={{
                   padding:'6px 18px',borderRadius:99,fontSize:12,fontWeight:700,cursor:'pointer',border:'none',
-                  background: musclePeriod===days ? '#FF9F0A' : '#2c2c2e',
-                  color: musclePeriod===days ? '#000' : 'rgba(255,255,255,0.5)',
+                  background: musclePeriod===days ? '#FF9F0A' : (isDark ? '#2c2c2e' : '#e5e5ea'),
+                  color: musclePeriod===days ? '#000' : thm.text50,
                 }}>{label}</button>
               ))}
             </div>
@@ -1418,7 +1460,7 @@ export default function App() {
               {[['#3A3A3C',t('Нет')],['#FFD60A',t('Мало')],['#9EDB3F',t('Норма')],['#30D158',t('Отлично')],['#FF453A',t('Перегрузка')]].map(([color,label])=>(
                 <div key={label} style={{display:'flex',alignItems:'center',gap:5}}>
                   <div style={{width:10,height:10,borderRadius:3,background:color,flexShrink:0}}/>
-                  <span style={{fontSize:11,color:'rgba(255,255,255,0.4)',fontWeight:500}}>{label}</span>
+                  <span style={{fontSize:11,color:thm.text40,fontWeight:500}}>{label}</span>
                 </div>
               ))}
             </div>
@@ -1462,7 +1504,7 @@ export default function App() {
                 </button>
                 {isOpen && <div style={{padding:'2px 16px 12px 58px',display:'flex',gap:16,flexWrap:'wrap',alignItems:'center'}}>
                   <span style={{fontSize:13,color:thm.text50,fontWeight:600}}>{pr.metric==='time' ? `${pr.time_sec} ${t('сек')}${pr.weight>0?` × ${kgToDisplay(pr.weight)} ${wUnit}`:''}` : pr.metric==='reps' ? `${pr.reps} ${t('повт')}${pr.weight>0?` ${t('с доп. весом')} ${kgToDisplay(pr.weight)} ${wUnit}`:''}` : `${kgToDisplay(pr.weight)} ${wUnit} × ${pr.reps} ${t('повт')} · ${t('1ПМ')} ≈ ${kgToDisplay(Math.round(pr.value*10)/10)} ${wUnit}`}</span>
-                  <span style={{fontSize:12,color:thm.text30}}>{new Date(pr.date).toLocaleDateString(locale(),{day:'numeric',month:'short',year:'numeric'})}</span>
+                  <span style={{fontSize:12,color:thm.text30}}>{new Date(pr.date+'T12:00:00').toLocaleDateString(locale(),{day:'numeric',month:'short',year:'numeric'})}</span>
                 </div>}
               </div>
             )
@@ -1477,15 +1519,14 @@ export default function App() {
                 ? chartData.map(p => ({ ...p, val: p.e1rm ?? p.val, metric: 'e1rm', bestWeight: p.e1Weight, bestReps: p.e1Reps }))
                 : chartData
               const base = chartPeriod === 'ALL' ? byMode : (() => {
-                const months = chartPeriod === '1M' ? 1 : 3
-                const cutoff = new Date(); cutoff.setMonth(cutoff.getMonth() - months)
+                const cutoff = new Date(); cutoff.setDate(cutoff.getDate() - (chartPeriod === '1M' ? 30 : 91))
                 const cutoffStr = localDateStr(cutoff)
                 return byMode.filter(p => p.date >= cutoffStr)
               })()
               if (settings.units === 'lbs' && (base[0]?.metric === 'weight' || base[0]?.metric === 'e1rm')) return base.map(p => ({...p, val: Math.round(p.val * 2.20462 * 10) / 10}))
               return base
             })()} period={chartPeriod} setPeriod={setChartPeriod} totalPoints={chartData.length}
-              unit={chartData[0]?.metric === 'time' ? t('сек') : chartData[0]?.metric === 'reps' ? t('повт') : wUnit}/>
+              unit={chartData[0]?.metric === 'time' ? t('сек') : chartData[0]?.metric === 'reps' ? t('повт') : wUnit} dark={isDark}/>
           </div>
         </div>
         )
@@ -1757,6 +1798,12 @@ export default function App() {
           </div>
         </div>
       )}
+      {saveError && (
+        <div className="alert-toast" onClick={() => setSaveError(null)} style={{borderColor:'rgba(255,69,58,0.5)',cursor:'pointer',zIndex:3000}}>
+          <div className="alert-toast-icon">⚠️</div>
+          <div><div className="alert-toast-title" style={{whiteSpace:'normal'}}>{saveError}</div></div>
+        </div>
+      )}
       {/* PR Alert Toast */}
       {prAlert && (
         <div className="alert-toast" onClick={()=>setPrAlert(null)} style={{borderColor:'rgba(255,200,0,0.3)',cursor:'pointer'}}>
@@ -1852,7 +1899,7 @@ export default function App() {
                     <div style={{fontSize:38,lineHeight:1}}>{rank.icon}</div>
                     <div style={{flex:1,minWidth:0}}>
                       <div style={{fontSize:18,fontWeight:800,color:thm.text}}>{t(rank.name)}</div>
-                      <div style={{fontSize:12,color:thm.text50,marginTop:2}}>{t('{n} тренировок в этом месяце',{n:streak})}</div>
+                      <div style={{fontSize:12,color:thm.text50,marginTop:2}}>{t('{w} в этом месяце',{w:workoutsN(streak)})}</div>
                     </div>
                   </div>
                   {!rank.isMax ? (
@@ -1860,7 +1907,7 @@ export default function App() {
                       <div style={{height:6,background:isDark?'rgba(255,255,255,0.1)':'rgba(0,0,0,0.08)',borderRadius:99,overflow:'hidden'}}>
                         <div style={{height:'100%',width:`${Math.round(rank.progress*100)}%`,background:'#FF9F0A',borderRadius:99,transition:'width 0.5s ease'}}/>
                       </div>
-                      <div style={{fontSize:12,color:thm.text40,marginTop:6}}>{t('{n} тренировок до ранга «{rank}»',{n:rank.nextAt - streak, rank:t(rank.nextName)})} {RANK_LEVELS.find(r=>r.name===rank.nextName)?.icon}</div>
+                      <div style={{fontSize:12,color:thm.text40,marginTop:6}}>{t('Ещё {w} до ранга «{rank}»',{w:workoutsN(rank.nextAt - streak), rank:t(rank.nextName)})} {RANK_LEVELS.find(r=>r.name===rank.nextName)?.icon}</div>
                     </div>
                   ) : <div style={{fontSize:12,color:'#FF9F0A',marginTop:10,fontWeight:700}}>{t('Максимальный ранг достигнут! 🎉')}</div>}
                   {streakMotivQuote && <div style={{fontSize:12,color:thm.text50,fontStyle:'italic',marginTop:10}}>«{t(streakMotivQuote)}»</div>}
@@ -2099,13 +2146,17 @@ export default function App() {
                     <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:10,marginBottom:20}}>
                       {[{key:'hard',label:t('😓 Тяжело')},{key:'ok',label:t('😐 Нормально')},{key:'good',label:t('😊 Хорошо')},{key:'super',label:t('🔥 Супер')}].map(r=>(
                         <button key={r.key} onClick={async ()=>{
-                          const completedMap = {}
+                          // a set counts as completed when it was filled in; the heaviest weight seeds a plan weight of 0
+                          const completedMap = {}, liftedMap = {}
                           for (const ex of workoutExercises) {
                             if (ex.planId === pendingRatingPlan.id) {
-                              completedMap[ex.name] = ex.sets.filter(s=>s.done).length
+                              const ty = EXERCISE_TYPE[ex.name] || 'light'
+                              const done = ex.sets.filter(s => isRepsType(ty) ? s.reps > 0 : (s.weight > 0 && s.reps > 0))
+                              completedMap[ex.name] = done.length
+                              liftedMap[ex.name] = Math.max(0, ...done.map(s => s.weight || 0))
                             }
                           }
-                          await applyProgression(pendingRatingPlan, r.key, completedMap)
+                          try { await applyProgression(pendingRatingPlan, r.key, completedMap, liftedMap) } catch {}
                           setShowRatingModal(false)
                           setPendingRatingPlan(null)
                           setSaved(true)
@@ -2115,6 +2166,8 @@ export default function App() {
                         </button>
                       ))}
                     </div>
+                    <button onClick={()=>{ setShowRatingModal(false); setPendingRatingPlan(null); setSaved(true); setTimeout(() => { setSaved(false); setWorkoutStarted(false); setWorkoutExercises([]) }, 1000) }}
+                      style={{background:'none',border:'none',color:'rgba(255,255,255,0.4)',fontSize:14,cursor:'pointer',padding:8}}>{t('Пропустить')}</button>
                   </div>
                 </div>
               )}
@@ -2124,7 +2177,7 @@ export default function App() {
         {[{id:'add',icon:'➕',label:t('Тренировка')},{id:'history',icon:'📜',label:t('История')},{id:'progress',icon:'📈',label:t('Прогресс')},{id:'exercises',icon:'📋',label:t('Упражнения')}].map(t=>(
           <div key={t.id} className="nav-item" style={{opacity:tab===t.id?1:0.62}} onClick={()=>{setTab(t.id);if(t.id!=='add'){setWorkoutStarted(false);setSelectedEx(null)}}}>
             <span className="nav-icon">{t.icon}</span>
-            <span className="nav-lbl" style={{color:tab===t.id?'#FF9F0A':'white'}}>{t.label}</span>
+            <span className="nav-lbl" style={{color:tab===t.id?'#FF9F0A':thm.text}}>{t.label}</span>
           </div>
         ))}
       </div>

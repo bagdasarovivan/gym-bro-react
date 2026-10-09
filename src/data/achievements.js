@@ -4,7 +4,7 @@
 import { EXERCISE_MUSCLES, MUSCLE_FILTER_MAP, normalizeName } from './exerciseCatalog'
 import { getRank } from './motivation'
 import { baseExName, recordMetric, setValue } from '../utils/records'
-import { fmtVolume, fmtW, locale, plural, t } from '../i18n'
+import { fmtVolume, fmtW, locale, plural, t, workoutsN } from '../i18n'
 import { RANKS, RANK_NAMES, STANDARDS, categoryFor } from './standards'
 
 export const TIERS = [
@@ -236,7 +236,7 @@ function permanent(days, bodyWeights, routineDates, sex) {
   add({ id: 'dip_w', group: 'Сила', emoji: '🤸', name: 'Брусья с весом', desc: 'Дополнительный вес в отжиманиях на брусьях', tiers: [20, 40, 60], fmt: v => `+${fmtW(v)}` }, dipW)
   add({ id: 'curl', group: 'Сила', emoji: '💪', name: 'Бицепс штангой', desc: 'Вес в подъёме штанги на бицепс', tiers: [40, 50, 60], fmt: kg }, bestOf('Подъём штанги на бицепс'))
   add({ id: 'glute', group: 'Сила', emoji: '🍑', name: 'Ягодичный мост', desc: 'Вес в ягодичном мосте', tiers: [100, 150, 200], fmt: kg }, bestOf('Ягодичный мост'))
-  add({ id: 'club', group: 'Сила', emoji: '🎯', name: 'Клуб 1000 фунтов', desc: 'Сумма троеборья: 1000 lb ≈ 454 кг, затем 1200 lb ≈ 544 кг', tiers: [453.59, 544.31], fmt: kg }, total)
+  add({ id: 'club', group: 'Сила', emoji: '🎯', name: 'Клуб 1000 фунтов', desc: 'Сумма троеборья: 1000 lb ≈ 454 кг, затем 1200 lb ≈ 544 кг', tiers: [453.5, 544.2], fmt: kg }, total)
 
   // ── More relative strength ──
   add({ id: 'bw_bench2', group: 'Сила к весу', emoji: '⚖️', name: 'Жим полтора веса', desc: needBW ? 'Добавь вес тела в 🧍, чтобы считать' : 'Жим лёжа ≥ 1,25 и 1,5 веса тела', tiers: [1.25, 1.5], fmt: x }, rel(bench))
@@ -358,7 +358,7 @@ function permanent(days, bodyWeights, routineDates, sex) {
   {
     const at = (pred) => { for (const d of days) for (const it of d.items) if (it.sets.some(x => pred(x, it))) return [{ date: d.date, value: 1 }]; return [] }
     add({ id: 'dozen13', group: 'Забавные', emoji: '🃏', name: 'Чёртова дюжина', desc: 'Подход ровно на 13 повторов', secret: true, tiers: [1], fmt: v => `${v}` }, at(x => x.reps === 13))
-    add({ id: 'even100', group: 'Забавные', emoji: '🎱', name: 'Ровный счёт', desc: 'Подход ровно со 100 кг', tiers: [1], fmt: v => `${v}` }, at(x => x.reps > 0 && x.weight === 100))
+    add({ id: 'even100', group: 'Забавные', emoji: '🎱', name: 'Ровный счёт', desc: 'Подход ровно со 100 кг', tiers: [1], fmt: v => `${v}` }, at(x => x.reps > 0 && Math.abs(x.weight - 100) < 0.5))
     // Every catalogue exercise of a muscle group done at least once
     const byGroup = {}
     Object.keys(EXERCISE_MUSCLES).forEach(n => groupsOf(n).forEach(g => (byGroup[g] = byGroup[g] || new Set()).add(n)))
@@ -394,7 +394,8 @@ export function tonnageTiers(prevMonthVolumes) {
   const typical = median(prev.slice(-6)), best = Math.max(...prev)
   const bronze = round100(typical), silver = round100(typical * 1.1)
   const gold = best + 100 > silver ? round100(best) + 100 : round100(silver * 1.05)
-  return [Math.max(100, bronze), Math.max(200, silver), Math.max(300, gold)]
+  const b = Math.max(100, bronze), s = Math.max(200, silver, b + 100)
+  return [b, s, Math.max(300, gold, s + 100)]
 }
 
 // Weeks belonging to a month: Monday-based weeks whose Thursday falls in the month
@@ -613,7 +614,7 @@ export function describeId(id, ach) {
   const m = a === ach.current.month ? ach.current : ach.archive.find(x => x.month === a)
   if (!m) return null
   if (b === 'perfect') return { emoji: '🌟', title: t('Идеальный месяц!'), sub: t('Все 5 испытаний выполнены на золото'), color: '#FFD700' }
-  if (b === 'rank') return { emoji: m.rank.icon, title: t('Ранг месяца: {rank}', { rank: t(c) }), sub: t('{n} тренировок в этом месяце', { n: m.visits }), color: '#FF9F0A' }
+  if (b === 'rank') return { emoji: m.rank.icon, title: t('Ранг месяца: {rank}', { rank: t(c) }), sub: t('{w} в этом месяце', { w: workoutsN(m.visits) }), color: '#FF9F0A' }
   const ch = m.challenges.find(x => x.id === b); if (!ch) return null
   const ti = +c
   return { emoji: TIERS[ti].medal, title: t('{tier} месяца: {name}', { tier: t(TIERS[ti].name), name: t(ch.name).toLowerCase() }), sub: ch.fmt(ch.tiers[ti]), color: TIERS[ti].color }

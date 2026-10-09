@@ -3,7 +3,9 @@
 import { EXERCISE_TYPE } from '../data/exerciseCatalog'
 
 // Название без вариации: «Жим лёжа (Узкий)» → «Жим лёжа»
-export const baseExName = (name) => (name || '').replace(/\s*\([^)]*\)\s*$/, '').trim()
+// Catalogue names that end in brackets themselves — they are not a variant
+const BRACKET_NAMES = new Set(['Приседания с гантелью (гоблет)'])
+export const baseExName = (name) => (BRACKET_NAMES.has((name || '').trim()) ? name.trim() : (name || '').replace(/\s*\([^)]*\)\s*$/, '').trim())
 
 // Чем меряется прогресс: вес / время / повторения (для упражнений без веса)
 // bodyweight — только повторения (колесо); bodyweight_plus — повторения + дополнительный вес по желанию
