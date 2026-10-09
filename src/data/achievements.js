@@ -4,6 +4,7 @@
 import { EXERCISE_MUSCLES, MUSCLE_FILTER_MAP, normalizeName } from './exerciseCatalog'
 import { getRank } from './motivation'
 import { baseExName, recordMetric, setValue } from '../utils/records'
+import { fmtVolume, fmtW, locale, plural, t } from '../i18n'
 
 export const TIERS = [
   { name: 'Бронза', color: '#CD7F32', medal: '🥉' },
@@ -19,7 +20,7 @@ const fmtDate = (dt) => `${dt.getFullYear()}-${String(dt.getMonth() + 1).padStar
 // Monday of the week the date belongs to
 export const weekKey = (d) => { const dt = parse(d); const wd = (dt.getDay() + 6) % 7; return fmtDate(new Date(dt.getTime() - wd * DAY)) }
 const addDays = (d, n) => fmtDate(new Date(parse(d).getTime() + n * DAY))
-const tons = (kg) => `${(Math.round(kg / 100) / 10).toLocaleString('ru')} т`
+const tons = (kg) => fmtVolume(kg)
 
 // Volume of a set list, same rule as the month stats: weight × reps of loaded sets
 const volume = (sets) => (sets || []).reduce((s, x) => s + (x.weight > 0 && x.reps > 0 ? x.weight * x.reps : 0), 0)
@@ -92,7 +93,7 @@ function permanent(days, bodyWeights, routineDates) {
   // Workouts
   const count = days.map((d, i) => ({ date: d.date, value: i + 1 }))
   add({ id: 'first', group: 'Постоянство', emoji: '🎉', name: 'Первая тренировка', desc: 'Запиши первую тренировку', tiers: [1], fmt: v => `${v}` }, count)
-  add({ id: 'workouts', group: 'Постоянство', emoji: '🏋️', name: 'Ветеран зала', desc: 'Всего тренировок', tiers: [10, 50, 100, 250, 500], fmt: v => `${v} тр.` }, count)
+  add({ id: 'workouts', group: 'Постоянство', emoji: '🏋️', name: 'Ветеран зала', desc: 'Всего тренировок', tiers: [10, 50, 100, 250, 500], fmt: v => `${v} ${t('тр.')}` }, count)
 
   // Consecutive weeks with at least 2 workouts
   const perWeek = new Map()
@@ -108,7 +109,7 @@ function permanent(days, bodyWeights, routineDates) {
     }
     curRun = run
   }
-  add({ id: 'weeks', group: 'Постоянство', emoji: '📅', name: 'Железная дисциплина', desc: 'Недель подряд, в каждой хотя бы 2 тренировки', tiers: [4, 12, 26, 52], fmt: v => `${v} нед.` }, weekSeries, { current: curRun })
+  add({ id: 'weeks', group: 'Постоянство', emoji: '📅', name: 'Железная дисциплина', desc: 'Недель подряд, в каждой хотя бы 2 тренировки', tiers: [4, 12, 26, 52], fmt: v => `${v} ${t('нед.')}` }, weekSeries, { current: curRun })
 
   // Strength — heaviest weight actually lifted (any reps)
   const bestLift = (name) => {
@@ -120,7 +121,7 @@ function permanent(days, bodyWeights, routineDates) {
     return s
   }
   const bench = bestLift('Жим лёжа'), squat = bestLift('Приседания'), dead = bestLift('Становая тяга')
-  const kg = v => `${v} кг`
+  const kg = v => fmtW(v)
   add({ id: 'bench', group: 'Сила', emoji: '🏋️', name: 'Жим лёжа', desc: 'Вес в жиме лёжа', tiers: [60, 80, 100, 120, 140], fmt: kg }, bench)
   add({ id: 'squat', group: 'Сила', emoji: '🦵', name: 'Приседания', desc: 'Вес в приседе', tiers: [80, 100, 140, 180, 220], fmt: kg }, squat)
   add({ id: 'deadlift', group: 'Сила', emoji: '🏗️', name: 'Становая тяга', desc: 'Вес в становой тяге', tiers: [100, 140, 180, 220, 260], fmt: kg }, dead)
@@ -131,15 +132,15 @@ function permanent(days, bodyWeights, routineDates) {
     const cur = { b: 0, s: 0, d: 0 }
     ev.forEach(p => { cur[p.k] = p.value; total.push({ date: p.date, value: cur.b + cur.s + cur.d }) })
   }
-  add({ id: 'total', group: 'Сила', emoji: '🏛️', name: 'Сумма троеборья', desc: 'Жим + присед + становая: клубы 300 / 400 / 500 / 600 кг', tiers: [300, 400, 500, 600], fmt: kg }, total)
+  add({ id: 'total', group: 'Сила', emoji: '🏛️', name: 'Сумма троеборья', desc: 'Сумма жима, приседа и становой', tiers: [300, 400, 500, 600], fmt: kg }, total)
   // Pull-ups: most reps in one set (any grip)
   const pull = []
   { let b = 0; days.forEach(d => d.items.forEach(it => { if (it.base !== 'Подтягивания') return; it.sets.forEach(x => { if ((x.reps || 0) > b) { b = x.reps; pull.push({ date: d.date, value: b }) } }) })) }
-  add({ id: 'pullups', group: 'Сила', emoji: '🧗', name: 'Турникмен', desc: 'Подтягиваний за один подход', tiers: [10, 15, 20, 25], fmt: v => `${v} повт` }, pull)
+  add({ id: 'pullups', group: 'Сила', emoji: '🧗', name: 'Турникмен', desc: 'Подтягиваний за один подход', tiers: [10, 15, 20, 25], fmt: v => `${v} ${t('повт')}` }, pull)
 
   // Relative to body weight
   const rel = (series) => series.map(p => { const bw = bodyWeightAt(bodyWeights, p.date); return { date: p.date, value: bw ? p.value / bw : 0 } })
-  const x = v => `${(Math.floor(v * 100) / 100).toLocaleString('ru')}× веса`
+  const x = v => `${(Math.floor(v * 100) / 100).toLocaleString(locale())}× ${t('веса')}`
   const needBW = !bodyWeights?.length
   add({ id: 'bw_bench', group: 'Сила к весу', emoji: '⚖️', name: 'Жим своего веса', desc: needBW ? 'Добавь вес тела в 🧍, чтобы считать' : 'Жим лёжа ≥ веса тела', tiers: [1], fmt: x }, rel(bench))
   add({ id: 'bw_squat', group: 'Сила к весу', emoji: '⚖️', name: 'Присед полтора веса', desc: needBW ? 'Добавь вес тела в 🧍, чтобы считать' : 'Присед ≥ 1,5 веса тела', tiers: [1.5], fmt: x }, rel(squat))
@@ -171,11 +172,11 @@ function permanent(days, bodyWeights, routineDates) {
       }
     })
   }
-  add({ id: 'full_body', group: 'Разное', emoji: '🦾', name: 'Всё тело', desc: `Все ${GROUPS.length} групп мышц за одну неделю`, tiers: [1, 5, 20], fmt: v => `${v} нед.` }, fullWeeks)
+  add({ id: 'full_body', group: 'Разное', emoji: '🦾', name: 'Всё тело', desc: `Все ${GROUPS.length} групп мышц за одну неделю`, tiers: [1, 5, 20], fmt: v => `${v} ${t('нед.')}` }, fullWeeks)
   add({ id: 'routines', group: 'Разное', emoji: '🤸', name: 'Подготовка', desc: 'Разминок и растяжек до конца', tiers: [10, 50, 100], fmt: v => `${v}` }, routineDates.map((d, i) => ({ date: d, value: i + 1 })))
   const wheel = []
   days.forEach(d => { const r = d.items.filter(it => it.base === 'Колесо для пресса').reduce((s, it) => s + it.sets.reduce((a, x) => a + (x.reps || 0), 0), 0); if (r) wheel.push({ date: d.date, value: r }) })
-  add({ id: 'wheel', group: 'Разное', emoji: '🛞', name: 'Колесо 100', desc: '100 повторов на колесе за тренировку', secret: true, tiers: [100], fmt: v => `${v} повт` }, wheel)
+  add({ id: 'wheel', group: 'Разное', emoji: '🛞', name: 'Колесо 100', desc: '100 повторов на колесе за тренировку', secret: true, tiers: [100], fmt: v => `${v} ${t('повт')}` }, wheel)
 
   return list
 }
@@ -226,10 +227,10 @@ function monthly(month, days, recordEventsList, routineDates, volByMonth) {
     month, visits, rank: getRank(visits),
     challenges: [
       ch({ id: 'tonnage', emoji: '🏋️', name: 'Поднятый вес', desc: 'Бронза — твой обычный месяц, серебро — +10 %, золото — побить лучший месяц', tiers: tonnageTiers(prevMonths.map(m => volByMonth[m])), fmt: tons }, vol),
-      ch({ id: 'records', emoji: '🏆', name: 'Рекорды', desc: 'Сколько рекордов поставил за месяц', tiers: [1, 3, 5], fmt: v => `${v} рек.` }, recs),
-      ch({ id: 'weeks', emoji: '📅', name: 'Без пропусков', desc: `Недели с 2+ тренировками (в месяце ${weeks.length} нед.)`, tiers: [2, weeks.length - 1, weeks.length], fmt: v => `${v} из ${weeks.length}` }, goodWeeks),
-      ch({ id: 'full_body', emoji: '🦾', name: 'Всё тело', desc: 'Сколько групп мышц проработал', tiers: [5, 7, GROUPS.length], fmt: v => `${v} из ${GROUPS.length}` }, groups.size),
-      ch({ id: 'routines', emoji: '🤸', name: 'Разминка и растяжка', desc: 'Сколько раз сделал до конца', tiers: [4, 8, 12], fmt: v => `${v} раз` }, routines),
+      ch({ id: 'records', emoji: '🏆', name: 'Рекорды', desc: 'Сколько рекордов поставил за месяц', tiers: [1, 3, 5], fmt: v => `${v} ${t('рек.')}` }, recs),
+      ch({ id: 'weeks', emoji: '📅', name: 'Без пропусков', desc: `Недели с 2+ тренировками (в месяце ${weeks.length} нед.)`, tiers: [2, weeks.length - 1, weeks.length], fmt: v => `${v} ${t('из')} ${weeks.length}` }, goodWeeks),
+      ch({ id: 'full_body', emoji: '🦾', name: 'Всё тело', desc: 'Сколько групп мышц проработал', tiers: [5, 7, GROUPS.length], fmt: v => `${v} ${t('из')} ${GROUPS.length}` }, groups.size),
+      ch({ id: 'routines', emoji: '🤸', name: 'Разминка и растяжка', desc: 'Сколько раз сделал до конца', tiers: [4, 8, 12], fmt: v => `${v} ${plural(v, ['раз', 'раза', 'раз'], ['time', 'times'])}` }, routines),
     ],
   }
 }
@@ -268,13 +269,13 @@ export function describeId(id, ach) {
   const [kind, a, b, c] = id.split(':')
   if (kind === 'p') {
     const p = ach.permanent.find(x => x.id === a); if (!p) return null
-    const t = +b
-    return { emoji: p.emoji, title: p.name, sub: p.tiers.length > 1 ? `${TIERS[t].medal} ${TIERS[t].name} · ${p.fmt(p.tiers[t])}` : p.desc, color: p.tiers.length > 1 ? TIERS[t].color : '#FF9F0A' }
+    const ti = +b
+    return { emoji: p.emoji, title: t(p.name), sub: p.tiers.length > 1 ? `${TIERS[ti].medal} ${t(TIERS[ti].name)} · ${p.fmt(p.tiers[ti])}` : t(p.desc), color: p.tiers.length > 1 ? TIERS[ti].color : '#FF9F0A' }
   }
   const m = a === ach.current.month ? ach.current : ach.archive.find(x => x.month === a)
   if (!m) return null
-  if (b === 'rank') return { emoji: m.rank.icon, title: `Ранг месяца: ${c}`, sub: `${m.visits} тренировок в этом месяце`, color: '#FF9F0A' }
+  if (b === 'rank') return { emoji: m.rank.icon, title: t('Ранг месяца: {rank}', { rank: t(c) }), sub: t('{n} тренировок в этом месяце', { n: m.visits }), color: '#FF9F0A' }
   const ch = m.challenges.find(x => x.id === b); if (!ch) return null
-  const t = +c
-  return { emoji: TIERS[t].medal, title: `${TIERS[t].name} месяца: ${ch.name.toLowerCase()}`, sub: ch.fmt(ch.tiers[t]), color: TIERS[t].color }
+  const ti = +c
+  return { emoji: TIERS[ti].medal, title: t('{tier} месяца: {name}', { tier: t(TIERS[ti].name), name: t(ch.name).toLowerCase() }), sub: ch.fmt(ch.tiers[ti]), color: TIERS[ti].color }
 }
