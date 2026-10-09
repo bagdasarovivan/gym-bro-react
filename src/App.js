@@ -778,9 +778,9 @@ export default function App() {
 
   const achievements = useMemo(() => {
     if (!allRows || !achReady || weightsStatus === 'loading') return null
-    try { return computeAchievements({ rows: allRows, bodyWeights, routineLog, today: localDateStr(new Date()) }) }
+    try { return computeAchievements({ rows: allRows, bodyWeights, routineLog, today: localDateStr(new Date()), sex: settings.sex || 'male' }) }
     catch (e) { console.error('achievements', e); return null }
-  }, [allRows, achReady, bodyWeights, weightsStatus, routineLog])
+  }, [allRows, achReady, bodyWeights, weightsStatus, routineLog, settings.sex])
 
   // Celebrate newly earned ones. On the very first run everything already earned is marked as seen quietly.
   useEffect(() => {
@@ -1506,6 +1506,15 @@ export default function App() {
                 {['kg','lbs'].map(u=>(
                   <button key={u} className={`settings-toggle-btn${settings.units===u?' active':''}`}
                     onClick={()=>saveSettings({...settings,units:u})}>{u}</button>
+                ))}
+              </div>
+            </div>
+            <div className="settings-row">
+              <div className="settings-row-label">{t('Пол (для разрядов)')}</div>
+              <div className="settings-toggle">
+                {[['male',t('Муж')],['female',t('Жен')]].map(([v,l])=>(
+                  <button key={v} className={`settings-toggle-btn${(settings.sex||'male')===v?' active':''}`}
+                    onClick={()=>saveSettings({...settings,sex:v})}>{l}</button>
                 ))}
               </div>
             </div>
