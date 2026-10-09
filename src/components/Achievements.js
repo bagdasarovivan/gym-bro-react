@@ -11,7 +11,7 @@ const shortDate = (d) => new Date(d + 'T12:00:00').toLocaleDateString(locale(), 
 export function AchTabs({ tab, setTab, thm, isDark }) {
   return (
     <div style={{ display: 'flex', gap: 4, padding: 4, borderRadius: 12, background: isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.05)', margin: '14px 20px 0' }}>
-      {[['month', t('Месяц')], ['all', t('Навсегда')]].map(([id, label]) => (
+      {[['month', t('Месяц')], ['all', t('Рекорды')]].map(([id, label]) => (
         <button key={id} onClick={() => setTab(id)} style={{
           flex: 1, padding: '8px 0', borderRadius: 9, border: 'none', cursor: 'pointer', fontSize: 14, fontWeight: 700,
           background: tab === id ? ORANGE : 'transparent', color: tab === id ? '#000' : thm.text50,
