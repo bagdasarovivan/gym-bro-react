@@ -15,7 +15,7 @@ import { LineChart } from './components/LineChart'
 import { ModalItem } from './components/ModalItem'
 import { MuscleMap } from './components/MuscleMap'
 import { ExerciseMuscleMap, ExerciseStats, ExerciseVariants, exerciseIndex } from './components/ExerciseStats'
-import { DEFAULT_FAVORITES, EXERCISES, EXERCISE_IMAGES, EXERCISE_INFO, EXERCISE_MUSCLES, EXERCISE_TYPE, LIGHT_WEIGHTS, MUSCLE_FILTERS_ROW1, MUSCLE_FILTERS_ROW2, MUSCLE_FILTER_MAP, MUSCLE_LABELS, EQUIPMENT_FILTERS, EXERCISE_EQUIPMENT, REPS_OPTIONS, TIME_OPTIONS, VARIANT_EXERCISES, getDefaultVariant, getExImage, getVariantOptions, getWarmupSets, getWeightOptions, normalizeName } from './data/exerciseCatalog'
+import { DEFAULT_FAVORITES, EXERCISES, EXERCISE_IMAGES, EXERCISE_INFO, EXERCISE_MUSCLES, EXERCISE_TYPE, LIGHT_WEIGHTS, MUSCLE_FILTERS_ROW1, MUSCLE_FILTERS_ROW2, MUSCLE_FILTER_MAP, MUSCLE_LABELS, REPS_OPTIONS, TIME_OPTIONS, VARIANT_EXERCISES, getDefaultVariant, getExImage, getVariantOptions, getWarmupSets, getWeightOptions, normalizeName } from './data/exerciseCatalog'
 import { RANK_LEVELS, RANK_QUOTES, getMotivation, getRank } from './data/motivation'
 import { calcAnatomyLoad } from './data/muscleLoad'
 import { PLAN_DAYS, PLAN_ICONS, PLAN_NAMES } from './data/plans'
@@ -119,7 +119,6 @@ export default function App() {
   const [streakMotivQuote, setStreakMotivQuote] = useState('')
   const [exTabSearch, setExTabSearch] = useState('')
   const [exTabFilter, setExTabFilter] = useState('all')
-  const [exTabEquip, setExTabEquip] = useState(null)   // equipment filter id or null
   const [exTabSort, setExTabSort] = useState('az')     // az | freq | old
   const [exDetailModal, setExDetailModal] = useState(null)
 
@@ -1611,8 +1610,7 @@ export default function App() {
           const matchesFilter = exTabFilter === 'all' || (MUSCLE_FILTER_MAP[exTabFilter] || []).some(m => primaryMuscles.includes(m))
           const matchesSearch = name.toLowerCase().includes(exTabSearch.toLowerCase()) || exName(name).toLowerCase().includes(exTabSearch.toLowerCase())
           return matchesFilter && matchesSearch
-        }).filter(name => !exTabEquip || EXERCISE_EQUIPMENT[name] === exTabEquip)
-          .sort((a,b) => {
+        }).sort((a,b) => {
             const ea = exIndex.get(a), eb = exIndex.get(b)
             if (exTabSort === 'freq') return (eb?.count || 0) - (ea?.count || 0) || exName(a).localeCompare(exName(b))
             // «давно»: done exercises from the longest ago, never-done ones at the end
@@ -1645,14 +1643,6 @@ export default function App() {
                   <button key={f.id} className={`muscle-chip${exTabFilter===f.id?' active':''}`}
                     style={exTabFilter!==f.id?{background:thm.btnBg,color:thm.text50,border:`1px solid ${thm.border}`}:{border:'none'}}
                     onClick={()=>setExTabFilter(f.id)}>{t(f.label)}</button>
-                ))}
-              </div>
-              <div className="muscle-filters-divider"/>
-              <div className="muscle-filters-row" style={{overflowX:'auto',scrollbarWidth:'none'}}>
-                {EQUIPMENT_FILTERS.map(f => (
-                  <button key={f.id} className={`muscle-chip${exTabEquip===f.id?' active':''}`}
-                    style={exTabEquip!==f.id?{background:thm.btnBg,color:thm.text50,border:`1px solid ${thm.border}`}:{border:'none'}}
-                    onClick={()=>setExTabEquip(exTabEquip===f.id?null:f.id)}>{t(f.label)}</button>
                 ))}
               </div>
             </div>
