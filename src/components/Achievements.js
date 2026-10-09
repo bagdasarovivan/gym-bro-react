@@ -123,7 +123,9 @@ function Badge({ a, size = 64 }) {
 
 export function BadgeGrid({ list, thm, isDark }) {
   const [open, setOpen] = useState(null)
-  const groups = [...new Set(list.map(a => a.group))]
+  const ORDER = ['Постоянство', 'Сила', 'Разряды', 'Сила к весу', 'Выносливость', 'Объём', 'Рекорды', 'Разное', 'Забавные']
+  const rank = (g) => (ORDER.includes(g) ? ORDER.indexOf(g) : ORDER.length)
+  const groups = [...new Set(list.map(a => a.group))].sort((a, b) => rank(a) - rank(b))
   const total = list.reduce((s, a) => s + a.tiers.length, 0), got = list.reduce((s, a) => s + a.tier, 0)
   return (
     <>

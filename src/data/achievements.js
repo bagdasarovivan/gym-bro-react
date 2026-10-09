@@ -219,6 +219,167 @@ function permanent(days, bodyWeights, routineDates, sex) {
   days.forEach(d => { const r = d.items.filter(it => it.base === 'Колесо для пресса').reduce((s, it) => s + it.sets.reduce((a, x) => a + (x.reps || 0), 0), 0); if (r) wheel.push({ date: d.date, value: r }) })
   add({ id: 'wheel', group: 'Разное', emoji: '🛞', name: 'Колесо 100', desc: '100 повторов на колесе за тренировку', secret: true, tiers: [100], fmt: v => `${v} ${t('повт')}` }, wheel)
 
+  // ── More strength (heaviest weight; extra weight for bodyweight moves) ──
+  const bestOf = (base) => {
+    let b = 0; const s = []
+    days.forEach(d => d.items.forEach(it => {
+      if (it.base !== base) return
+      it.sets.forEach(x => { if (x.reps > 0 && x.weight > b) { b = x.weight; s.push({ date: d.date, value: b }) } })
+    }))
+    return s
+  }
+  const ohp = bestOf('Жим над головой'), pullW = bestOf('Подтягивания'), dipW = bestOf('Отжимания на брусьях')
+  add({ id: 'ohp', group: 'Сила', emoji: '🙌', name: 'Жим стоя', desc: 'Вес в жиме штанги над головой', tiers: [40, 60, 80, 100], fmt: kg }, ohp)
+  add({ id: 'db_press', group: 'Сила', emoji: '🔩', name: 'Жим гантелей', desc: 'Вес одной гантели в жиме лёжа', tiers: [30, 40, 50], fmt: kg }, bestOf('Жим гантелей лёжа'))
+  add({ id: 'row', group: 'Сила', emoji: '🚣', name: 'Тяга в наклоне', desc: 'Вес в тяге штанги в наклоне', tiers: [60, 80, 100, 120], fmt: kg }, bestOf('Тяга штанги в наклоне'))
+  add({ id: 'pull_w', group: 'Сила', emoji: '🧗', name: 'Подтягивания с весом', desc: 'Дополнительный вес в подтягиваниях, любой хват', tiers: [10, 20, 30, 40], fmt: v => `+${fmtW(v)}` }, pullW)
+  add({ id: 'dip_w', group: 'Сила', emoji: '🤸', name: 'Брусья с весом', desc: 'Дополнительный вес в отжиманиях на брусьях', tiers: [20, 40, 60], fmt: v => `+${fmtW(v)}` }, dipW)
+  add({ id: 'curl', group: 'Сила', emoji: '💪', name: 'Бицепс штангой', desc: 'Вес в подъёме штанги на бицепс', tiers: [40, 50, 60], fmt: kg }, bestOf('Подъём штанги на бицепс'))
+  add({ id: 'glute', group: 'Сила', emoji: '🍑', name: 'Ягодичный мост', desc: 'Вес в ягодичном мосте', tiers: [100, 150, 200], fmt: kg }, bestOf('Ягодичный мост'))
+  add({ id: 'club', group: 'Сила', emoji: '🎯', name: 'Клуб 1000 фунтов', desc: 'Сумма троеборья: 1000 lb ≈ 454 кг, затем 1200 lb ≈ 544 кг', tiers: [453.59, 544.31], fmt: kg }, total)
+
+  // ── More relative strength ──
+  add({ id: 'bw_bench2', group: 'Сила к весу', emoji: '⚖️', name: 'Жим полтора веса', desc: needBW ? 'Добавь вес тела в 🧍, чтобы считать' : 'Жим лёжа ≥ 1,25 и 1,5 веса тела', tiers: [1.25, 1.5], fmt: x }, rel(bench))
+  add({ id: 'bw_squat2', group: 'Сила к весу', emoji: '⚖️', name: 'Присед два веса', desc: needBW ? 'Добавь вес тела в 🧍, чтобы считать' : 'Присед ≥ 2 весов тела', tiers: [2], fmt: x }, rel(squat))
+  add({ id: 'bw_dead2', group: 'Сила к весу', emoji: '⚖️', name: 'Становая два с половиной', desc: needBW ? 'Добавь вес тела в 🧍, чтобы считать' : 'Становая ≥ 2,5 веса тела', tiers: [2.5], fmt: x }, rel(dead))
+  add({ id: 'bw_pull', group: 'Сила к весу', emoji: '⚖️', name: 'Подтягивания с полувесом', desc: needBW ? 'Добавь вес тела в 🧍, чтобы считать' : 'Дополнительный вес в подтягиваниях ≥ половины веса тела', tiers: [0.5], fmt: x }, rel(pullW))
+
+  // ── Endurance ──
+  const repsOf = (base) => {
+    let b = 0; const s = []
+    days.forEach(d => d.items.forEach(it => { if (it.base !== base) return; it.sets.forEach(x => { if ((x.reps || 0) > b) { b = x.reps; s.push({ date: d.date, value: b }) } }) }))
+    return s
+  }
+  const reps = v => `${v} ${t('повт')}`
+  add({ id: 'dip_reps', group: 'Выносливость', emoji: '🤸', name: 'Мастер брусьев', desc: 'Отжиманий на брусьях за один подход', tiers: [15, 25, 40], fmt: reps }, repsOf('Отжимания на брусьях'))
+  add({ id: 'pushup_reps', group: 'Выносливость', emoji: '🫸', name: 'Отжимания', desc: 'Отжиманий от пола за один подход', tiers: [30, 50, 75], fmt: reps }, repsOf('Отжимания'))
+  {
+    // Bench press with at least the body weight on the bar, most reps in one set
+    let b = 0; const s = []
+    if (!needBW) days.forEach(d => { const bw = bodyWeightAt(bodyWeights, d.date); d.items.forEach(it => { if (it.base !== 'Жим лёжа') return; it.sets.forEach(x => { if (x.weight >= bw && (x.reps || 0) > b) { b = x.reps; s.push({ date: d.date, value: b }) } }) }) })
+    add({ id: 'bw_bench_reps', group: 'Выносливость', emoji: '🔁', name: 'Свой вес на повторы', desc: needBW ? 'Добавь вес тела в 🧍, чтобы считать' : 'Жим лёжа своего веса на 5 и на 10 повторов', tiers: [5, 10], fmt: reps }, s)
+  }
+  {
+    // Most reps of one exercise (all variants together) in one workout
+    let b = 0; const s = []
+    days.forEach(d => {
+      const per = {}
+      d.items.forEach(it => { per[it.base] = (per[it.base] || 0) + it.sets.reduce((a, x) => a + (x.reps || 0), 0) })
+      const m = Math.max(0, ...Object.values(per))
+      if (m > b) { b = m; s.push({ date: d.date, value: b }) }
+    })
+    add({ id: 'hundred', group: 'Выносливость', emoji: '💯', name: 'Сотка', desc: 'Повторов одного упражнения за тренировку', tiers: [100, 200], fmt: reps }, s)
+  }
+  let repAcc = 0
+  add({ id: 'all_reps', group: 'Выносливость', emoji: '🔢', name: 'Тысячи повторов', desc: 'Повторов за всё время', tiers: [1000, 10000, 50000], fmt: reps },
+    days.map(d => ({ date: d.date, value: (repAcc += d.items.reduce((a, it) => a + it.sets.reduce((q, x) => q + (x.reps || 0), 0), 0)) })))
+
+  // ── More consistency ──
+  {
+    // Chain of workouts with gaps of at most 2 days (every other day or more often)
+    const s = []; let n = 0, best = 0, cur = 0
+    days.forEach((d, i) => {
+      n = i && (parse(d.date) - parse(days[i - 1].date)) / DAY <= 2 ? n + 1 : 1
+      if (n > best) { best = n; s.push({ date: d.date, value: n }) }
+    })
+    if (days.length) cur = (parse(fmtDate(new Date())) - parse(days[days.length - 1].date)) / DAY <= 2 ? n : 0
+    add({ id: 'chain', group: 'Постоянство', emoji: '⛓️', name: 'Через день', desc: 'Тренировок подряд с перерывом не больше одного дня', tiers: [5, 10, 20, 30], fmt: v => `${v} ${t('тр.')}` }, s, { current: Math.max(cur, 0) })
+  }
+  {
+    const s = []; let b = 0
+    ;[...perWeek.entries()].sort(([a], [c]) => a.localeCompare(c)).forEach(([, dates]) => { if (dates.length > b) { b = dates.length; s.push({ date: dates[dates.length - 1], value: b }) } })
+    add({ id: 'week_max', group: 'Постоянство', emoji: '🗓️', name: 'Ударная неделя', desc: 'Тренировок за одну неделю', tiers: [4, 5, 6], fmt: v => `${v} ${t('тр.')}` }, s)
+  }
+  {
+    // Consecutive calendar months with 8+ workouts (the current month does not break the run)
+    const perMonth = {}
+    days.forEach(d => { const m = d.date.slice(0, 7); (perMonth[m] = perMonth[m] || []).push(d.date) })
+    const s = []; let run = 0, cur = 0
+    if (days.length) {
+      const nowM = fmtDate(new Date()).slice(0, 7)
+      for (let m = days[0].date.slice(0, 7); m <= nowM; m = fmtDate(new Date(+m.slice(0, 4), +m.slice(5, 7), 1)).slice(0, 7)) {
+        const ds = perMonth[m] || []
+        if (ds.length >= 8) { run++; s.push({ date: ds[7], value: run }) } else if (m !== nowM) run = 0
+      }
+      cur = run
+    }
+    add({ id: 'months8', group: 'Постоянство', emoji: '📆', name: 'Месяц за месяцем', desc: 'Месяцев подряд, в каждом 8+ тренировок', tiers: [2, 3, 6, 12], fmt: v => `${v} ${t('мес.')}` }, s, { current: cur })
+  }
+  {
+    const s = []
+    if (days.length) {
+      const today = fmtDate(new Date()), f = parse(days[0].date)
+      for (let y = 1; y <= 5; y++) { const d = fmtDate(new Date(f.getFullYear() + y, f.getMonth(), f.getDate())); if (d <= today) s.push({ date: d, value: y }) }
+    }
+    add({ id: 'anniversary', group: 'Постоянство', emoji: '🎂', name: 'Годовщина', desc: 'Лет с первой тренировки', tiers: [1, 2, 3], fmt: v => `${v} ${plural(v, ['год', 'года', 'лет'], ['year', 'years'])}` }, s)
+  }
+  {
+    const s = []
+    days.forEach((d, i) => { if (i && (parse(d.date) - parse(days[i - 1].date)) / DAY >= 14) s.push({ date: d.date, value: s.length + 1 }) })
+    add({ id: 'comeback', group: 'Постоянство', emoji: '🔄', name: 'Возвращение', desc: 'Вернулся в зал после перерыва в 2 недели и больше', secret: true, tiers: [1], fmt: v => `${v}` }, s)
+  }
+
+  // ── More volume ──
+  const setCount = (it) => it.sets.filter(x => (x.reps || 0) > 0 || (x.time_sec || 0) > 0).length
+  add({ id: 'day_sets', group: 'Объём', emoji: '📋', name: 'Много подходов', desc: 'Подходов за одну тренировку', tiers: [20, 30, 40], fmt: v => `${v} ${t('подх.')}` },
+    days.map(d => ({ date: d.date, value: d.items.reduce((a, it) => a + setCount(it), 0) })))
+  let setAcc = 0
+  add({ id: 'all_sets', group: 'Объём', emoji: '🧱', name: 'Подход за подходом', desc: 'Подходов за всё время', tiers: [250, 1000, 5000, 10000], fmt: v => `${v} ${t('подх.')}` },
+    days.map(d => ({ date: d.date, value: (setAcc += d.items.reduce((a, it) => a + setCount(it), 0)) })))
+  {
+    const wk = {}, mo = {}, ws = [], ms = []
+    dayVol.forEach(p => {
+      const k = weekKey(p.date), m = p.date.slice(0, 7)
+      wk[k] = (wk[k] || 0) + p.value; mo[m] = (mo[m] || 0) + p.value
+      ws.push({ date: p.date, value: wk[k] }); ms.push({ date: p.date, value: mo[m] })
+    })
+    add({ id: 'week_tonnage', group: 'Объём', emoji: '🚚', name: 'Тяжёлая неделя', desc: 'Тоннаж за одну неделю', tiers: [20000, 40000, 60000], fmt: tons }, ws)
+    add({ id: 'month_tonnage', group: 'Объём', emoji: '🏗️', name: 'Тяжёлый месяц', desc: 'Тоннаж за один месяц', tiers: [100000, 200000, 300000], fmt: tons }, ms)
+  }
+
+  // ── More records ──
+  {
+    const perDay = {}, s = []; let b = 0
+    events.forEach(e => { perDay[e.date] = (perDay[e.date] || 0) + 1 })
+    Object.keys(perDay).sort().forEach(d => { if (perDay[d] > b) { b = perDay[d]; s.push({ date: d, value: b }) } })
+    add({ id: 'pr_day', group: 'Рекорды', emoji: '⚡', name: 'Рекордный день', desc: 'Рекордов за одну тренировку', tiers: [3, 5], fmt: v => `${v} ${t('рек.')}` }, s)
+    const names = new Set(), s2 = []
+    events.forEach(e => { if (!names.has(e.name)) { names.add(e.name); s2.push({ date: e.date, value: names.size }) } })
+    add({ id: 'pr_wide', group: 'Рекорды', emoji: '🌐', name: 'Рекорды везде', desc: 'Разных упражнений, в которых побит рекорд', tiers: [10, 20], fmt: v => `${v}` }, s2)
+  }
+  {
+    // Bench press gain over the heaviest weight of the first bench workout
+    const first = days.find(d => d.items.some(it => it.name === 'Жим лёжа'))
+    const base = first ? Math.max(0, ...first.items.filter(it => it.name === 'Жим лёжа').flatMap(it => it.sets.filter(x => x.reps > 0).map(x => x.weight || 0))) : 0
+    add({ id: 'bench_gain', group: 'Рекорды', emoji: '📈', name: 'Прибавка в жиме', desc: 'На сколько вырос жим лёжа с первой записи', tiers: [10, 20, 30], fmt: v => `+${fmtW(v)}` }, bench.map(p => ({ date: p.date, value: p.value - base })).filter(p => p.value > 0))
+  }
+
+  // ── Fun ──
+  {
+    const at = (pred) => { for (const d of days) for (const it of d.items) if (it.sets.some(x => pred(x, it))) return [{ date: d.date, value: 1 }]; return [] }
+    add({ id: 'dozen13', group: 'Забавные', emoji: '🃏', name: 'Чёртова дюжина', desc: 'Подход ровно на 13 повторов', secret: true, tiers: [1], fmt: v => `${v}` }, at(x => x.reps === 13))
+    add({ id: 'even100', group: 'Забавные', emoji: '🎱', name: 'Ровный счёт', desc: 'Подход ровно со 100 кг', tiers: [1], fmt: v => `${v}` }, at(x => x.reps > 0 && x.weight === 100))
+    // Every catalogue exercise of a muscle group done at least once
+    const byGroup = {}
+    Object.keys(EXERCISE_MUSCLES).forEach(n => groupsOf(n).forEach(g => (byGroup[g] = byGroup[g] || new Set()).add(n)))
+    const done = new Set(), complete = new Set(), s = []
+    days.forEach(d => d.items.forEach(it => {
+      done.add(it.base)
+      GROUPS.forEach(g => { if (!complete.has(g) && byGroup[g]?.size && [...byGroup[g]].every(n => done.has(n))) { complete.add(g); s.push({ date: d.date, value: complete.size }) } })
+    }))
+    add({ id: 'collector', group: 'Забавные', emoji: '🗂️', name: 'Коллекционер', desc: 'Групп мышц, в которых сделал все упражнения из каталога', tiers: [1, 3, 6], fmt: v => `${v} ${t('из')} ${GROUPS.length}` }, s)
+    // Weeks where chest, back, legs and shoulders were all trained
+    const BIG = ['chest', 'back', 'legs', 'shoulders'], s2 = []; let n = 0
+    ;[...perWeek.entries()].sort(([a], [c]) => a.localeCompare(c)).forEach(([, dates]) => {
+      const got = new Set()
+      for (const date of dates) {
+        days.find(d => d.date === date).items.forEach(it => groupsOf(it.name).forEach(g => got.add(g)))
+        if (BIG.every(g => got.has(g))) { s2.push({ date, value: ++n }); break }
+      }
+    })
+    add({ id: 'balanced', group: 'Забавные', emoji: '☯️', name: 'Сбалансированный', desc: 'Недель, в которых проработаны грудь, спина, ноги и плечи', tiers: [1, 10, 25], fmt: v => `${v} ${t('нед.')}` }, s2)
+  }
+
   return list
 }
 
@@ -297,12 +458,13 @@ export function computeAchievements({ rows, bodyWeights = [], routineLog = {}, t
 
   // Ids of everything earned — used to celebrate only new ones
   const ids = []
-  perm.forEach(a => a.earned.forEach((d, i) => d && ids.push(`p:${a.id}:${i}`)))
+  const idDates = {}
+  perm.forEach(a => a.earned.forEach((d, i) => { if (d) { ids.push(`p:${a.id}:${i}`); idDates[`p:${a.id}:${i}`] = d } }))
   ;[current, ...archive].forEach(m => {
     if (m.visits) ids.push(`m:${m.month}:rank:${m.rank.name}`)
     m.challenges.forEach(c => { for (let i = 0; i < c.tier; i++) ids.push(`m:${m.month}:${c.id}:${i}`) })
   })
-  return { permanent: perm, current, archive: archive.slice(0, 12), ids, earnedCount: perm.reduce((s, a) => s + a.tier, 0) }
+  return { permanent: perm, current, archive: archive.slice(0, 12), ids, idDates, earnedCount: perm.reduce((s, a) => s + a.tier, 0) }
 }
 
 // Human description of an achievement id, for the celebration screen
