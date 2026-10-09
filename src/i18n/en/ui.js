@@ -285,4 +285,5 @@ export const UI_EN = {
   'Вес, lbs': 'Weight, lbs',
   'раз': 'times',
   'Вес': 'Weight',
+  '＋ Ввести вес': '＋ Log weight',
 }

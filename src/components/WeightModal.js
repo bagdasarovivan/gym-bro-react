@@ -15,6 +15,8 @@ export function WeightModal({ entries, status, onAdd, onDelete, onClose }) {
   const [saving, setSaving] = useState(false)
   const [confirmDel, setConfirmDel] = useState(null)
   const [showAll, setShowAll] = useState(false)
+  // The form (and the keyboard) opens only after tapping «Ввести вес»
+  const [entering, setEntering] = useState(false)
 
   const save = async () => {
     const v = Number(String(value).replace(',', '.'))
@@ -24,6 +26,7 @@ export function WeightModal({ entries, status, onAdd, onDelete, onClose }) {
     const ok = await onAdd(date, kg)
     setSaving(false)
     if (!ok) setError(t('Не удалось сохранить. Проверь интернет и попробуй ещё раз.'))
+    else { setEntering(false); setDate(today) }
   }
   const fmtDate = (d) => new Date(d + 'T12:00:00').toLocaleDateString(locale(), { day: 'numeric', month: 'long', year: d.slice(0, 4) === today.slice(0, 4) ? undefined : 'numeric' })
   const list = showAll ? sorted : sorted.slice(0, 7)
@@ -44,6 +47,12 @@ export function WeightModal({ entries, status, onAdd, onDelete, onClose }) {
           </div>
         ) : (
           <>
+            {!entering ? (
+              <button onClick={() => { setEntering(true); setError(null) }} disabled={status === 'loading'} style={{ width: '100%', padding: 14, borderRadius: 14, border: 'none', cursor: 'pointer',
+                background: '#FF9F0A', color: '#000', fontSize: 16, fontWeight: 700, marginBottom: 20 }}>
+                {t('＋ Ввести вес')}
+              </button>
+            ) : (<>
             <div style={{ display: 'flex', gap: 10, marginBottom: 10 }}>
               <div style={{ flex: 1.2 }}>
                 <div style={{ fontSize: 12, opacity: 0.45, marginBottom: 6, fontWeight: 500 }}>{isLbs() ? t('Вес, lbs') : t('Вес, кг')}</div>
@@ -65,6 +74,10 @@ export function WeightModal({ entries, status, onAdd, onDelete, onClose }) {
               background: '#FF9F0A', color: '#000', fontSize: 16, fontWeight: 700, opacity: saving ? 0.7 : 1, marginBottom: 20 }}>
               {saving ? t('Сохраняю…') : sorted.some(e => e.measured_on === date) ? t('Обновить вес за этот день') : t('Сохранить')}
             </button>
+            <button onClick={() => { setEntering(false); setError(null) }} style={{ width: '100%', marginTop: -12, marginBottom: 16, padding: 10, background: 'none', border: 'none', color: 'rgba(255,255,255,0.45)', fontSize: 14, fontWeight: 600, cursor: 'pointer' }}>
+              {t('Отмена')}
+            </button>
+            </>)}
 
             <BodyWeightChart entries={entries} />
 
