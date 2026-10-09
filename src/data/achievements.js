@@ -3,9 +3,8 @@
 // date it was earned. Only warm-up / stretching completions are logged separately (routineLog).
 import { EXERCISE_MUSCLES, MUSCLE_FILTER_MAP, normalizeName } from './exerciseCatalog'
 import { getRank } from './motivation'
-import { baseExName, e1rm, recordMetric, setValue } from '../utils/records'
+import { baseExName, recordMetric, setValue } from '../utils/records'
 import { fmtVolume, fmtW, locale, plural, t } from '../i18n'
-import { RANKS, RANK_NAMES, STANDARDS, categoryFor, rankFor } from './standards'
 
 export const TIERS = [
   { name: 'Бронза', color: '#CD7F32', medal: '🥉' },
@@ -236,51 +235,9 @@ function monthly(month, days, recordEventsList, routineDates, volByMonth) {
   }
 }
 
-// ── Sport classification (разряды) ──────────────────────────────────────────
-// Running best of the heaviest weight actually lifted (≥1 rep) for an exercise
-function liftSeries(days, name) {
-  let b = 0; const s = []
-  days.forEach(d => d.items.forEach(it => {
-    if (it.name !== name) return
-    it.sets.forEach(x => { if (x.reps > 0 && x.weight > b) { b = x.weight; s.push({ date: d.date, value: b }) } })
-  }))
-  return s
-}
-// Ranks by the classic bench press and the classic total, in the category of the latest body weight
-function classification(days, bw, sex) {
-  const std = STANDARDS[sex === 'female' ? 'female' : 'male']
-  const bench = liftSeries(days, 'Жим лёжа'), squat = liftSeries(days, 'Приседания'), dead = liftSeries(days, 'Становая тяга')
-  const totalSeries = []
-  {
-    const ev = [...bench.map(p => ({ ...p, k: 'b' })), ...squat.map(p => ({ ...p, k: 's' })), ...dead.map(p => ({ ...p, k: 'd' }))].sort((a, b) => a.date.localeCompare(b.date))
-    const cur = { b: 0, s: 0, d: 0 }
-    ev.forEach(p => { cur[p.k] = p.value; if (cur.b && cur.s && cur.d) totalSeries.push({ date: p.date, value: cur.b + cur.s + cur.d }) })
-  }
-  let benchE1 = 0
-  days.forEach(d => d.items.forEach(it => { if (it.name === 'Жим лёжа') it.sets.forEach(x => { if (x.weight > 0 && x.reps > 0) benchE1 = Math.max(benchE1, e1rm(x.weight, x.reps)) }) }))
-  const bodyWeight = bw.length ? bw[bw.length - 1].weight : null
-  const lift = (id, name, series, rows, extra = {}) => {
-    const best = series.length ? series[series.length - 1].value : 0
-    if (!bodyWeight) return { id, name, best, ...extra }
-    const row = categoryFor(rows, bodyWeight)
-    const r = rankFor(row, best)
-    // first date each rank was reached (in today's category)
-    const earned = {}
-    series.forEach(p => { const x = rankFor(row, p.value); if (x.rank) RANKS.slice(0, RANKS.indexOf(x.rank) + 1).forEach(k => { if (row.norms[k] != null && !earned[k]) earned[k] = p.date }) })
-    return { id, name, best, row, ...r, earned, ...extra }
-  }
-  return {
-    sex: sex === 'female' ? 'female' : 'male', bodyWeight,
-    bench: lift('bench', 'Жим лёжа', bench, std.bench, { e1: benchE1 }),
-    total: lift('total', 'Сумма троеборья', totalSeries, std.total, {
-      parts: { bench: bench.length ? bench[bench.length - 1].value : 0, squat: squat.length ? squat[squat.length - 1].value : 0, dead: dead.length ? dead[dead.length - 1].value : 0 },
-    }),
-  }
-}
-
 // ── Entry point ─────────────────────────────────────────────────────────────
 // routineLog: { w: ['YYYY-MM-DD', ...], s: [...] } — completed warm-ups / stretches
-export function computeAchievements({ rows, bodyWeights = [], routineLog = {}, today, sex = 'male' }) {
+export function computeAchievements({ rows, bodyWeights = [], routineLog = {}, today }) {
   const days = buildDays(rows)
   const bw = [...(bodyWeights || [])].sort((a, b) => a.measured_on.localeCompare(b.measured_on))
   const routineDates = [...(routineLog.w || []), ...(routineLog.s || [])].sort()
@@ -304,25 +261,12 @@ export function computeAchievements({ rows, bodyWeights = [], routineLog = {}, t
     if (m.visits) ids.push(`m:${m.month}:rank:${m.rank.name}`)
     m.challenges.forEach(c => { for (let i = 0; i < c.tier; i++) ids.push(`m:${m.month}:${c.id}:${i}`) })
   })
-  const ranks = classification(days, bw, sex)
-  ;[ranks.bench, ranks.total].forEach(l => Object.keys(l.earned || {}).forEach(r => ids.push(`r:${l.id}:${r}`)))
-
-  // Everything earned with its date, newest first (for «Последние полученные»)
-  const recent = []
-  perm.forEach(a => a.earned.forEach((d, i) => d && recent.push({ date: d, id: `p:${a.id}:${i}` })))
-  ;[ranks.bench, ranks.total].forEach(l => Object.entries(l.earned || {}).forEach(([r, d]) => recent.push({ date: d, id: `r:${l.id}:${r}` })))
-  recent.sort((a, b) => b.date.localeCompare(a.date))
-
-  return { permanent: perm, current, archive: archive.slice(0, 12), ids, earnedCount: perm.reduce((s, a) => s + a.tier, 0), ranks, recent }
+  return { permanent: perm, current, archive: archive.slice(0, 12), ids, earnedCount: perm.reduce((s, a) => s + a.tier, 0) }
 }
 
 // Human description of an achievement id, for the celebration screen
 export function describeId(id, ach) {
   const [kind, a, b, c] = id.split(':')
-  if (kind === 'r') {
-    const l = ach.ranks?.[a]; if (!l || !l.row) return null
-    return { emoji: '🎖', title: t('Разряд выполнен: {rank}', { rank: t(RANK_NAMES[b]) }), sub: `${t(l.name)} · ${fmtW(l.row.norms[b])} · ${t('категория {cat}', { cat: l.row.label })}`, color: '#FF9F0A' }
-  }
   if (kind === 'p') {
     const p = ach.permanent.find(x => x.id === a); if (!p) return null
     const ti = +b

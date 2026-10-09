@@ -8,7 +8,7 @@ import { WarmupModal } from './components/WarmupModal'
 import { StretchModal } from './components/StretchModal'
 import { ChartExercisePicker } from './components/ChartExercisePicker'
 import { HistoryView } from './components/History'
-import { AchTabs, AchievementCelebration, BadgeGrid, MonthArchive, MonthChallenges, NextGoals, RanksCard, RecentEarned } from './components/Achievements'
+import { AchTabs, AchievementCelebration, BadgeGrid, MonthArchive, MonthChallenges } from './components/Achievements'
 import { computeAchievements, describeId } from './data/achievements'
 import { KG_TO_LB, dispW, exInfo, exName, fmtVolume, fmtW, isLbs, locale, muscleLabel, num, setPrefs, t, toKg, variantName, weightOptions } from './i18n'
 import { LineChart } from './components/LineChart'
@@ -778,9 +778,9 @@ export default function App() {
 
   const achievements = useMemo(() => {
     if (!allRows || !achReady || weightsStatus === 'loading') return null
-    try { return computeAchievements({ rows: allRows, bodyWeights, routineLog, today: localDateStr(new Date()), sex: settings.sex || 'male' }) }
+    try { return computeAchievements({ rows: allRows, bodyWeights, routineLog, today: localDateStr(new Date()) }) }
     catch (e) { console.error('achievements', e); return null }
-  }, [allRows, achReady, bodyWeights, weightsStatus, routineLog, settings.sex])
+  }, [allRows, achReady, bodyWeights, weightsStatus, routineLog])
 
   // Celebrate newly earned ones. On the very first run everything already earned is marked as seen quietly.
   useEffect(() => {
@@ -797,11 +797,7 @@ export default function App() {
       return
     }
     const cur = achievements.current.month
-    // For sport ranks only the highest new rank per lift is celebrated
-    const RANK_ORDER = ['III юн', 'II юн', 'I юн', 'III', 'II', 'I', 'КМС', 'МС', 'МСМК']
-    const topRank = {}
-    fresh.filter(id => id.startsWith('r:')).forEach(id => { const [, lift, r] = id.split(':'); if (!topRank[lift] || RANK_ORDER.indexOf(r) > RANK_ORDER.indexOf(topRank[lift])) topRank[lift] = r })
-    const items = fresh.filter(id => id.startsWith('p:') || (id.startsWith('r:') && topRank[id.split(':')[1]] === id.split(':')[2]) || id.startsWith(`m:${cur}:`)).map(id => describeId(id, achievements)).filter(Boolean)
+    const items = fresh.filter(id => id.startsWith('p:') || id.startsWith(`m:${cur}:`)).map(id => describeId(id, achievements)).filter(Boolean)
     if (items.length) {
       setAchQueue(q => [...q, ...items]); setAchUnviewed(true)
       if (navigator.vibrate) navigator.vibrate([80, 40, 80, 40, 200])
@@ -1782,12 +1778,7 @@ export default function App() {
               <AchTabs tab={achTab} setTab={setAchTab} thm={thm} isDark={isDark}/>
               <div style={{overflowY:'auto',padding:'16px 20px 32px',flex:1}}>
                 {achTab === 'all' && (achievements
-                  ? <>
-                      <RanksCard ranks={achievements.ranks} sex={settings.sex || 'male'} onSex={v=>saveSettings({...settings,sex:v})} thm={thm} isDark={isDark}/>
-                      <NextGoals list={achievements.permanent} bodyWeight={achievements.ranks?.bodyWeight} thm={thm} isDark={isDark}/>
-                      <RecentEarned ach={achievements} thm={thm} isDark={isDark}/>
-                      <BadgeGrid list={achievements.permanent} thm={thm} isDark={isDark}/>
-                    </>
+                  ? <BadgeGrid list={achievements.permanent} thm={thm} isDark={isDark}/>
                   : <div style={{textAlign:'center',color:thm.text40,fontSize:14,padding:'24px 0'}}>{t('Загрузка...')}</div>)}
                 {achTab === 'month' && (<>
                 {/* Rank — compact */}
