@@ -1,6 +1,6 @@
 import { useState } from 'react'
-import { TIERS } from '../data/achievements'
-import { locale, t } from '../i18n'
+import { TIERS, tierOf } from '../data/achievements'
+import { fmtW, locale, t } from '../i18n'
 
 const ORANGE = '#FF9F0A'
 const card = (isDark, thm) => ({ background: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.03)', borderRadius: 20, padding: '18px 20px', marginBottom: 12, border: `1px solid ${thm.border}` })
@@ -98,11 +98,11 @@ export function progressOf(a) {
 // Round badge; a thin ring around it fills up towards the next tier
 function Badge({ a, size = 64 }) {
   const got = a.tier > 0
-  const color = got ? (a.tiers.length > 1 ? TIERS[a.tier - 1].color : ORANGE) : 'rgba(128,128,128,0.35)'
+  const color = got ? (a.tiers.length > 1 ? tierOf(a, a.tier - 1).color : ORANGE) : 'rgba(128,128,128,0.35)'
   const hidden = a.secret && !got
   const done = a.tier >= a.tiers.length
   const ring = size + 10, r = ring / 2 - 2, c = 2 * Math.PI * r
-  const nextColor = done ? color : (a.tiers.length > 1 ? TIERS[a.tier].color : ORANGE)
+  const nextColor = done ? color : (a.tiers.length > 1 ? tierOf(a, a.tier).color : ORANGE)
   return (
     <div style={{ position: 'relative', width: ring, height: ring, flexShrink: 0 }}>
       {!hidden && (
@@ -147,8 +147,8 @@ export function BadgeGrid({ list, thm, isDark }) {
                 <button key={a.id} onClick={() => setOpen(a)} style={{ background: 'none', border: 'none', cursor: 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6, padding: 0 }}>
                   <Badge a={a} />
                   <div style={{ fontSize: 12, fontWeight: 700, color: a.tier ? thm.text : thm.text50, textAlign: 'center', lineHeight: 1.25 }}>{hidden ? t('Секрет') : t(a.name)}</div>
-                  <div style={{ fontSize: 10, color: a.tier ? (a.tiers.length > 1 ? TIERS[a.tier - 1].color : ORANGE) : thm.text35, textAlign: 'center', minHeight: 12 }}>
-                    {hidden ? '???' : next !== undefined ? `${a.fmt(a.value)} / ${a.fmt(next)}` : (a.tiers.length > 1 ? t(TIERS[a.tier - 1].name) : t('Получено'))}
+                  <div style={{ fontSize: 10, color: a.tier ? (a.tiers.length > 1 ? tierOf(a, a.tier - 1).color : ORANGE) : thm.text35, textAlign: 'center', minHeight: 12 }}>
+                    {hidden ? '???' : a.tierInfo && a.tier ? t(tierOf(a, a.tier - 1).name) : next !== undefined ? `${a.fmt(a.value)} / ${a.fmt(next)}` : (a.tiers.length > 1 ? t(tierOf(a, a.tier - 1).name) : t('Получено'))}
                   </div>
                 </button>
               )
@@ -161,12 +161,14 @@ export function BadgeGrid({ list, thm, isDark }) {
           <div onClick={e => e.stopPropagation()} style={{ background: thm.modalBg, borderRadius: 24, padding: '26px 22px 20px', width: '100%', maxWidth: 340, border: `1px solid ${thm.border}`, textAlign: 'center' }}>
             <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 12 }}><Badge a={open} size={84} /></div>
             <div style={{ fontSize: 20, fontWeight: 800, color: thm.text }}>{open.secret && !open.tier ? t('Секретное достижение') : t(open.name)}</div>
-            <div style={{ fontSize: 13, color: thm.text50, margin: '4px 0 16px' }}>{open.secret && !open.tier ? t('Условие откроется, когда получишь') : t(open.desc)}</div>
+            <div style={{ fontSize: 13, color: thm.text50, margin: '4px 0 16px' }}>{open.secret && !open.tier ? t('Условие откроется, когда получишь') : t(open.desc)}
+              {open.cat && <div style={{ marginTop: 6, color: ORANGE, fontWeight: 700 }}>{t('Категория {cat} кг · твой вес {bw}', { cat: open.cat, bw: fmtW(open.bodyWeight) })}</div>}
+            </div>
             {!(open.secret && !open.tier) && (
               <div style={{ display: 'flex', flexDirection: 'column', gap: 8, textAlign: 'left' }}>
                 {open.tiers.map((thr, i) => {
                   const d = open.earned[i]
-                  const tierName = open.tiers.length > 1 ? `${TIERS[i].medal} ${t(TIERS[i].name)}` : '🏅'
+                  const tierName = open.tiers.length > 1 ? `${tierOf(open, i).medal} ${t(tierOf(open, i).name)}` : '🏅'
                   return (
                     <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 10, opacity: d ? 1 : 0.45 }}>
                       <span style={{ fontSize: 13, fontWeight: 700, color: thm.text, flex: 1 }}>{tierName} · {open.fmt(thr)}</span>

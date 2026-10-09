@@ -5,6 +5,7 @@ import { EXERCISE_MUSCLES, MUSCLE_FILTER_MAP, normalizeName } from './exerciseCa
 import { getRank } from './motivation'
 import { baseExName, recordMetric, setValue } from '../utils/records'
 import { fmtVolume, fmtW, locale, plural, t } from '../i18n'
+import { RANKS, RANK_NAMES, STANDARDS, categoryFor } from './standards'
 
 export const TIERS = [
   { name: 'Бронза', color: '#CD7F32', medal: '🥉' },
@@ -13,6 +14,11 @@ export const TIERS = [
   { name: 'Платина', color: '#7FDBDA', medal: '💠' },
   { name: 'Алмаз', color: '#B9F2FF', medal: '💎' },
 ]
+
+// Tier look (name/colour/medal) of an achievement: sport-rank badges carry their own
+export const tierOf = (a, i) => (a.tierInfo ? a.tierInfo[i] : TIERS[i])
+// Colours for sport ranks, from youth ranks to МСМК
+const RANK_COLORS = { 'III юн': '#8FA3B8', 'II юн': '#9DB4CC', 'I юн': '#AEC6E0', III: '#CD7F32', II: '#C0C0C0', I: '#FFD700', КМС: '#7FDBDA', МС: '#B9F2FF', МСМК: '#FF6B6B' }
 
 const DAY = 86400000
 const parse = (d) => new Date(d + 'T12:00:00')
@@ -82,7 +88,7 @@ export function recordEvents(days) {
 }
 
 // ── Permanent achievements ───────────────────────────────────────────────────
-function permanent(days, bodyWeights, routineDates) {
+function permanent(days, bodyWeights, routineDates, sex) {
   const list = []
   const add = (def, series, opts = {}) => {
     const earned = crossings(series, def.tiers)
@@ -137,6 +143,26 @@ function permanent(days, bodyWeights, routineDates) {
   const pull = []
   { let b = 0; days.forEach(d => d.items.forEach(it => { if (it.base !== 'Подтягивания') return; it.sets.forEach(x => { if ((x.reps || 0) > b) { b = x.reps; pull.push({ date: d.date, value: b }) } }) })) }
   add({ id: 'pullups', group: 'Сила', emoji: '🧗', name: 'Турникмен', desc: 'Подтягиваний за один подход', tiers: [10, 15, 20, 25], fmt: v => `${v} ${t('повт')}` }, pull)
+
+  // Sport ranks (ЕВСК 2026) as medal badges: tiers are the norms of the weight class of the latest weigh-in
+  if (bodyWeights?.length) {
+    const std = STANDARDS[sex === 'female' ? 'female' : 'male']
+    const body = bodyWeights[bodyWeights.length - 1].weight
+    const fullTotal = []
+    {
+      const ev = [...bench.map(p => ({ ...p, k: 'b' })), ...squat.map(p => ({ ...p, k: 's' })), ...dead.map(p => ({ ...p, k: 'd' }))].sort((a, b) => a.date.localeCompare(b.date))
+      const cur = { b: 0, s: 0, d: 0 }
+      ev.forEach(p => { cur[p.k] = p.value; if (cur.b && cur.s && cur.d) fullTotal.push({ date: p.date, value: cur.b + cur.s + cur.d }) })
+    }
+    const rankBadge = (id, name, desc, series, rows) => {
+      const row = categoryFor(rows, body)
+      const ranks = RANKS.filter(r => row.norms[r] != null)
+      add({ id, group: 'Разряды', emoji: '🎖', name, desc, cat: row.label, bodyWeight: body,
+        tiers: ranks.map(r => row.norms[r]), tierInfo: ranks.map(r => ({ name: RANK_NAMES[r], color: RANK_COLORS[r], medal: '🎖' })), fmt: kg }, series)
+    }
+    rankBadge('rank_bench', 'Разряд в жиме лёжа', 'Разрядные нормативы ЕВСК 2026 по классическому жиму лёжа для твоей весовой категории. Засчитывается реально поднятый вес.', bench, std.bench)
+    rankBadge('rank_total', 'Разряд по сумме троеборья', 'Разрядные нормативы ЕВСК 2026 по сумме классического троеборья (присед + жим + становая) для твоей весовой категории.', fullTotal, std.total)
+  }
 
   // Relative to body weight
   const rel = (series) => series.map(p => { const bw = bodyWeightAt(bodyWeights, p.date); return { date: p.date, value: bw ? p.value / bw : 0 } })
@@ -237,11 +263,11 @@ function monthly(month, days, recordEventsList, routineDates, volByMonth) {
 
 // ── Entry point ─────────────────────────────────────────────────────────────
 // routineLog: { w: ['YYYY-MM-DD', ...], s: [...] } — completed warm-ups / stretches
-export function computeAchievements({ rows, bodyWeights = [], routineLog = {}, today }) {
+export function computeAchievements({ rows, bodyWeights = [], routineLog = {}, today, sex = 'male' }) {
   const days = buildDays(rows)
   const bw = [...(bodyWeights || [])].sort((a, b) => a.measured_on.localeCompare(b.measured_on))
   const routineDates = [...(routineLog.w || []), ...(routineLog.s || [])].sort()
-  const perm = permanent(days, bw, routineDates)
+  const perm = permanent(days, bw, routineDates, sex)
 
   const volByMonth = {}
   days.forEach(d => { const m = d.date.slice(0, 7); volByMonth[m] = (volByMonth[m] || 0) + d.items.reduce((s, it) => s + volume(it.sets), 0) })
@@ -270,7 +296,8 @@ export function describeId(id, ach) {
   if (kind === 'p') {
     const p = ach.permanent.find(x => x.id === a); if (!p) return null
     const ti = +b
-    return { emoji: p.emoji, title: t(p.name), sub: p.tiers.length > 1 ? `${TIERS[ti].medal} ${t(TIERS[ti].name)} · ${p.fmt(p.tiers[ti])}` : t(p.desc), color: p.tiers.length > 1 ? TIERS[ti].color : '#FF9F0A' }
+    const ti_ = tierOf(p, ti)
+    return { emoji: p.emoji, title: t(p.name), sub: p.tiers.length > 1 ? `${ti_.medal} ${t(ti_.name)} · ${p.fmt(p.tiers[ti])}` : t(p.desc), color: p.tiers.length > 1 ? ti_.color : '#FF9F0A' }
   }
   const m = a === ach.current.month ? ach.current : ach.archive.find(x => x.month === a)
   if (!m) return null
