@@ -3,6 +3,8 @@
 
 export const CSS = `
 :root{--accent:#FF9F0A;--accent-rgb:255,159,10}
+/* hidden timer mode: hide at once (children with transition:all would otherwise fade the visibility out) */
+.tm-hidden,.tm-hidden *{visibility:hidden!important;transition:none!important}
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
 body{background:#000;margin:0}
 input[type=number]::-webkit-inner-spin-button{-webkit-appearance:none}
