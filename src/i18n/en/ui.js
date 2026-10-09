@@ -286,6 +286,7 @@ export const UI_EN = {
   'раз': 'times',
   'Вес': 'Weight',
   'т': 't',
+  'Тренировки по неделям': 'Workouts per week',
   'поднято': 'lifted',
   'Сравнение с {range}': 'Compared with {range}',
   'Сравнение с прошлым месяцем': 'Compared with the previous month',

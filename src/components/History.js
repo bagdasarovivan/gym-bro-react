@@ -26,7 +26,7 @@ function Delta({ value }) {
   return <span style={{ fontSize: 11, fontWeight: 700, color: same ? 'rgba(255,255,255,0.4)' : up ? GREEN : RED }}>{same ? '=' : up ? '↑' : '↓'} {Math.abs(value)}%</span>
 }
 
-export function HistoryView({ history, allRows, month, setMonth, openDays, setOpenDays, copiedDay, onCopy, onEdit, onDeleteDay, onDeleteExercise, setChip, thm, isDark }) {
+export function HistoryView({ history, allRows, month, setMonth, year, setYear, openDays, setOpenDays, copiedDay, onCopy, onEdit, onDeleteDay, onDeleteExercise, setChip, thm, isDark }) {
   // Record events over the whole history: "date|exercise" → new PR that day
   const prIndex = useMemo(() => {
     const ev = recordEvents(buildDays(allRows || history))
@@ -46,11 +46,19 @@ export function HistoryView({ history, allRows, month, setMonth, openDays, setOp
     return m
   }, [allRows, history])
 
-  const months = [...new Set(history.map(w => w.workout_date.slice(0, 7)))].sort().reverse()
+  // Whole history once loaded (all years), the last 12 months until then
+  const rows = allRows || history
+  const months = [...new Set(rows.map(w => w.workout_date.slice(0, 7)))].sort().reverse()
   const active = month && months.includes(month) ? month : months[0] || ''
-  const inMonth = history.filter(w => w.workout_date.startsWith(active))
+  const inMonth = rows.filter(w => w.workout_date.startsWith(active))
   const byDate = {}
   inMonth.forEach(w => { (byDate[w.workout_date] = byDate[w.workout_date] || []).push(w) })
+  Object.values(byDate).forEach(ws => ws.sort((a, b) => (a.id || 0) - (b.id || 0))) // order they were logged
+  // Workout days per month, for the year grid
+  const daysPerMonth = {}
+  new Set(rows.map(w => w.workout_date)).forEach(d => { const m = d.slice(0, 7); daysPerMonth[m] = (daysPerMonth[m] || 0) + 1 })
+  const years = [...new Set(months.map(m => m.slice(0, 4)))]
+  const activeYear = year && years.includes(year) ? year : active.slice(0, 4)
   const dates = Object.keys(byDate).sort().reverse()
 
   // Month summary vs the previous month
@@ -59,22 +67,23 @@ export function HistoryView({ history, allRows, month, setMonth, openDays, setOp
   const today = new Date()
   const isCurrent = active === `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}`
   const cutDay = String(today.getDate()).padStart(2, '0')
-  const prevRows = history.filter(w => w.workout_date.startsWith(prevM) && (!isCurrent || w.workout_date.slice(8, 10) <= cutDay))
+  const prevRows = rows.filter(w => w.workout_date.startsWith(prevM) && (!isCurrent || w.workout_date.slice(8, 10) <= cutDay))
   const volNow = dayVolume(inMonth), volPrev = dayVolume(prevRows)
   const daysNow = dates.length, daysPrev = new Set(prevRows.map(w => w.workout_date)).size
   const prsNow = [...prIndex].filter(k => k.startsWith(active)).length
   // Workouts per Monday-week of the month
+  // (weeks crossing the month boundary count their workouts from both months)
   const weekCounts = {}
-  dates.forEach(d => { const k = weekKey(d); weekCounts[k] = (weekCounts[k] || 0) + 1 })
+  new Set(rows.map(w => w.workout_date)).forEach(d => { const k = weekKey(d); weekCounts[k] = (weekCounts[k] || 0) + 1 })
   const firstWeek = weekKey(`${active}-01`)
   const weeks = []
   for (let k = firstWeek; k.slice(0, 7) <= active; k = addDays(k, 7)) weeks.push(k)
-  const maxWeek = Math.max(3, ...Object.values(weekCounts))
+  const maxWeek = Math.max(3, ...weeks.map(k => weekCounts[k] || 0))
+  const weekShort = (k) => `${D(k).getDate()}–${D(addDays(k, 6)).getDate()}`
 
   const monthShort = (m) => {
     const s = D(`${m}-01`).toLocaleDateString(locale(), { month: 'short' }).replace('.', '')
-    const y = m.slice(0, 4) !== String(new Date().getFullYear()) ? ` ${m.slice(2, 4)}` : ''
-    return s.charAt(0).toUpperCase() + s.slice(1) + y
+    return s.charAt(0).toUpperCase() + s.slice(1, 3) // 3 letters: Янв, Фев, Сен… / Jan, Feb…
   }
   const monthLong = (m) => { const s = D(`${m}-01`).toLocaleDateString(locale(), { month: 'long', year: 'numeric' }); return s.charAt(0).toUpperCase() + s.slice(1) }
   const dayTitle = (d) => { const s = D(d).toLocaleDateString(locale(), { weekday: 'short', day: 'numeric', month: 'long' }); return s.charAt(0).toUpperCase() + s.slice(1) }
@@ -94,14 +103,31 @@ export function HistoryView({ history, allRows, month, setMonth, openDays, setOp
 
   return (
     <div className="section">
-      {/* Month strip */}
-      <div style={{ display: 'flex', gap: 6, overflowX: 'auto', paddingBottom: 4, marginBottom: 12, scrollbarWidth: 'none' }}>
-        {months.map(m => (
-          <button key={m} onClick={() => { setMonth(m); setOpenDays({}) }} style={{
-            flexShrink: 0, padding: '7px 14px', borderRadius: 99, border: 'none', cursor: 'pointer', fontSize: 13, fontWeight: 700,
-            background: m === active ? ORANGE : (isDark ? '#1c1c1e' : '#fff'), color: m === active ? '#000' : thm.text50,
-          }}>{monthShort(m)}</button>
-        ))}
+      {/* Year chips (only when there is more than one year) + month grid of the selected year */}
+      {years.length > 1 && (
+        <div style={{ display: 'flex', gap: 6, marginBottom: 10 }}>
+          {years.map(y => (
+            <button key={y} onClick={() => { setYear(y); const m = months.find(x => x.startsWith(y)); if (m) setMonth(m); setOpenDays({}) }} style={{
+              padding: '6px 14px', borderRadius: 99, border: 'none', cursor: 'pointer', fontSize: 13, fontWeight: 800,
+              background: y === activeYear ? (isDark ? '#fff' : '#1c1c1e') : 'transparent', color: y === activeYear ? (isDark ? '#000' : '#fff') : thm.text50,
+            }}>{y}</button>
+          ))}
+        </div>
+      )}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(6, 1fr)', gap: 6, marginBottom: 14 }}>
+        {Array.from({ length: 12 }, (_, i) => `${activeYear}-${String(i + 1).padStart(2, '0')}`).map(m => {
+          const n = daysPerMonth[m] || 0
+          const sel = m === active
+          return (
+            <button key={m} disabled={!n} onClick={() => { setMonth(m); setOpenDays({}) }} style={{
+              padding: '8px 0 6px', borderRadius: 12, border: 'none', cursor: n ? 'pointer' : 'default',
+              background: sel ? ORANGE : (isDark ? '#1c1c1e' : '#fff'), opacity: n ? 1 : 0.35,
+            }}>
+              <div style={{ fontSize: 13, fontWeight: 700, color: sel ? '#000' : thm.text }}>{monthShort(m)}</div>
+              <div style={{ fontSize: 10, fontWeight: 600, marginTop: 2, color: sel ? 'rgba(0,0,0,0.6)' : n ? ORANGE : thm.text35 }}>{n || '·'}</div>
+            </button>
+          )
+        })}
       </div>
 
       {/* Month summary */}
@@ -121,13 +147,16 @@ export function HistoryView({ history, allRows, month, setMonth, openDays, setOp
           ))}
         </div>
         {/* Workouts per week */}
-        <div style={{ display: 'flex', gap: 6, alignItems: 'flex-end', height: 34, marginTop: 10 }}>
+        <div style={{ fontSize: 10, fontWeight: 700, color: thm.text35, textTransform: 'uppercase', letterSpacing: '0.5px', marginTop: 12 }}>{t('Тренировки по неделям')}</div>
+        <div style={{ display: 'flex', gap: 6, alignItems: 'flex-end', height: 52, marginTop: 6 }}>
           {weeks.map(k => {
             const n = weekCounts[k] || 0
+            const future = k > addDays(`${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`, 0)
             return (
               <div key={k} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 3 }}>
+                <div style={{ fontSize: 11, fontWeight: 800, color: n ? ORANGE : thm.text35 }}>{future ? '' : n}</div>
                 <div style={{ width: '100%', height: Math.max(3, (n / maxWeek) * 22), borderRadius: 4, background: n ? ORANGE : (isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.08)'), opacity: n ? 0.35 + 0.65 * (n / maxWeek) : 1 }} />
-                <div style={{ fontSize: 9, color: thm.text35 }}>{D(k).getDate()}</div>
+                <div style={{ fontSize: 9, color: thm.text35, whiteSpace: 'nowrap' }}>{weekShort(k)}</div>
               </div>
             )
           })}

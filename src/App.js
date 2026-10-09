@@ -51,6 +51,7 @@ export default function App() {
   const [streak, setStreak] = useState(0)
   const [history, setHistory] = useState([])
   const [openDays, setOpenDays] = useState({})
+  const [historyYear, setHistoryYear] = useState('')
   const [historyMonth, setHistoryMonth] = useState('')
   const [copiedDay, setCopiedDay] = useState(null)
   const [editModal, setEditModal] = useState(null)
@@ -554,7 +555,7 @@ export default function App() {
     async function load() {
       // Рекорды по всей истории. Каждая вариация («Жим лёжа (Узкий)») — отдельный рекорд, как и на графике.
       // Record for weight exercises = best estimated 1RM (100×5 beats 100×1); plank — time, ab wheel — reps.
-      const pData = await fetchAllRows(() => supabase.from('workouts').select('id,workout_date,exercises(name),sets(weight,reps,time_sec)').eq('user_id', user.id).order('id'))
+      const pData = await fetchAllRows(() => supabase.from('workouts').select('id,workout_date,exercises(name),sets(set_no,weight,reps,time_sec)').eq('user_id', user.id).order('id'))
       if (!cancelled) setAllRows(pData)
       const map = {}
       pData.forEach(w => {
@@ -1349,7 +1350,7 @@ export default function App() {
       )}
 
       {tab === 'history' && (
-        <HistoryView history={history} allRows={allRows} month={historyMonth} setMonth={setHistoryMonth}
+        <HistoryView history={history} allRows={allRows} month={historyMonth} setMonth={setHistoryMonth} year={historyYear} setYear={setHistoryYear}
           openDays={openDays} setOpenDays={setOpenDays} copiedDay={copiedDay} onCopy={copyDay}
           onEdit={(date, ws) => setEditModal({ date, workouts: ws.map(w => ({ ...w, sets: w.sets ? [...w.sets] : [] })) })}
           onDeleteDay={deleteDay} onDeleteExercise={deleteWorkout} setChip={setChip} thm={thm} isDark={isDark}/>
