@@ -219,6 +219,7 @@ export const expandGroups = (groups) => [...new Set((groups || []).flatMap(g => 
 export function getAnatomy(rawName) {
   const name = normalizeName(rawName)
   if (!name) return null
+  if (EXERCISE_ANATOMY[name]) return EXERCISE_ANATOMY[name]
   const m = name.match(/^(.+) \((.+)\)$/)
   if (m && GRIP_ANATOMY[m[1]]?.[m[2]]) return GRIP_ANATOMY[m[1]][m[2]]
   const base = m ? m[1] : name

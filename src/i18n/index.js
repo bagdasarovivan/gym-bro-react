@@ -35,6 +35,9 @@ export function plural(n, ru, en) {
   return ru[2]
 }
 
+// "5 тренировок" / "1 workout"
+export const workoutsN = (n) => `${n} ${plural(n, ['тренировка', 'тренировки', 'тренировок'], ['workout', 'workouts'])}`
+
 // ── Exercise names ──────────────────────────────────────────────────────────
 // Names are stored in Russian in the database; only the display changes.
 export function exName(name) {

@@ -201,7 +201,7 @@ export function ExerciseStats({ base, entry, achievements, thm, isDark }) {
       <Section label={t('Последние тренировки')} thm={thm}>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
           {entry.sessions.slice(0, 5).map((s, i) => {
-            const v = s.name.match(/\(([^)]*)\)\s*$/)?.[1]
+            const v = s.name !== entry.base ? s.name.match(/\(([^)]*)\)\s*$/)?.[1] : null
             return (
               <div key={s.date + i} style={{ display: 'flex', gap: 10, fontSize: 13, alignItems: 'baseline' }}>
                 <span style={{ width: 56, flexShrink: 0, color: thm.text50 }}>{fmtDateShort(s.date)}</span>

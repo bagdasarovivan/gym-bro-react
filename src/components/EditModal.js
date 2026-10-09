@@ -7,8 +7,21 @@ import { dispW, exName, t, toKg, wUnit } from '../i18n'
 export function EditModal({ data, onClose, onSave }) {
   const [workouts, setWorkouts] = useState(data.workouts.map(w => ({
     ...w,
-    editSets: w.sets?.sort((a,b) => a.set_no-b.set_no).map(s => ({ weight: String(dispW(s.weight)), reps: String(s.reps), time_sec: s.time_sec ?? null })) || []
+    // origKg/origW: an untouched weight is saved back as the original kg value (no kg→lbs→kg rounding drift)
+    editSets: [...(w.sets || [])].sort((a,b) => a.set_no-b.set_no).map(s => ({ weight: String(dispW(s.weight)), reps: String(s.reps), time_sec: s.time_sec ?? null, origKg: s.weight, origW: String(dispW(s.weight)) }))
   })))
+  const [saving, setSaving] = useState(false)
+  const initial = useState(() => JSON.stringify(workouts.map(w => w.editSets)))[0]
+  const sig = (w) => JSON.stringify(w.editSets)
+  const initialSigs = JSON.parse(initial)
+  const changed = workouts.filter((w, i) => JSON.stringify(initialSigs[i]) !== sig(w))
+  const toStored = (s) => ({ ...s, weight: String(s.weight === s.origW && s.origKg != null ? s.origKg : toKg(Number(String(s.weight).replace(',','.')) || 0)) })
+  const saveAll = async () => {
+    if (!changed.length) { onClose(); return }
+    setSaving(true)
+    await onSave(changed.map(w => ({ workoutId: w.id, sets: w.editSets.map(toStored) })))
+    setSaving(false)
+  }
 
   const upd = (wi, si, f, v) => setWorkouts(prev => prev.map((w,i) => i!==wi?w:{...w,editSets:w.editSets.map((s,j) => j!==si?s:{...s,[f]:v})}))
   const del = (wi, si) => setWorkouts(prev => prev.map((w,i) => i!==wi?w:{...w,editSets:w.editSets.filter((_,j)=>j!==si)}))
@@ -43,10 +56,10 @@ export function EditModal({ data, onClose, onSave }) {
                 </div>
               ))}
               <button className="set-btn" style={{width:'100%',marginTop:4}} onClick={()=>add(wi)}>{t('➕ Подход')}</button>
-              {/* weights are edited in the display unit and saved in kg */}
-              <button className="edit-save-btn" onClick={()=>onSave(w.id,w.editSets.map(s=>({...s,weight:String(toKg(Number(String(s.weight).replace(',','.'))||0))})))}>💾 {t('Сохранить')} {exName(normalizeName(w.exercises?.name))}</button>
             </div>
           )})}
+          {/* one button saves every edited exercise; weights are edited in the display unit and saved in kg */}
+          <button className="edit-save-btn" disabled={saving} onClick={saveAll} style={{opacity:saving?0.6:1}}>💾 {saving ? t('⏳ Сохранение...') : t('Сохранить изменения')}</button>
 
         </div>
       </div>

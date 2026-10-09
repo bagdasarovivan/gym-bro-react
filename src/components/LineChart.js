@@ -2,8 +2,11 @@
 import { useState } from 'react'
 import { fmtW, locale, plural, t } from '../i18n'
 
-export function LineChart({ data, period, setPeriod, unit, totalPoints = 0 }) {
+export function LineChart({ data, period, setPeriod, unit, totalPoints = 0, dark = true }) {
   unit = unit || t('кг')
+  // text/line colour for the current theme
+  const ink = (a) => (dark ? `rgba(255,255,255,${a})` : `rgba(0,0,0,${a})`)
+  const chipBg = dark ? '#2c2c2e' : '#e5e5ea'
   const [tooltip, setTooltip] = useState(null)
 
   const periods = [{ id:'1M', label:t('1 мес') }, { id:'3M', label:t('3 мес') }, { id:'ALL', label:t('Всё') }]
@@ -14,8 +17,8 @@ export function LineChart({ data, period, setPeriod, unit, totalPoints = 0 }) {
         {periods.map(p => (
           <button key={p.id} onClick={() => setPeriod(p.id)} style={{
             padding:'6px 14px',borderRadius:99,fontSize:12,fontWeight:700,cursor:'pointer',border:'none',
-            background: period===p.id ? '#FF9F0A' : '#2c2c2e',
-            color: period===p.id ? '#000' : 'rgba(255,255,255,0.5)',
+            background: period===p.id ? '#FF9F0A' : chipBg,
+            color: period===p.id ? '#000' : ink(0.5),
           }}>{p.label}</button>
         ))}
       </div>
@@ -94,12 +97,12 @@ export function LineChart({ data, period, setPeriod, unit, totalPoints = 0 }) {
   const gainPct = first > 0 ? round1((gain / first) * 100) : 0
   const fromRecord = round1(last - record)
   const signed = (v) => (v > 0 ? '+' : v < 0 ? '−' : '+') + Math.abs(v)
-  const ORANGE = '#FF9F0A', RED = '#FF453A', MUTED = 'rgba(255,255,255,0.5)'
+  const ORANGE = '#FF9F0A', RED = '#FF453A', MUTED = ink(0.5)
   const tiles = [
     { label: t('Старт'), value: `${first} ${unit}` },
     { label: t('Рекорд'), value: `${record} ${unit}`,
       sub: gain > 0 ? `${signed(gain)} ${unit} · ${signed(gainPct)}%` : t('без роста'), subColor: gain > 0 ? ORANGE : MUTED },
-    { label: t('Сейчас'), value: `${last} ${unit}`, valueColor: fromRecord < 0 ? RED : 'white',
+    { label: t('Сейчас'), value: `${last} ${unit}`, valueColor: fromRecord < 0 ? RED : ink(1),
       sub: fromRecord < 0 ? `${signed(fromRecord)} ${unit} ${t('от рекорда')}` : t('🔥 на рекорде'), subColor: fromRecord < 0 ? RED : ORANGE },
   ]
 
@@ -109,8 +112,8 @@ export function LineChart({ data, period, setPeriod, unit, totalPoints = 0 }) {
         {periods.map(p => (
           <button key={p.id} onClick={() => setPeriod(p.id)} style={{
             padding:'6px 14px',borderRadius:99,fontSize:12,fontWeight:700,cursor:'pointer',border:'none',
-            background: period===p.id ? '#FF9F0A' : '#2c2c2e',
-            color: period===p.id ? '#000' : 'rgba(255,255,255,0.5)',
+            background: period===p.id ? '#FF9F0A' : chipBg,
+            color: period===p.id ? '#000' : ink(0.5),
           }}>{p.label}</button>
         ))}
       </div>
@@ -124,12 +127,12 @@ export function LineChart({ data, period, setPeriod, unit, totalPoints = 0 }) {
           </defs>
           {gridLines.map((g,i) => (
             <g key={i}>
-              <line x1={padL} y1={g.y} x2={W-padR} y2={g.y} stroke="rgba(255,255,255,0.06)" strokeWidth="1"/>
-              <text x={padL-4} y={g.y+4} textAnchor="end" fontSize="9" fill="rgba(255,255,255,0.3)">{g.val}</text>
+              <line x1={padL} y1={g.y} x2={W-padR} y2={g.y} stroke={ink(0.06)} strokeWidth="1"/>
+              <text x={padL-4} y={g.y+4} textAnchor="end" fontSize="9" fill={ink(0.35)}>{g.val}</text>
             </g>
           ))}
           {xTicks.map((tk, i) => (
-            <text key={'x' + i} x={tk.x} y={H - padB + 15} textAnchor={tk.anchor} fontSize="9" fill="rgba(255,255,255,0.35)">{tk.label}</text>
+            <text key={'x' + i} x={tk.x} y={H - padB + 15} textAnchor={tk.anchor} fontSize="9" fill={ink(0.4)}>{tk.label}</text>
           ))}
           <path d={area} fill="url(#cg2)"/>
           <path d={path} fill="none" stroke="#FF9F0A" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>
@@ -181,13 +184,13 @@ export function LineChart({ data, period, setPeriod, unit, totalPoints = 0 }) {
           )
         })()}
       </div>
-      <div style={{textAlign:'center',fontSize:12,color:'rgba(255,255,255,0.45)',marginTop:2}}>
-        📅 {fmtFull(t0)} — {fmtFull(t1)} · <b style={{color:'rgba(255,255,255,0.75)'}}>{duration}</b>
+      <div style={{textAlign:'center',fontSize:12,color:ink(0.5),marginTop:2}}>
+        📅 {fmtFull(t0)} — {fmtFull(t1)} · <b style={{color:ink(0.8)}}>{duration}</b>
       </div>
-      <div style={{display:'flex',justifyContent:'space-between',marginTop:10,background:'rgba(255,255,255,0.04)',borderRadius:12,padding:'10px 14px'}}>
+      <div style={{display:'flex',justifyContent:'space-between',marginTop:10,background:ink(0.04),borderRadius:12,padding:'10px 14px'}}>
         {tiles.map(t => (
           <div key={t.label} style={{textAlign:'center',flex:1}}>
-            <div style={{fontSize:14,fontWeight:700,color:t.valueColor || 'white'}}>{t.value}</div>
+            <div style={{fontSize:14,fontWeight:700,color:t.valueColor || ink(1)}}>{t.value}</div>
             {t.sub && <div style={{fontSize:10,fontWeight:700,color:t.subColor,marginTop:1}}>{t.sub}</div>}
             <div style={{fontSize:9,opacity:0.35,marginTop:2,textTransform:'uppercase',letterSpacing:'0.5px'}}>{t.label}</div>
           </div>
