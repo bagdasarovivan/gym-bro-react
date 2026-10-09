@@ -797,7 +797,14 @@ export default function App() {
       return
     }
     const cur = achievements.current.month
-    const items = fresh.filter(id => id.startsWith('p:') || id.startsWith(`m:${cur}:`)).map(id => describeId(id, achievements)).filter(Boolean)
+    // Badges earned long ago (e.g. a newly added badge that past workouts already satisfy) are not celebrated
+    // one by one: only those earned in the last 3 days get a celebration, the rest show a single toast.
+    const d3 = new Date(Date.now() - 3 * 86400000)
+    const since = `${d3.getFullYear()}-${String(d3.getMonth() + 1).padStart(2, '0')}-${String(d3.getDate()).padStart(2, '0')}`
+    const isOld = id => id.startsWith('p:') && (achievements.idDates?.[id] || '9999') < since
+    const old = fresh.filter(isOld).length
+    const items = fresh.filter(id => !isOld(id) && (id.startsWith('p:') || id.startsWith(`m:${cur}:`))).map(id => describeId(id, achievements)).filter(Boolean)
+    if (old && !items.length) { setAchToast(achievements.earnedCount); setAchUnviewed(true); setTimeout(() => setAchToast(null), 5000) }
     if (items.length) {
       setAchQueue(q => [...q, ...items]); setAchUnviewed(true)
       if (navigator.vibrate) navigator.vibrate([80, 40, 80, 40, 200])
