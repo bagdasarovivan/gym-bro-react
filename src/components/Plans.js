@@ -225,14 +225,14 @@ export function PlansSheet({ thm, activePlans, planWeights, onClose, onStartDay,
 }
 
 // Card on the start screen: next workout of the plan, one tap starts it
-export function TodayPlanCard({ plan, thm, onStart, onOpen }) {
+export function TodayPlanCard({ plan, thm, onStart, onOpen, full }) {
   const pr = planProgress(plan)
   const day = pr.days[pr.dayIdx]
   if (!day) return null
   return (
-    <div style={{ width: '100%', maxWidth: 340, display: 'flex', alignItems: 'stretch', borderRadius: 18, border: `1px solid ${thm.border}`, background: thm.card, overflow: 'hidden' }}>
+    <div style={{ width: '100%', maxWidth: full ? 'none' : 340, marginBottom: full ? 10 : 0, display: 'flex', alignItems: 'stretch', borderRadius: 18, border: `1px solid ${full ? accA(0.35) : thm.border}`, background: thm.card, overflow: 'hidden' }}>
       <button onClick={() => onStart(plan, pr.dayIdx)} style={{ flex: 1, minWidth: 0, display: 'flex', alignItems: 'center', gap: 12, padding: '12px 14px', background: 'none', border: 'none', cursor: 'pointer', textAlign: 'left' }}>
-        <span style={{ width: 40, height: 40, borderRadius: 12, background: accA(0.14), display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 22, flexShrink: 0 }}>{pr.prog?.icon}</span>
+        <span style={{ width: 44, height: 44, borderRadius: 13, background: accA(0.14), display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 22, flexShrink: 0 }}>{pr.prog?.icon}</span>
         <span style={{ flex: 1, minWidth: 0 }}>
           <span style={{ display: 'block', fontSize: 11, fontWeight: 800, letterSpacing: '0.8px', color: ACC }}>{t('ПО ПЛАНУ')} · {t('НЕДЕЛЯ {w}', { w: pr.week })}</span>
           <span style={{ display: 'block', fontSize: 15, fontWeight: 700, color: thm.text, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{t(day.label)}</span>

@@ -35,6 +35,18 @@ const ACCENTS = [
   { id: 'blue', hex: '#0A84FF', rgb: '10,132,255', name: 'Синий' },
   { id: 'pink', hex: '#FF375F', rgb: '255,55,95', name: 'Розовый' },
 ]
+// Uniform action card of the workout screen (add exercise, program, warm-up, stretching)
+const ActionCard = ({ icon, title, sub, onClick, thm, last }) => (
+  <button onClick={onClick} style={{width:'100%',marginBottom:last?16:10,padding:'14px 16px',borderRadius:18,border:`1px solid ${thm.border}`,background:thm.card,cursor:'pointer',display:'flex',alignItems:'center',gap:14,textAlign:'left'}}>
+    <div style={{width:44,height:44,borderRadius:13,background:'rgba(var(--accent-rgb),0.14)',color:'var(--accent)',display:'flex',alignItems:'center',justifyContent:'center',fontSize:20,fontWeight:700,flexShrink:0}}>{icon}</div>
+    <div style={{flex:1,minWidth:0}}>
+      <div style={{fontSize:16,fontWeight:700,color:thm.text}}>{title}</div>
+      <div style={{fontSize:12,color:thm.text40,marginTop:3}}>{sub}</div>
+    </div>
+    <span style={{color:thm.text30,fontSize:20}}>›</span>
+  </button>
+)
+
 // Flame icon in the accent colour (an emoji can't be recoloured)
 const Flame = ({ size = 16 }) => (
   <svg width={size} height={size} viewBox="0 0 24 24" aria-hidden="true" style={{ display: 'block', filter: 'drop-shadow(0 0 3px rgba(var(--accent-rgb),0.5))' }}>
@@ -1336,9 +1348,6 @@ export default function App() {
               </div>
               <div style={{fontSize:14,color:thm.text50,textAlign:'center',maxWidth:300,lineHeight:1.4}}>{hint}</div>
               {!resume && activePlans[0] && <TodayPlanCard plan={activePlans[0]} thm={thm} onStart={loadPlanDay} onOpen={()=>setShowPlanModal('my')}/>}
-              {!resume && !activePlans.length && (
-                <button onClick={()=>setShowPlanModal('catalog')} style={{background:'none',border:'none',color:'var(--accent)',fontSize:14,fontWeight:700,cursor:'pointer',marginTop:-14}}>📋 {t('Тренироваться по программе')} ›</button>
-              )}
             </div>
             )
           })() : (
@@ -1461,45 +1470,17 @@ export default function App() {
                   </div>
                 )
               })}
-              <button onClick={()=>setShowExModal(true)} style={{width:'100%',marginBottom:10,padding:'16px 20px',borderRadius:16,border:'1px solid rgba(255,255,255,0.09)',background:'rgba(255,255,255,0.06)',cursor:'pointer',display:'flex',alignItems:'center',gap:14,textAlign:'left'}}>
-                <div style={{width:44,height:44,borderRadius:12,background:'rgba(255,255,255,0.08)',display:'flex',alignItems:'center',justifyContent:'center',fontSize:20,flexShrink:0}}>＋</div>
-                <div style={{flex:1}}>
-                  <div style={{fontSize:16,fontWeight:600,color:'#fff',marginBottom:4}}>{t('Добавить упражнение')}</div>
-                  <div style={{fontSize:12,color:'rgba(255,255,255,0.35)',marginTop:4}}>{t('Выбрать вручную')}</div>
-                </div>
-                <span style={{color:'rgba(255,255,255,0.2)',fontSize:18}}>›</span>
-              </button>
+              <ActionCard thm={thm} icon="＋" title={t('Добавить упражнение')} sub={t('Выбрать вручную')} onClick={()=>setShowExModal(true)}/>
               {/* Plan — only shown when no exercises added yet */}
-              {workoutExercises.length === 0 && <div style={{marginBottom:12,display:'flex',flexDirection:'column',gap:8,alignItems:'stretch'}}>
-                {activePlans.map(plan => <TodayPlanCard key={plan.id} plan={plan} thm={thm} onStart={loadPlanDay} onOpen={()=>setShowPlanModal('my')}/>)}
+              {workoutExercises.length === 0 && <div style={{display:'flex',flexDirection:'column',alignItems:'stretch'}}>
+                {activePlans.map(plan => <TodayPlanCard key={plan.id} full plan={plan} thm={thm} onStart={loadPlanDay} onOpen={()=>setShowPlanModal('my')}/>)}
                 {activePlans.length === 0 && (
-                  <button onClick={()=>setShowPlanModal('catalog')} style={{width:'100%',padding:'16px 20px',borderRadius:16,border:`1px solid ${thm.border}`,background:thm.card,cursor:'pointer',display:'flex',alignItems:'center',gap:14,textAlign:'left'}}>
-                    <div style={{width:44,height:44,borderRadius:12,background:'rgba(var(--accent-rgb),0.15)',display:'flex',alignItems:'center',justifyContent:'center',fontSize:20,flexShrink:0}}>📋</div>
-                    <div style={{flex:1}}>
-                      <div style={{fontSize:16,fontWeight:600,color:thm.text,marginBottom:4}}>{t('Тренироваться по программе')}</div>
-                      <div style={{fontSize:12,color:thm.text40,marginTop:4}}>{t('7 программ: сила, масса, ноги, рельеф…')}</div>
-                    </div>
-                    <span style={{color:thm.text30,fontSize:18}}>›</span>
-                  </button>
+                  <ActionCard thm={thm} icon="📋" title={t('Тренироваться по программе')} sub={t('7 программ: сила, масса, ноги, рельеф…')} onClick={()=>setShowPlanModal('catalog')}/>
                 )}
               </div>}
               {workoutExercises.length === 0 && (<>
-              <button onClick={()=>setShowWarmup(true)} style={{width:'100%',marginBottom:10,padding:'16px 20px',borderRadius:16,border:'1px solid rgba(255,255,255,0.09)',background:'rgba(255,255,255,0.06)',cursor:'pointer',display:'flex',alignItems:'center',gap:14,textAlign:'left'}}>
-                <div style={{width:44,height:44,borderRadius:12,background:'rgba(255,200,0,0.12)',display:'flex',alignItems:'center',justifyContent:'center',fontSize:20,flexShrink:0}}>🤸</div>
-                <div style={{flex:1}}>
-                  <div style={{fontSize:16,fontWeight:600,color:'#fff',marginBottom:4}}>{t('Разминка')}</div>
-                  <div style={{fontSize:12,color:'rgba(255,255,255,0.35)',marginTop:4}}>{t('Подготовь тело к тренировке')}</div>
-                </div>
-                <span style={{color:'rgba(255,255,255,0.2)',fontSize:18}}>›</span>
-              </button>
-              <button onClick={()=>setShowStretch(true)} style={{width:'100%',marginBottom:16,padding:'16px 20px',borderRadius:16,border:'1px solid rgba(255,255,255,0.09)',background:'rgba(255,255,255,0.06)',cursor:'pointer',display:'flex',alignItems:'center',gap:14,textAlign:'left'}}>
-                <div style={{width:44,height:44,borderRadius:12,background:'rgba(100,180,255,0.1)',display:'flex',alignItems:'center',justifyContent:'center',fontSize:20,flexShrink:0}}>🧘</div>
-                <div style={{flex:1}}>
-                  <div style={{fontSize:16,fontWeight:600,color:'#fff',marginBottom:4}}>{t('Растяжка')}</div>
-                  <div style={{fontSize:12,color:'rgba(255,255,255,0.35)',marginTop:4}}>{t('Восстановление после нагрузки')}</div>
-                </div>
-                <span style={{color:'rgba(255,255,255,0.2)',fontSize:18}}>›</span>
-              </button>
+              <ActionCard thm={thm} icon="🤸" title={t('Разминка')} sub={t('Подготовь тело к тренировке')} onClick={()=>setShowWarmup(true)}/>
+              <ActionCard thm={thm} last icon="🧘" title={t('Растяжка')} sub={t('Восстановление после нагрузки')} onClick={()=>setShowStretch(true)}/>
               </>)}
               {workoutExercises.length > 0 && (
                 <button className={`save-btn${saved?' done':''}`} onClick={saveWorkout} disabled={saving || saved}>
