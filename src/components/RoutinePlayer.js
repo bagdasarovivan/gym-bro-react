@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { t } from '../i18n'
 
-const ORANGE = '#FF9F0A'
+const ORANGE = 'var(--accent)'
 
 // Picture for a move: /images/<imgDir>/<id>.webp, an existing exercise image, or the emoji.
 // `thumb` — small list icon: falls back to the bare emoji instead of a tinted tile.
@@ -13,7 +13,7 @@ function MoveImage({ move, imgDir, size, thumb = false }) {
   if (failed) {
     return thumb
       ? <div style={{ width: size, height: size, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 20, flexShrink: 0 }}>{move.emoji}</div>
-      : <div style={{ width: size, height: size, borderRadius: radius, background: 'rgba(255,159,10,0.08)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: size * 0.3 }}>{move.emoji}</div>
+      : <div style={{ width: size, height: size, borderRadius: radius, background: 'rgba(var(--accent-rgb),0.08)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: size * 0.3 }}>{move.emoji}</div>
   }
   // Square, like exercise pictures elsewhere in the app
   return <img src={src} alt={t(move.name)} onError={() => setFailed(true)} loading={thumb ? 'lazy' : undefined}
@@ -127,7 +127,7 @@ export function RoutinePlayer({ plan, title, imgDir, summary, startLabel, done, 
           <>
             <div style={{ display: 'flex', gap: 4, marginBottom: 14 }}>
               {plan.steps.map((s, i) => (
-                <div key={s.id} style={{ flex: 1, height: 4, borderRadius: 2, background: i < idx ? ORANGE : i === idx ? 'rgba(255,159,10,0.55)' : 'rgba(255,255,255,0.1)' }} />
+                <div key={s.id} style={{ flex: 1, height: 4, borderRadius: 2, background: i < idx ? ORANGE : i === idx ? 'rgba(var(--accent-rgb),0.55)' : 'rgba(255,255,255,0.1)' }} />
               ))}
             </div>
             <div style={{ fontSize: 12, fontWeight: 800, color: ORANGE, textTransform: 'uppercase', letterSpacing: '0.8px' }}>{t(step.block)} · {idx + 1}/{plan.steps.length}</div>
@@ -139,7 +139,7 @@ export function RoutinePlayer({ plan, title, imgDir, summary, startLabel, done, 
                 {[t('Одна сторона'), t('Другая сторона')].map((label, i) => {
                   const active = i === 0 ? onFirstSide : !onFirstSide
                   return <span key={label} style={{ fontSize: 12, fontWeight: 700, padding: '4px 10px', borderRadius: 99,
-                    background: active ? 'rgba(255,159,10,0.18)' : 'rgba(255,255,255,0.05)', color: active ? ORANGE : 'rgba(255,255,255,0.35)' }}>{label}</span>
+                    background: active ? 'rgba(var(--accent-rgb),0.18)' : 'rgba(255,255,255,0.05)', color: active ? ORANGE : 'rgba(255,255,255,0.35)' }}>{label}</span>
                 })}
               </div>
             )}

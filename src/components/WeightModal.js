@@ -40,7 +40,7 @@ export function WeightModal({ entries, status, onAdd, onDelete, onClose }) {
         </div>
 
         {status === 'missing' ? (
-          <div style={{ fontSize: 14, lineHeight: 1.5, opacity: 0.8, background: 'rgba(255,159,10,0.08)', border: '1px solid rgba(255,159,10,0.3)', borderRadius: 12, padding: 14 }}>
+          <div style={{ fontSize: 14, lineHeight: 1.5, opacity: 0.8, background: 'rgba(var(--accent-rgb),0.08)', border: '1px solid rgba(var(--accent-rgb),0.3)', borderRadius: 12, padding: 14 }}>
             {t('История веса ещё не настроена в базе. Нужно один раз выполнить SQL из файла')}
             <code style={{ display: 'block', margin: '8px 0', fontSize: 12, opacity: 0.8 }}>supabase/migrations/20261003_create_body_weights.sql</code>
             {t('в Supabase → SQL Editor.')}
@@ -49,7 +49,7 @@ export function WeightModal({ entries, status, onAdd, onDelete, onClose }) {
           <>
             {!entering ? (
               <button onClick={() => { setEntering(true); setError(null) }} disabled={status === 'loading'} style={{ width: '100%', padding: 14, borderRadius: 14, border: 'none', cursor: 'pointer',
-                background: '#FF9F0A', color: '#000', fontSize: 16, fontWeight: 700, marginBottom: 20 }}>
+                background: 'var(--accent)', color: '#000', fontSize: 16, fontWeight: 700, marginBottom: 20 }}>
                 {t('＋ Ввести вес')}
               </button>
             ) : (<>
@@ -71,7 +71,7 @@ export function WeightModal({ entries, status, onAdd, onDelete, onClose }) {
             </div>
             {error && <div style={{ fontSize: 12, color: '#FF453A', marginBottom: 10 }}>{error}</div>}
             <button onClick={save} disabled={saving || status === 'loading'} style={{ width: '100%', padding: 14, borderRadius: 14, border: 'none', cursor: 'pointer',
-              background: '#FF9F0A', color: '#000', fontSize: 16, fontWeight: 700, opacity: saving ? 0.7 : 1, marginBottom: 20 }}>
+              background: 'var(--accent)', color: '#000', fontSize: 16, fontWeight: 700, opacity: saving ? 0.7 : 1, marginBottom: 20 }}>
               {saving ? t('Сохраняю…') : sorted.some(e => e.measured_on === date) ? t('Обновить вес за этот день') : t('Сохранить')}
             </button>
             <button onClick={() => { setEntering(false); setError(null) }} style={{ width: '100%', marginTop: -12, marginBottom: 16, padding: 10, background: 'none', border: 'none', color: 'rgba(255,255,255,0.45)', fontSize: 14, fontWeight: 600, cursor: 'pointer' }}>
@@ -96,7 +96,7 @@ export function WeightModal({ entries, status, onAdd, onDelete, onClose }) {
                   </div>
                 ))}
                 {sorted.length > 7 && (
-                  <button onClick={() => setShowAll(s => !s)} style={{ width: '100%', background: 'none', border: 'none', color: '#FF9F0A', fontSize: 13, fontWeight: 600, padding: '10px 0', cursor: 'pointer' }}>
+                  <button onClick={() => setShowAll(s => !s)} style={{ width: '100%', background: 'none', border: 'none', color: 'var(--accent)', fontSize: 13, fontWeight: 600, padding: '10px 0', cursor: 'pointer' }}>
                     {showAll ? t('Свернуть') : t('Показать все ({n})',{n:sorted.length})}
                   </button>
                 )}

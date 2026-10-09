@@ -37,7 +37,7 @@ export function BodyWeightChart({ entries, defaultPeriod = '3M' }) {
       {PERIODS.map(x => (
         <button key={x.id} onClick={() => setPeriod(x.id)} style={{
           padding: '6px 14px', borderRadius: 99, fontSize: 12, fontWeight: 700, cursor: 'pointer', border: 'none',
-          background: period === x.id ? '#FF9F0A' : '#2c2c2e', color: period === x.id ? '#000' : 'rgba(255,255,255,0.5)',
+          background: period === x.id ? 'var(--accent)' : '#2c2c2e', color: period === x.id ? '#000' : 'rgba(255,255,255,0.5)',
         }}>{t(x.label)}</button>
       ))}
     </div>
@@ -66,7 +66,7 @@ export function BodyWeightChart({ entries, defaultPeriod = '3M' }) {
   // Summary uses real weigh-ins: users expect "now" to be the number they just entered
   const start = data[0].w, now = data[data.length - 1].w, diff = now - start
   const avgNow = data[data.length - 1].avg
-  const diffColor = Math.abs(diff) < 0.05 ? 'white' : '#FF9F0A'
+  const diffColor = Math.abs(diff) < 0.05 ? 'white' : 'var(--accent)'
   const dateLabel = (d) => new Date(d + 'T12:00:00').toLocaleDateString(locale(), { day: 'numeric', month: 'short' })
 
   return (
@@ -81,7 +81,7 @@ export function BodyWeightChart({ entries, defaultPeriod = '3M' }) {
             </g>
           ))}
           <path d={rawPath} fill="none" stroke="rgba(255,255,255,0.18)" strokeWidth="1" />
-          <path d={avgPath} fill="none" stroke="#FF9F0A" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
+          <path d={avgPath} fill="none" stroke="var(--accent)" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
           {data.map((d, i) => (
             <g key={i} onMouseEnter={() => setTip(d)} onMouseLeave={() => setTip(null)}
               onTouchStart={e => { e.preventDefault(); setTip(d) }} onTouchEnd={() => setTimeout(() => setTip(null), 1200)}>
@@ -94,8 +94,8 @@ export function BodyWeightChart({ entries, defaultPeriod = '3M' }) {
         </svg>
         {tip && (
           <div style={{ position: 'absolute', left: `${Math.min(Math.max(X(tip) / W * 100, 15), 85)}%`, top: Y(tip.w) - 8, transform: 'translate(-50%,-110%)',
-            background: '#2c2c2e', border: '1px solid rgba(255,159,10,0.4)', borderRadius: 10, padding: '8px 12px', textAlign: 'center', whiteSpace: 'nowrap', pointerEvents: 'none' }}>
-            <div style={{ fontSize: 16, fontWeight: 700, color: '#FF9F0A' }}>{fmt(tip.w)} {unit}</div>
+            background: '#2c2c2e', border: '1px solid rgba(var(--accent-rgb),0.4)', borderRadius: 10, padding: '8px 12px', textAlign: 'center', whiteSpace: 'nowrap', pointerEvents: 'none' }}>
+            <div style={{ fontSize: 16, fontWeight: 700, color: 'var(--accent)' }}>{fmt(tip.w)} {unit}</div>
             <div style={{ fontSize: 11, opacity: 0.5 }}>{new Date(tip.measured_on + 'T12:00:00').toLocaleDateString(locale(), { day: 'numeric', month: 'long', year: 'numeric' })}</div>
           </div>
         )}

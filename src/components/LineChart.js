@@ -17,7 +17,7 @@ export function LineChart({ data, period, setPeriod, unit, totalPoints = 0, dark
         {periods.map(p => (
           <button key={p.id} onClick={() => setPeriod(p.id)} style={{
             padding:'6px 14px',borderRadius:99,fontSize:12,fontWeight:700,cursor:'pointer',border:'none',
-            background: period===p.id ? '#FF9F0A' : chipBg,
+            background: period===p.id ? 'var(--accent)' : chipBg,
             color: period===p.id ? '#000' : ink(0.5),
           }}>{p.label}</button>
         ))}
@@ -97,7 +97,7 @@ export function LineChart({ data, period, setPeriod, unit, totalPoints = 0, dark
   const gainPct = first > 0 ? round1((gain / first) * 100) : 0
   const fromRecord = round1(last - record)
   const signed = (v) => (v > 0 ? '+' : v < 0 ? '−' : '+') + Math.abs(v)
-  const ORANGE = '#FF9F0A', RED = '#FF453A', MUTED = ink(0.5)
+  const ORANGE = 'var(--accent)', RED = '#FF453A', MUTED = ink(0.5)
   const tiles = [
     { label: t('Старт'), value: `${first} ${unit}` },
     { label: t('Рекорд'), value: `${record} ${unit}`,
@@ -112,7 +112,7 @@ export function LineChart({ data, period, setPeriod, unit, totalPoints = 0, dark
         {periods.map(p => (
           <button key={p.id} onClick={() => setPeriod(p.id)} style={{
             padding:'6px 14px',borderRadius:99,fontSize:12,fontWeight:700,cursor:'pointer',border:'none',
-            background: period===p.id ? '#FF9F0A' : chipBg,
+            background: period===p.id ? 'var(--accent)' : chipBg,
             color: period===p.id ? '#000' : ink(0.5),
           }}>{p.label}</button>
         ))}
@@ -121,8 +121,8 @@ export function LineChart({ data, period, setPeriod, unit, totalPoints = 0, dark
         <svg viewBox={`0 0 ${W} ${H}`} style={{width:'100%',height:H,overflow:'visible',display:'block'}}>
           <defs>
             <linearGradient id="cg2" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%" stopColor="#FF9F0A" stopOpacity="0.2"/>
-              <stop offset="100%" stopColor="#FF9F0A" stopOpacity="0"/>
+              <stop offset="0%" stopColor="var(--accent)" stopOpacity="0.2"/>
+              <stop offset="100%" stopColor="var(--accent)" stopOpacity="0"/>
             </linearGradient>
           </defs>
           {gridLines.map((g,i) => (
@@ -135,7 +135,7 @@ export function LineChart({ data, period, setPeriod, unit, totalPoints = 0, dark
             <text key={'x' + i} x={tk.x} y={H - padB + 15} textAnchor={tk.anchor} fontSize="9" fill={ink(0.4)}>{tk.label}</text>
           ))}
           <path d={area} fill="url(#cg2)"/>
-          <path d={path} fill="none" stroke="#FF9F0A" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>
+          <path d={path} fill="none" stroke="var(--accent)" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>
           {(() => {
             // Много точек — уменьшаем кружки и зону касания, чтобы не слипались
             const step = (W - padL - padR) / Math.max(pts.length - 1, 1)
@@ -146,7 +146,7 @@ export function LineChart({ data, period, setPeriod, unit, totalPoints = 0, dark
                 onMouseEnter={()=>setTooltip(p)} onMouseLeave={()=>setTooltip(null)}
                 onTouchStart={e=>{e.preventDefault();setTooltip(p)}} onTouchEnd={()=>setTimeout(()=>setTooltip(null),1200)}>
                 <circle cx={p.x} cy={p.y} r={hitR} fill="transparent"/>
-                <circle cx={p.x} cy={p.y} r={tooltip?.date===p.date ? (dense?4:6) : (dense?2:4)} fill="#FF9F0A" stroke="#000" strokeWidth={dense?1:2}/>
+                <circle cx={p.x} cy={p.y} r={tooltip?.date===p.date ? (dense?4:6) : (dense?2:4)} fill="var(--accent)" stroke="#000" strokeWidth={dense?1:2}/>
               </g>
             ))
           })()}
@@ -168,7 +168,7 @@ export function LineChart({ data, period, setPeriod, unit, totalPoints = 0, dark
               top:topPx,
               transform:'translate(-50%, -110%)',
               background:'#2c2c2e',
-              border:'1px solid rgba(255,159,10,0.4)',
+              border:'1px solid rgba(var(--accent-rgb),0.4)',
               borderRadius:10,
               padding:'10px 14px',
               boxShadow:'0 4px 12px rgba(0,0,0,0.4)',
@@ -177,7 +177,7 @@ export function LineChart({ data, period, setPeriod, unit, totalPoints = 0, dark
               textAlign:'center',
               whiteSpace:'nowrap',
             }}>
-              <div style={{fontSize:18,fontWeight:700,color:'#FF9F0A',lineHeight:1.2}}>{tooltip.metric === 'e1rm' ? '≈' : ''}{tooltip.val} {unit}{tooltip.metric === 'e1rm' && <span style={{fontSize:11,opacity:0.7,marginLeft:4}}>{t('1ПМ')}</span>}</div>
+              <div style={{fontSize:18,fontWeight:700,color:'var(--accent)',lineHeight:1.2}}>{tooltip.metric === 'e1rm' ? '≈' : ''}{tooltip.val} {unit}{tooltip.metric === 'e1rm' && <span style={{fontSize:11,opacity:0.7,marginLeft:4}}>{t('1ПМ')}</span>}</div>
               {setLine && <div style={{fontSize:13,fontWeight:600,color:'rgba(255,255,255,0.9)',marginTop:3}}>{setLine}</div>}
               <div style={{fontSize:11,color:'rgba(255,255,255,0.4)',marginTop:3}}>{fullDate}</div>
             </div>

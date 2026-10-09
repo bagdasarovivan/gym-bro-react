@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { MAX_SWAPS, TIERS, isHardChallenge, tierOf } from '../data/achievements'
 import { fmtW, locale, t } from '../i18n'
 
-const ORANGE = '#FF9F0A'
+const ORANGE = 'var(--accent)'
 const card = (isDark, thm) => ({ background: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.03)', borderRadius: 20, padding: '18px 20px', marginBottom: 12, border: `1px solid ${thm.border}` })
 const sectionTitle = (thm) => ({ fontSize: 13, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.8px', color: thm.text40, marginBottom: 14 })
 const monthName = (m) => { const s = new Date(+m.slice(0, 4), +m.slice(5, 7) - 1).toLocaleDateString(locale(), { month: 'long', year: 'numeric' }); return s.charAt(0).toUpperCase() + s.slice(1) }
@@ -68,13 +68,13 @@ export function MonthChallenges({ month, thm, isDark, onSwap }) {
                 )}
               </div>
               {confirm === c.id && canSwap && (
-                <div style={{ margin: '8px 0 2px 36px', padding: '10px 12px', borderRadius: 12, background: isDark ? 'rgba(255,159,10,0.1)' : 'rgba(255,159,10,0.12)', border: '1px solid rgba(255,159,10,0.3)' }}>
+                <div style={{ margin: '8px 0 2px 36px', padding: '10px 12px', borderRadius: 12, background: isDark ? 'rgba(var(--accent-rgb),0.1)' : 'rgba(var(--accent-rgb),0.12)', border: '1px solid rgba(var(--accent-rgb),0.3)' }}>
                   <div style={{ fontSize: 13, color: thm.text, fontWeight: 600 }}>{t('Заменить «{name}»?', { name: t(c.name) })}</div>
                   <div style={{ fontSize: 11, color: thm.text50, marginTop: 2 }}>
                     {c.tier ? t('Медаль за это испытание пропадёт. ') : ''}{isHardChallenge(c.id) ? t('Сложное испытание может замениться только на сложное. ') : ''}{t('Осталось замен: {n}', { n: swapsLeft })}
                   </div>
                   <div style={{ display: 'flex', gap: 8, marginTop: 8 }}>
-                    <button onClick={() => { setConfirm(null); onSwap(idx) }} style={{ flex: 1, border: 'none', borderRadius: 10, padding: '8px', background: '#FF9F0A', color: '#000', fontWeight: 700, fontSize: 13, cursor: 'pointer' }}>{t('Да, заменить')}</button>
+                    <button onClick={() => { setConfirm(null); onSwap(idx) }} style={{ flex: 1, border: 'none', borderRadius: 10, padding: '8px', background: 'var(--accent)', color: '#000', fontWeight: 700, fontSize: 13, cursor: 'pointer' }}>{t('Да, заменить')}</button>
                     <button onClick={() => setConfirm(null)} style={{ flex: 1, border: 'none', borderRadius: 10, padding: '8px', background: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)', color: thm.text70, fontWeight: 600, fontSize: 13, cursor: 'pointer' }}>{t('Отмена')}</button>
                   </div>
                 </div>
@@ -103,7 +103,7 @@ function PerfectMonthBar({ month, thm, isDark }) {
   const golds = month.challenges.filter(c => c.tier >= c.tiers.length).length
   if (month.perfect) {
     return (
-      <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 12px', borderRadius: 14, marginBottom: 14, background: 'linear-gradient(135deg, rgba(255,215,0,0.25), rgba(255,159,10,0.12))', border: '1px solid rgba(255,215,0,0.45)' }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 12px', borderRadius: 14, marginBottom: 14, background: 'linear-gradient(135deg, rgba(255,215,0,0.25), rgba(var(--accent-rgb),0.12))', border: '1px solid rgba(255,215,0,0.45)' }}>
         <span style={{ fontSize: 28 }}>🌟</span>
         <div>
           <div style={{ fontSize: 15, fontWeight: 800, color: '#FFD700' }}>{t('Идеальный месяц!')}</div>
@@ -199,8 +199,8 @@ function Badge({ a, size = 64 }) {
         </svg>
       )}
       <div style={{ position: 'absolute', top: 5, left: 5, width: size, height: size, borderRadius: '50%', border: `3px solid ${color}`, boxSizing: 'border-box', display: 'flex', alignItems: 'center', justifyContent: 'center',
-        fontSize: size * 0.42, background: got ? `${color}22` : 'rgba(128,128,128,0.08)', filter: got ? 'none' : 'grayscale(1)', opacity: got ? 1 : 0.5,
-        boxShadow: got ? `0 0 14px ${color}55` : 'none' }}>
+        fontSize: size * 0.42, background: got ? `color-mix(in srgb, ${color} 13%, transparent)` : 'rgba(128,128,128,0.08)', filter: got ? 'none' : 'grayscale(1)', opacity: got ? 1 : 0.5,
+        boxShadow: got ? `0 0 14px color-mix(in srgb, ${color} 33%, transparent)` : 'none' }}>
         {hidden ? '❓' : a.emoji}
       </div>
     </div>
@@ -277,7 +277,7 @@ export function BadgeGrid({ list, thm, isDark }) {
 
 // Full-screen "new achievement" moment
 const CONFETTI = Array.from({ length: 28 }, (_, i) => ({
-  left: (i * 37) % 100, delay: (i % 7) * 0.12, dur: 1.6 + (i % 5) * 0.25, color: ['#FF9F0A', '#FFD700', '#ffffff', '#FF6400', '#C0C0C0'][i % 5], rot: (i * 47) % 360,
+  left: (i * 37) % 100, delay: (i % 7) * 0.12, dur: 1.6 + (i % 5) * 0.25, color: ['var(--accent)', '#FFD700', '#ffffff', '#FF6400', '#C0C0C0'][i % 5], rot: (i * 47) % 360,
 }))
 export function AchievementCelebration({ item, left, onNext }) {
   if (!item) return null
@@ -288,7 +288,7 @@ export function AchievementCelebration({ item, left, onNext }) {
         <div key={i} style={{ position: 'absolute', top: 0, left: `${c.left}%`, width: 8, height: 14, borderRadius: 2, background: c.color, transform: `rotate(${c.rot}deg)`, animation: `gbConf ${c.dur}s ${c.delay}s ease-in infinite`, opacity: 0.85 }} />
       ))}
       <div style={{ fontSize: 13, fontWeight: 800, letterSpacing: '1.5px', textTransform: 'uppercase', color: ORANGE, marginBottom: 18 }}>{t('Новое достижение')}</div>
-      <div style={{ width: 150, height: 150, borderRadius: '50%', border: `5px solid ${item.color}`, background: `${item.color}22`, boxShadow: `0 0 40px ${item.color}88`,
+      <div style={{ width: 150, height: 150, borderRadius: '50%', border: `5px solid ${item.color}`, background: `color-mix(in srgb, ${item.color} 13%, transparent)`, boxShadow: `0 0 40px color-mix(in srgb, ${item.color} 53%, transparent)`,
         display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 72, animation: 'gbPop 0.6s cubic-bezier(0.34,1.4,0.64,1) both' }}>{item.emoji}</div>
       <div style={{ fontSize: 24, fontWeight: 800, color: '#fff', marginTop: 22, textAlign: 'center' }}>{item.title}</div>
       <div style={{ fontSize: 15, color: 'rgba(255,255,255,0.65)', marginTop: 6, textAlign: 'center' }}>{item.sub}</div>

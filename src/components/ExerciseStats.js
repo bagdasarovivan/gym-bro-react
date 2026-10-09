@@ -107,9 +107,9 @@ function Sparkline({ series, metric, thm }) {
         </span>
       </div>
       <svg viewBox={`0 0 ${W} ${H}`} style={{ width: '100%', height: 70, display: 'block' }} preserveAspectRatio="none">
-        <defs><linearGradient id="exsg" x1="0" x2="0" y1="0" y2="1"><stop offset="0" stopColor="#FF9F0A" stopOpacity="0.35" /><stop offset="1" stopColor="#FF9F0A" stopOpacity="0" /></linearGradient></defs>
+        <defs><linearGradient id="exsg" x1="0" x2="0" y1="0" y2="1"><stop offset="0" stopColor="var(--accent)" stopOpacity="0.35" /><stop offset="1" stopColor="var(--accent)" stopOpacity="0" /></linearGradient></defs>
         <path d={`${path} L${xy[xy.length - 1][0]},${H} L${xy[0][0]},${H} Z`} fill="url(#exsg)" />
-        <path d={path} fill="none" stroke="#FF9F0A" strokeWidth="2.2" vectorEffect="non-scaling-stroke" strokeLinejoin="round" />
+        <path d={path} fill="none" stroke="var(--accent)" strokeWidth="2.2" vectorEffect="non-scaling-stroke" strokeLinejoin="round" />
       </svg>
       <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11, color: thm.text40, marginTop: 2 }}>
         <span>{fmtDateShort(pts[0].date)} · {fmtV(vals[0])}</span>
@@ -143,7 +143,7 @@ export function ExerciseStats({ base, entry, achievements, thm, isDark }) {
 
   if (!entry) {
     return (
-      <div style={{ margin: '14px 0 4px', padding: '14px 16px', borderRadius: 14, background: 'rgba(255,159,10,0.1)', color: thm.text70, fontSize: 14 }}>
+      <div style={{ margin: '14px 0 4px', padding: '14px 16px', borderRadius: 14, background: 'rgba(var(--accent-rgb),0.1)', color: thm.text70, fontSize: 14 }}>
         ✨ {t('Ты ещё не делал это упражнение. Добавь его в тренировку — здесь появятся рекорды и прогресс.')}
       </div>
     )
@@ -206,7 +206,7 @@ export function ExerciseStats({ base, entry, achievements, thm, isDark }) {
               <div key={s.date + i} style={{ display: 'flex', gap: 10, fontSize: 13, alignItems: 'baseline' }}>
                 <span style={{ width: 56, flexShrink: 0, color: thm.text50 }}>{fmtDateShort(s.date)}</span>
                 <span style={{ flex: 1, color: thm.text70 }}>
-                  {v && <span style={{ fontSize: 11, padding: '1px 7px', borderRadius: 99, marginRight: 6, background: 'rgba(255,159,10,0.15)', color: '#FF9F0A' }}>{variantName(v)}</span>}
+                  {v && <span style={{ fontSize: 11, padding: '1px 7px', borderRadius: 99, marginRight: 6, background: 'rgba(var(--accent-rgb),0.15)', color: 'var(--accent)' }}>{variantName(v)}</span>}
                   {s.sets.filter(x => (x.reps || 0) > 0 || (x.time_sec || 0) > 0).map(x => setText(x, m)).join(' · ') || '—'}
                 </span>
               </div>
