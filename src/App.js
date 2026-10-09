@@ -10,11 +10,12 @@ import { ChartExercisePicker } from './components/ChartExercisePicker'
 import { HistoryView } from './components/History'
 import { AchTabs, AchievementCelebration, BadgeGrid, MonthArchive, MonthChallenges } from './components/Achievements'
 import { computeAchievements, describeId } from './data/achievements'
-import { KG_TO_LB, dispW, exInfo, exName, fmtVolume, fmtW, isLbs, locale, muscleLabel, num, setPrefs, t, toKg, variantName, weightOptions } from './i18n'
+import { KG_TO_LB, dispW, exInfo, exName, fmtVolume, fmtW, isLbs, locale, muscleLabel, num, plural, setPrefs, t, toKg, variantName, weightOptions } from './i18n'
 import { LineChart } from './components/LineChart'
 import { ModalItem } from './components/ModalItem'
 import { MuscleMap } from './components/MuscleMap'
-import { DEFAULT_FAVORITES, EXERCISES, EXERCISE_IMAGES, EXERCISE_INFO, EXERCISE_MUSCLES, EXERCISE_TYPE, LIGHT_WEIGHTS, MUSCLE_FILTERS_ROW1, MUSCLE_FILTERS_ROW2, MUSCLE_FILTER_MAP, MUSCLE_LABELS, REPS_OPTIONS, TIME_OPTIONS, VARIANT_EXERCISES, getDefaultVariant, getExImage, getVariantOptions, getWarmupSets, getWeightOptions, normalizeName } from './data/exerciseCatalog'
+import { ExerciseMuscleMap, ExerciseStats, ExerciseVariants, agoLabel, bestLabel, exerciseIndex } from './components/ExerciseStats'
+import { DEFAULT_FAVORITES, EXERCISES, EXERCISE_IMAGES, EXERCISE_INFO, EXERCISE_MUSCLES, EXERCISE_TYPE, LIGHT_WEIGHTS, MUSCLE_FILTERS_ROW1, MUSCLE_FILTERS_ROW2, MUSCLE_FILTER_MAP, MUSCLE_LABELS, EQUIPMENT_FILTERS, EXERCISE_EQUIPMENT, REPS_OPTIONS, TIME_OPTIONS, VARIANT_EXERCISES, getDefaultVariant, getExImage, getVariantOptions, getWarmupSets, getWeightOptions, normalizeName } from './data/exerciseCatalog'
 import { RANK_LEVELS, RANK_QUOTES, getMotivation, getRank } from './data/motivation'
 import { calcAnatomyLoad } from './data/muscleLoad'
 import { PLAN_DAYS, PLAN_ICONS, PLAN_NAMES } from './data/plans'
@@ -117,6 +118,8 @@ export default function App() {
   const [streakMotivQuote, setStreakMotivQuote] = useState('')
   const [exTabSearch, setExTabSearch] = useState('')
   const [exTabFilter, setExTabFilter] = useState('all')
+  const [exTabEquip, setExTabEquip] = useState(null)   // equipment filter id or null
+  const [exTabSort, setExTabSort] = useState('az')     // az | freq | old
   const [exDetailModal, setExDetailModal] = useState(null)
 
   // Plan state
@@ -781,6 +784,8 @@ export default function App() {
     try { return computeAchievements({ rows: allRows, bodyWeights, routineLog, today: localDateStr(new Date()), sex: settings.sex || 'male' }) }
     catch (e) { console.error('achievements', e); return null }
   }, [allRows, achReady, bodyWeights, weightsStatus, routineLog, settings.sex])
+  // Per-exercise stats for the Exercises tab
+  const exIndex = useMemo(() => exerciseIndex(allRows), [allRows])
 
   // Celebrate newly earned ones. On the very first run everything already earned is marked as seen quietly.
   useEffect(() => {
@@ -1583,7 +1588,14 @@ export default function App() {
           const matchesFilter = exTabFilter === 'all' || (MUSCLE_FILTER_MAP[exTabFilter] || []).some(m => primaryMuscles.includes(m))
           const matchesSearch = name.toLowerCase().includes(exTabSearch.toLowerCase()) || exName(name).toLowerCase().includes(exTabSearch.toLowerCase())
           return matchesFilter && matchesSearch
-        }).sort((a,b) => a.localeCompare(b,'ru'))
+        }).filter(name => !exTabEquip || EXERCISE_EQUIPMENT[name] === exTabEquip)
+          .sort((a,b) => {
+            const ea = exIndex.get(a), eb = exIndex.get(b)
+            if (exTabSort === 'freq') return (eb?.count || 0) - (ea?.count || 0) || exName(a).localeCompare(exName(b))
+            // «давно»: done exercises from the longest ago, never-done ones at the end
+            if (exTabSort === 'old') return (!ea) - (!eb) || (ea && eb ? ea.last.localeCompare(eb.last) : 0) || exName(a).localeCompare(exName(b))
+            return exName(a).localeCompare(exName(b))
+          })
         return (
           <div className="section" style={{paddingTop:16}}>
             <div style={{position:'relative',marginBottom:0}}>
@@ -1612,6 +1624,23 @@ export default function App() {
                     onClick={()=>setExTabFilter(f.id)}>{t(f.label)}</button>
                 ))}
               </div>
+              <div className="muscle-filters-divider"/>
+              <div className="muscle-filters-row" style={{overflowX:'auto',scrollbarWidth:'none'}}>
+                {EQUIPMENT_FILTERS.map(f => (
+                  <button key={f.id} className={`muscle-chip${exTabEquip===f.id?' active':''}`}
+                    style={exTabEquip!==f.id?{background:thm.btnBg,color:thm.text50,border:`1px solid ${thm.border}`}:{border:'none'}}
+                    onClick={()=>setExTabEquip(exTabEquip===f.id?null:f.id)}>{t(f.label)}</button>
+                ))}
+              </div>
+            </div>
+            <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',margin:'-4px 2px 10px'}}>
+              <span style={{fontSize:12,color:thm.text40}}>{filtered.length} {plural(filtered.length,['упражнение','упражнения','упражнений'],['exercise','exercises'])}</span>
+              <div style={{display:'flex',gap:2,padding:2,borderRadius:10,background:isDark?'rgba(255,255,255,0.06)':'rgba(0,0,0,0.05)'}}>
+                {[['az',t('А–Я')],['freq',t('Частые')],['old',t('Давно')]].map(([id,label]) => (
+                  <button key={id} onClick={()=>setExTabSort(id)} style={{padding:'4px 10px',borderRadius:8,border:'none',cursor:'pointer',fontSize:12,fontWeight:600,
+                    background:exTabSort===id?(isDark?'#3a3a3c':'#fff'):'transparent',color:exTabSort===id?thm.text:thm.text50}}>{label}</button>
+                ))}
+              </div>
             </div>
             {filtered.length === 0 && (
               <div style={{textAlign:'center',color:thm.text40,fontSize:14,padding:'40px 0'}}>{exTabFilter==='favorites'?t('Нет избранных упражнений'):t('Ничего не найдено')}</div>
@@ -1622,20 +1651,28 @@ export default function App() {
               const primaryMuscles = exMuscles?.primary || []
               const secondaryMuscles = exMuscles?.secondary || []
               const isFav = favorites.includes(name)
+              const st = exIndex.get(name)
+              const isNew = allRows && !st
               return (
-                <div key={name} className="ex-list-item" style={{background:isDark?'rgba(255,255,255,0.04)':'rgba(0,0,0,0.03)',border:`1px solid ${thm.border}`}}
+                <div key={name} className="ex-list-item" style={{background:isDark?'rgba(255,255,255,0.04)':'rgba(0,0,0,0.03)',border:`1px solid ${thm.border}`,opacity:isNew?0.6:1}}
                   onClick={()=>setExDetailModal(name)}>
                   {img
                     ? <img src={img} alt={name} className="ex-list-img" loading="lazy" decoding="async" onError={e=>{e.target.style.display='none';e.target.nextSibling.style.display='flex'}}/>
                     : null}
                   <div className="ex-list-ph" style={{display: img ? 'none' : 'flex'}}>💪</div>
-                  <div style={{flex:1}}>
-                    <div className="ex-list-name" style={{color:thm.text}}>{exName(name)}</div>
+                  <div style={{flex:1,minWidth:0}}>
+                    <div className="ex-list-name" style={{color:thm.text}}>{exName(name)}{isNew && <span style={{marginLeft:6,fontSize:10,fontWeight:700,padding:'2px 6px',borderRadius:99,background:'rgba(255,159,10,0.18)',color:'#FF9F0A',verticalAlign:'middle'}}>{t('НОВОЕ')}</span>}</div>
                     <div style={{fontSize:12,marginTop:2}}>
                       <span style={{color:thm.text60}}>{primaryMuscles.slice(0,2).map(m=>muscleLabel(m, MUSCLE_LABELS[m]||m)).join(' · ')}</span>
                       {secondaryMuscles.length > 0 && <span style={{color:thm.text30,fontSize:11}}>{' · '}{secondaryMuscles.slice(0,2).map(m=>muscleLabel(m, MUSCLE_LABELS[m]||m)).join(', ')}</span>}
                     </div>
                   </div>
+                  {st && (
+                    <div style={{textAlign:'right',flexShrink:0}}>
+                      <div style={{fontSize:13,fontWeight:700,color:'#FF9F0A',whiteSpace:'nowrap'}}>{bestLabel(st)}</div>
+                      <div style={{fontSize:11,color:thm.text40,whiteSpace:'nowrap'}}>{agoLabel(st.last)}</div>
+                    </div>
+                  )}
                   <button onClick={e=>{e.stopPropagation();toggleFav(name)}} style={{background:'none',border:'none',cursor:'pointer',fontSize:20,padding:'4px 6px',flexShrink:0,lineHeight:1,color:'inherit'}}>{isFav?'⭐':'☆'}</button>
                 </div>
               )
@@ -1673,6 +1710,12 @@ export default function App() {
                     <span key={'s_'+m} className="ex-detail-muscle-tag-secondary">{muscleLabel(m, MUSCLE_LABELS[m]||m)}</span>
                   ))}
                 </div>
+                <button onClick={()=>{ addExToWorkout(name); setWorkoutStarted(true); setTab('add'); setExDetailModal(null); window.scrollTo({ top: 0 }) }}
+                  style={{width:'100%',margin:'12px 0 4px',padding:'12px',borderRadius:14,border:'none',background:'#FF9F0A',color:'#000',fontSize:15,fontWeight:700,cursor:'pointer'}}>
+                  {workoutExercises.some(e => e.name === name) ? t('✓ Уже в тренировке — добавить ещё раз') : t('＋ Добавить в тренировку')}
+                </button>
+                <ExerciseStats base={name} entry={exIndex.get(name)} achievements={achievements} thm={thm} isDark={isDark}/>
+                <ExerciseVariants name={name} thm={thm} isDark={isDark}/>
                 {info ? (
                   <>
                     <div className="ex-detail-section">
@@ -1691,6 +1734,7 @@ export default function App() {
                 ) : (
                   <div style={{textAlign:'center',color:thm.text40,fontSize:14,padding:'20px 0'}}>{t('Описание скоро появится')}</div>
                 )}
+                <ExerciseMuscleMap name={name} thm={thm}/>
               </div>
             </div>
           </div>
