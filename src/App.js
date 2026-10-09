@@ -15,7 +15,6 @@ import { LineChart } from './components/LineChart'
 import { ModalItem } from './components/ModalItem'
 import { MuscleMap } from './components/MuscleMap'
 import { PlansSheet, TodayPlanCard } from './components/Plans'
-import { WorkoutHome } from './components/WorkoutHome'
 import { ExerciseMuscleMap, ExerciseStats, ExerciseVariants, exerciseIndex } from './components/ExerciseStats'
 import { DEFAULT_FAVORITES, EXERCISES, EXERCISE_IMAGES, EXERCISE_INFO, EXERCISE_MUSCLES, EXERCISE_TYPE, LIGHT_WEIGHTS, MUSCLE_FILTERS_ROW1, MUSCLE_FILTERS_ROW2, MUSCLE_FILTER_MAP, MUSCLE_LABELS, REPS_OPTIONS, TIME_OPTIONS, VARIANT_EXERCISES, getDefaultVariant, getExImage, getVariantOptions, getWarmupSets, getWeightOptions, normalizeName } from './data/exerciseCatalog'
 import { RANK_LEVELS, RANK_QUOTES, getMotivation, getRank } from './data/motivation'
@@ -38,13 +37,15 @@ const ACCENTS = [
 ]
 // Uniform action card of the workout screen (add exercise, program, warm-up, stretching)
 const ActionCard = ({ icon, title, sub, onClick, thm, last }) => (
-  <button onClick={onClick} style={{width:'100%',marginBottom:last?16:10,padding:'14px 16px',borderRadius:18,border:`1px solid ${thm.border}`,background:thm.card,cursor:'pointer',display:'flex',alignItems:'center',gap:14,textAlign:'left'}}>
-    <div style={{width:44,height:44,borderRadius:13,background:'rgba(var(--accent-rgb),0.14)',color:'var(--accent)',display:'flex',alignItems:'center',justifyContent:'center',fontSize:20,fontWeight:700,flexShrink:0}}>{icon}</div>
+  <button className="action-card" onClick={onClick} style={{width:'100%',marginBottom:last?16:10,padding:'14px 16px',borderRadius:18,border:'1px solid rgba(var(--accent-rgb),0.45)',
+    background:'linear-gradient(135deg, rgba(var(--accent-rgb),0.16), rgba(var(--accent-rgb),0.04) 70%)',boxShadow:'0 0 20px rgba(var(--accent-rgb),0.08)',
+    cursor:'pointer',display:'flex',alignItems:'center',gap:14,textAlign:'left',transition:'transform 0.12s'}}>
+    <div style={{width:46,height:46,borderRadius:14,background:'rgba(var(--accent-rgb),0.24)',border:'1px solid rgba(var(--accent-rgb),0.4)',color:'var(--accent)',display:'flex',alignItems:'center',justifyContent:'center',fontSize:21,fontWeight:800,flexShrink:0}}>{icon}</div>
     <div style={{flex:1,minWidth:0}}>
-      <div style={{fontSize:16,fontWeight:700,color:thm.text}}>{title}</div>
-      <div style={{fontSize:12,color:thm.text40,marginTop:3}}>{sub}</div>
+      <div style={{fontSize:16,fontWeight:700,color:thm.text,whiteSpace:'nowrap',overflow:'hidden',textOverflow:'ellipsis'}}>{title}</div>
+      <div style={{fontSize:12,color:thm.text50,marginTop:3}}>{sub}</div>
     </div>
-    <span style={{color:thm.text30,fontSize:20}}>›</span>
+    <span style={{color:'var(--accent)',fontSize:22,fontWeight:700}}>›</span>
   </button>
 )
 
@@ -972,26 +973,6 @@ export default function App() {
       setLoadingPlan(false)
     }
   }
-  // Repeat a past workout: same exercises and grips, weights prefilled, reps left to fill in
-  const repeatWorkout = async (last) => {
-    const items = []
-    for (const w of last.rows) {
-      const full = normalizeName(w.exercises?.name); if (!full) continue
-      const base = baseExName(full)
-      const variant = full !== base ? full.match(/\(([^)]*)\)\s*$/)?.[1] : null
-      const grip = variant || getDefaultVariant(base)
-      if (items.some(e => e.name === base && e.grip === grip)) continue
-      const ty = EXERCISE_TYPE[base] || 'light'
-      const sorted = [...(w.sets || [])].sort((a, b) => a.set_no - b.set_no)
-      const sets = (sorted.length ? sorted : [{}]).map(x => ({ weight: ty === 'timed' ? 0 : (x.weight || 0), reps: 0 }))
-      items.push({ tempId: Date.now() + Math.random(), name: base, grip, open: false, lastSession: { workout_date: w.workout_date, sets: sorted }, sets })
-    }
-    if (!items.length) return
-    items[0].open = true
-    setWorkoutDate(localDateStr(new Date()))
-    setWorkoutExercises(items)
-    window.scrollTo({ top: 0, behavior: 'smooth' })
-  }
   // Start a program from the catalogue (replaces the active one)
   const choosePlan = async (type) => {
     const days = PLAN_DAYS[type] || []
@@ -1491,12 +1472,18 @@ export default function App() {
                   </div>
                 )
               })}
-              {workoutExercises.length > 0
-                ? <ActionCard thm={thm} icon="＋" title={t('Добавить упражнение')} sub={t('Выбрать вручную')} onClick={()=>setShowExModal(true)}/>
-                : <WorkoutHome thm={thm} allRows={allRows} favorites={favorites} activePlans={activePlans}
-                    onRepeat={repeatWorkout} onAdd={addExToWorkout} onOpenAll={()=>setShowExModal(true)}
-                    onOpenPlans={v=>setShowPlanModal(v)} onStartPlanDay={loadPlanDay}
-                    onWarmup={()=>setShowWarmup(true)} onStretch={()=>setShowStretch(true)}/>}
+              <ActionCard thm={thm} icon="＋" title={t('Добавить упражнение')} sub={t('Выбрать вручную')} onClick={()=>setShowExModal(true)}/>
+              {/* Plan — only shown when no exercises added yet */}
+              {workoutExercises.length === 0 && <div style={{display:'flex',flexDirection:'column',alignItems:'stretch'}}>
+                {activePlans.map(plan => <TodayPlanCard key={plan.id} full plan={plan} thm={thm} onStart={loadPlanDay} onOpen={()=>setShowPlanModal('my')}/>)}
+                {activePlans.length === 0 && (
+                  <ActionCard thm={thm} icon="📋" title={t('Тренироваться по программе')} sub={t('7 программ: сила, масса, ноги, рельеф…')} onClick={()=>setShowPlanModal('catalog')}/>
+                )}
+              </div>}
+              {workoutExercises.length === 0 && (<>
+              <ActionCard thm={thm} icon="🤸" title={t('Разминка')} sub={t('Подготовь тело к тренировке')} onClick={()=>setShowWarmup(true)}/>
+              <ActionCard thm={thm} last icon="🧘" title={t('Растяжка')} sub={t('Восстановление после нагрузки')} onClick={()=>setShowStretch(true)}/>
+              </>)}
               {workoutExercises.length > 0 && (
                 <button className={`save-btn${saved?' done':''}`} onClick={saveWorkout} disabled={saving || saved}>
                   {saved ? t('✅ Сохранено!') : saving ? t('⏳ Сохранение...') : t('💾 Сохранить тренировку ({n} упр.)',{n:workoutExercises.length})}
