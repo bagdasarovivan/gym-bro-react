@@ -1265,7 +1265,7 @@ export default function App() {
               </div>
               {/* Both modes are stacked in one grid cell so the panel keeps the same height when switching */}
               <div style={{display:'grid'}}>
-              <div style={{gridArea:'1/1',visibility:timerMode==='countdown'?'visible':'hidden'}} aria-hidden={timerMode!=='countdown'}>
+              <div className={timerMode==='countdown'?undefined:'tm-hidden'} style={{gridArea:'1/1',visibility:timerMode==='countdown'?'visible':'hidden'}} aria-hidden={timerMode!=='countdown'}>
                 <div style={{display:'flex',alignItems:'baseline',gap:8,marginBottom:12}}>
                   <span style={{fontSize:48,fontWeight:800,color:timerPaused?'rgba(var(--accent-rgb),0.55)':'var(--accent)',fontVariantNumeric:'tabular-nums',letterSpacing:'-2px'}}>
                     {`${Math.floor((timerSecs||0)/60)}:${String((timerSecs||0)%60).padStart(2,'0')}`}
@@ -1282,7 +1282,7 @@ export default function App() {
                 <div style={{fontSize:11,opacity:0.35,marginBottom:6,fontWeight:600,textTransform:'uppercase',letterSpacing:'0.5px'}}>{t('Изменить время')}</div>
                 <DropdownPicker options={Array.from({length:50},(_,i)=>(i+1)*5)} value={timerDuration} onChange={v=>{setTimerDuration(v);setTimerSecs(v);setTimerPaused(true)}} unit={t('сек')} label=""/>
               </div>
-              <div style={{gridArea:'1/1',visibility:timerMode==='stopwatch'?'visible':'hidden'}} aria-hidden={timerMode!=='stopwatch'}>
+              <div className={timerMode==='stopwatch'?undefined:'tm-hidden'} style={{gridArea:'1/1',visibility:timerMode==='stopwatch'?'visible':'hidden'}} aria-hidden={timerMode!=='stopwatch'}>
                 <div style={{display:'flex',alignItems:'baseline',gap:8,marginBottom:12}}>
                   <span style={{fontSize:48,fontWeight:800,color:stopwatchRunning?'var(--accent)':'rgba(255,255,255,0.85)',fontVariantNumeric:'tabular-nums',letterSpacing:'-2px'}}>
                     {`${Math.floor(stopwatchSecs/60)}:${String(stopwatchSecs%60).padStart(2,'0')}`}
