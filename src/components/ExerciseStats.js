@@ -1,6 +1,6 @@
 import { useMemo } from 'react'
 import { buildDays, tierOf } from '../data/achievements'
-import { GRIP_MUSCLES, getVariantOptions, EXERCISE_MUSCLES, MUSCLE_LABELS, GRIP_EXERCISES } from '../data/exerciseCatalog'
+import { GRIP_MUSCLES, getVariantOptions, EXERCISE_MUSCLES, MUSCLE_LABELS, GRIP_EXERCISES, VARIANT_EXERCISES } from '../data/exerciseCatalog'
 import { getAnatomy, ANATOMY_LABELS } from '../data/muscleLoad'
 import { e1rm, recordMetric } from '../utils/records'
 import { anatomyLabel, dispW, fmtVolume, fmtW, locale, muscleLabel, num, plural, t, variantName } from '../i18n'
@@ -249,7 +249,7 @@ export function ExerciseVariants({ name, thm, isDark }) {
     return { v, focus }
   })
   return (
-    <Section label={t('Варианты хвата')} thm={thm}>
+    <Section label={VARIANT_EXERCISES.has(name) ? t('Вариации') : t('Варианты хвата')} thm={thm}>
       <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
         {rows.map(({ v, focus }) => (
           <div key={v} style={{ display: 'flex', gap: 10, alignItems: 'baseline', padding: '8px 12px', borderRadius: 12, background: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.04)' }}>

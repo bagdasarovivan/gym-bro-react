@@ -1,6 +1,28 @@
 // English localization for the exercise catalog.
 
 export const EX_NAMES_EN = {
+  'Бабочка': 'Pec Deck',
+  'Сведение ног в тренажёре': 'Hip Adduction Machine',
+  'Разведение ног в тренажёре': 'Hip Abduction Machine',
+  'Подъём на носки стоя': 'Standing Calf Raise',
+  'Жим гантелей сидя': 'Seated Dumbbell Shoulder Press',
+  'Гравитрон': 'Assisted Pull-Up Machine',
+  'Сумо-становая тяга': 'Sumo Deadlift',
+  'Зашагивания на тумбу': 'Box Step-Up',
+  'Скручивания на блоке': 'Cable Crunch',
+  'Обратные отжимания от скамьи': 'Bench Dips',
+  'Тяга в рычажном тренажёре': 'Seated Machine Row',
+  'Хип-траст в тренажёре': 'Machine Hip Thrust',
+  'Боковая планка': 'Side Plank',
+  'Велосипед на пресс': 'Bicycle Crunch',
+  'Подъём коленей на брусьях': 'Knee Raise on Parallel Bars',
+  'Обратная гиперэкстензия': 'Reverse Hyperextension',
+  'Пуловер на блоке': 'Cable Straight-Arm Pulldown',
+  'Приседания в Смите': 'Smith Machine Squat',
+  'Румынская тяга с гантелями': 'Dumbbell Romanian Deadlift',
+  'Разгибание руки в наклоне': 'Triceps Kickback',
+  'Фермерская прогулка': 'Farmer\'s Walk',
+  'Бёрпи': 'Burpee',
   'Жим лёжа': 'Bench Press',
   'Приседания': 'Squat',
   'Становая тяга': 'Deadlift',
@@ -75,6 +97,16 @@ export const EX_NAMES_EN = {
 }
 
 export const VARIANTS_EN = {
+  'В тренажёре': 'Machine',
+  'В Смите': 'Smith machine',
+  'С гантелью': 'Dumbbell',
+  'Нейтральный': 'Neutral',
+  'С гантелями': 'Dumbbells',
+  'Со штангой': 'Barbell',
+  'Канат': 'Rope',
+  'Прямая рукоять': 'Straight bar',
+  'Гантель': 'Dumbbell',
+  'Блок': 'Cable',
   'Стандартный': 'Standard',
   'Широкий': 'Wide',
   'Узкий': 'Narrow',
@@ -86,6 +118,116 @@ export const VARIANTS_EN = {
 }
 
 export const EX_INFO_EN = {
+  'Бабочка': {
+    desc: 'Sit in the machine with forearms or hands on the handles and arms open. Bring the arms together in front of the chest and return slowly.',
+    benefit: 'Isolates the chest without loading the triceps. A great finisher after presses.',
+    tips: 'Keep the elbows slightly bent and at shoulder height. Pause for a second at the squeeze. Do not open the arms too far back.',
+  },
+  'Сведение ног в тренажёре': {
+    desc: 'Sit in the machine with knees apart and the pads on the inner thighs. Squeeze the legs together and open them slowly.',
+    benefit: 'Strengthens the inner thigh, improves stability in squats and helps protect against groin strains.',
+    tips: 'Move smoothly without jerking. Keep your back against the pad. Do not open wider than is comfortable.',
+  },
+  'Разведение ног в тренажёре': {
+    desc: 'Sit in the machine with legs together and the pads on the outer thighs. Push the legs apart and bring them back slowly.',
+    benefit: 'Works the gluteus medius — glute shape and pelvic stability.',
+    tips: 'Lean slightly forward to involve the glutes more. Pause at the end range. Do not push with your hands.',
+  },
+  'Подъём на носки стоя': {
+    desc: 'Stand with the balls of your feet on the edge of a platform, heels down. Rise onto your toes as high as you can and lower slowly.',
+    benefit: 'The main calf exercise. Standing works the gastrocnemius more than the seated version.',
+    tips: 'Let the heels drop below the platform for full range. Knees almost straight. No bouncing.',
+  },
+  'Жим гантелей сидя': {
+    desc: 'Sit on a bench with an upright back, dumbbells at the shoulders. Press them overhead and lower back to the shoulders.',
+    benefit: 'Builds the front and side delts. Each arm works on its own, which evens out strength.',
+    tips: 'Keep your back against the pad and your core tight. Do not clang the dumbbells at the top. Lower to ear level.',
+  },
+  'Гравитрон': {
+    desc: 'Kneel on the pad and grab the handles. Pull up until your chin is over the handles and lower smoothly.',
+    benefit: 'Pull-ups with a counterweight — a way to learn pull-ups and add volume for the back.',
+    tips: 'The weight is assistance: the less you set, the harder it is. Reduce it gradually. Drive the elbows down and do not swing.',
+  },
+  'Сумо-становая тяга': {
+    desc: 'Wide stance, toes turned out, grip between the knees. Stand up with the bar by extending knees and hips together.',
+    benefit: 'Less load on the lower back, more on the glutes and adductors. Many lifters pull more weight sumo.',
+    tips: 'Push the knees out in line with the toes. Keep a flat back and the bar close to your legs. Do not start the lift with your back.',
+  },
+  'Зашагивания на тумбу': {
+    desc: 'Put one foot on a box or bench. Step up by straightening the leg and lower slowly. Do all reps, then switch legs.',
+    benefit: 'Trains each leg on its own: quads and glutes, balance and knee stability.',
+    tips: 'Push through the leg on the box, not the one on the floor. Knee over the foot. Box about knee height.',
+  },
+  'Скручивания на блоке': {
+    desc: 'Kneel at a high cable with the rope by your head. Crunch down bringing the elbows toward the knees and return.',
+    benefit: 'Weighted ab work — you can add weight over time like any strength exercise.',
+    tips: 'Curl through the spine, do not hinge at the hips. Keep the hands fixed by your head. Exhale at the bottom.',
+  },
+  'Обратные отжимания от скамьи': {
+    desc: 'Sit on the edge of a bench with hands next to your hips. Slide forward and lower by bending the elbows to 90°, then press back up.',
+    benefit: 'A simple bodyweight triceps exercise you can do anywhere.',
+    tips: 'Keep your back close to the bench. Do not go below 90° at the elbows to spare the shoulders. Bent legs are easier, straight legs harder.',
+  },
+  'Тяга в рычажном тренажёре': {
+    desc: 'Sit with your chest on the pad and arms reaching to the handles. Pull to the waist squeezing the shoulder blades and return smoothly.',
+    benefit: 'A chest-supported row — the back works without loading the lower back.',
+    tips: 'Start with the shoulder blades. Drive the elbows back, not out. Keep your chest on the pad.',
+  },
+  'Хип-траст в тренажёре': {
+    desc: 'Sit in the machine with your upper back on the pad and the belt or roller over the hips. Drive the hips up to a straight line and lower slowly.',
+    benefit: 'One of the best glute exercises, easier to set up than with a barbell.',
+    tips: 'Tuck the chin and look forward. Squeeze the glutes hard for a second at the top. Do not arch the lower back.',
+  },
+  'Боковая планка': {
+    desc: 'Lie on your side on one forearm with the elbow under the shoulder. Lift the hips so the body forms a straight line and hold.',
+    benefit: 'Strengthens the obliques and the core stabilisers.',
+    tips: 'Do not let the hips sag or drift back. Hold for time on each side. Breathe evenly.',
+  },
+  'Велосипед на пресс': {
+    desc: 'Lie on your back, hands behind the head, legs raised. Bring an elbow to the opposite knee, alternating sides.',
+    benefit: 'Works the rectus abdominis and the obliques together.',
+    tips: 'Rotate through the shoulder rather than pulling the head. Move slowly. Keep the lower back on the floor.',
+  },
+  'Подъём коленей на брусьях': {
+    desc: 'Support yourself on the dip bars with forearms or straight arms, legs down. Raise the knees to the chest and lower slowly.',
+    benefit: 'Works the lower abs without the swing of hanging raises.',
+    tips: 'Curl the pelvis up at the top. No swinging. Lower the legs under control.',
+  },
+  'Обратная гиперэкстензия': {
+    desc: 'Lie face down on a bench or machine with the legs hanging. Raise the straight legs to body level and lower slowly.',
+    benefit: 'Strengthens the glutes and lower back and decompresses the spine.',
+    tips: 'Lift with the glutes and do not arch far above horizontal. No jerking.',
+  },
+  'Пуловер на блоке': {
+    desc: 'Stand at a high cable holding the bar with almost straight arms. Sweep it down in an arc to the thighs and return.',
+    benefit: 'Isolates the lats without the biceps — helps you feel the back working.',
+    tips: 'Keep the arms almost straight throughout. Lean slightly forward. Squeeze the lats at the bottom.',
+  },
+  'Приседания в Смите': {
+    desc: 'Step under the Smith bar with it on your traps and feet slightly forward. Squat to parallel and stand up.',
+    benefit: 'A safer squat: the bar runs on rails, so you can train without a spotter.',
+    tips: 'Place the feet slightly in front of the bar. Knees in line with the toes. Keep the heels down.',
+  },
+  'Румынская тяга с гантелями': {
+    desc: 'Stand holding dumbbells in front of the thighs. Push the hips back and lower the dumbbells along the legs to mid-shin, then return.',
+    benefit: 'Stretches and strengthens the hamstrings and glutes; easier for beginners than with a barbell.',
+    tips: 'Knees slightly bent and fixed. Back flat, dumbbells close to the legs. Go down as far as you feel the stretch.',
+  },
+  'Разгибание руки в наклоне': {
+    desc: 'Lean forward supported on a bench with the upper arm along your body. Extend the arm back until straight and return.',
+    benefit: 'Isolates the triceps in the shortened position — a good finisher.',
+    tips: 'Keep the upper arm still, only the forearm moves. Pause at the top. Use a light weight.',
+  },
+  'Фермерская прогулка': {
+    desc: 'Pick up heavy dumbbells or kettlebells and walk with an even stride for a set time or distance.',
+    benefit: 'Builds grip, traps and core stability — great carryover to strength lifts.',
+    tips: 'Shoulders down and back, back straight. Short quick steps. Log the time and the dumbbell weight.',
+  },
+  'Бёрпи': {
+    desc: 'From standing, squat with hands on the floor, jump back to a plank, do a push-up, bring the feet in and jump up.',
+    benefit: 'Works the whole body and the heart rate — a great finisher and cardio without machines.',
+    tips: 'Keep a straight body in the plank. Land softly. Rhythm over speed, without losing form.',
+  },
   'Жим лёжа': {
     desc: 'Lie on a flat bench. Grip the bar wider than shoulder width, lower it to the lower chest and press up until your arms are fully extended.',
     benefit: 'One of the best exercises for building chest mass and strength. Heavily involves the triceps and front delts.',
@@ -387,7 +529,7 @@ export const MUSCLE_LABELS_EN = {
   chest: 'Chest', triceps: 'Triceps', shoulders: 'Shoulders', lats: 'Lats',
   upper_back: 'Upper back', lower_back: 'Lower back', biceps: 'Biceps',
   quads: 'Quads', hamstrings: 'Hamstrings', glutes: 'Glutes',
-  abs: 'Abs', core: 'Core', traps: 'Traps', forearms: 'Forearms', calves: 'Calves',
+  abs: 'Abs', core: 'Core', traps: 'Traps', forearms: 'Forearms', calves: 'Calves', adductors: 'Adductors',
 }
 
 export const ANATOMY_LABELS_EN = {

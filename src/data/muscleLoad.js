@@ -18,6 +18,7 @@ export const MUSCLE_RECOVERY_HOURS = {
   quads:      84,
   hamstrings: 84,
   glutes:     84,
+  adductors:  84,
 }
 
 // Max = recovery-based theoretical max × 1.5 buffer
@@ -103,7 +104,7 @@ export const GROUP_TO_ANATOMY = {
   lats:['lats'], upper_back:['rhomboids','rotator'], lower_back:['erectors'], traps:['traps_upper'],
   abs:['abs','obliques','serratus','hip_flexors'], core:['abs','obliques'],
   quads:['rectus_femoris','vastus_lateralis','vastus_medialis','adductors'],
-  hamstrings:['hamstrings'], glutes:['glutes_max','glutes_med'], calves:['gastrocnemius','soleus','tibialis'],
+  hamstrings:['hamstrings'], adductors:['adductors'], glutes:['glutes_max','glutes_med'], calves:['gastrocnemius','soleus','tibialis'],
 }
 
 export const ANATOMY_PARENT = {}
@@ -114,6 +115,28 @@ export const Q3 = 'rectus_femoris vastus_lateralis vastus_medialis'
 
 // 'основные / вспомогательные'
 export const EXERCISE_ANATOMY_SRC = {
+  'Бабочка': 'chest_upper chest_lower / delts_front',
+  'Сведение ног в тренажёре': 'adductors / glutes_med',
+  'Разведение ног в тренажёре': 'glutes_med glutes_max /',
+  'Подъём на носки стоя': 'gastrocnemius soleus /',
+  'Жим гантелей сидя': 'delts_front delts_side / triceps traps_upper',
+  'Гравитрон': 'lats / biceps rhomboids brachioradialis',
+  'Сумо-становая тяга': 'glutes_max adductors rectus_femoris vastus_lateralis vastus_medialis / hamstrings erectors traps_upper forearm_flexors',
+  'Зашагивания на тумбу': 'rectus_femoris vastus_lateralis vastus_medialis glutes_max / hamstrings glutes_med adductors',
+  'Скручивания на блоке': 'abs / obliques',
+  'Обратные отжимания от скамьи': 'triceps / chest_lower delts_front',
+  'Тяга в рычажном тренажёре': 'lats rhomboids / biceps delts_rear traps_upper',
+  'Хип-траст в тренажёре': 'glutes_max / hamstrings glutes_med adductors',
+  'Боковая планка': 'obliques abs / glutes_med delts_side',
+  'Велосипед на пресс': 'obliques abs / hip_flexors',
+  'Подъём коленей на брусьях': 'abs hip_flexors / obliques',
+  'Обратная гиперэкстензия': 'glutes_max / hamstrings erectors',
+  'Пуловер на блоке': 'lats / triceps serratus delts_rear',
+  'Приседания в Смите': 'rectus_femoris vastus_lateralis vastus_medialis glutes_max / hamstrings adductors',
+  'Румынская тяга с гантелями': 'hamstrings glutes_max / erectors forearm_flexors',
+  'Разгибание руки в наклоне': 'triceps /',
+  'Фермерская прогулка': 'forearm_flexors traps_upper / abs obliques glutes_max',
+  'Бёрпи': 'rectus_femoris vastus_lateralis chest_lower / delts_front triceps abs glutes_max',
   'Болгарские выпады':        `${Q3} glutes_max / hamstrings adductors glutes_med tibialis`,
   'Вертикальный жим':         'delts_front delts_side / triceps traps_upper',
   'Выпады':                   `${Q3} glutes_max / hamstrings adductors glutes_med tibialis`,
