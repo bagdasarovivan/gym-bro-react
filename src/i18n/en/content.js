@@ -156,7 +156,7 @@ export const CONTENT_EN = {
 
   // ── stretch.js ──
   'Вис на турнике': 'Bar hang',
-  'Повисни на прямых руках, плечи расслаблены, ноги можно оставить на полу или на скамье. Разгружает позвоночник и тянет широчайшие.': 'Hang from straight arms with relaxed shoulders; your feet can stay on the floor or a bench. Decompresses the spine and stretches the lats.',
+  'Повисни на прямых руках, плечи расслаблены. Можно мягко подтянуть колени к груди — так сильнее разгружается поясница. Растягивает широчайшие и позвоночник.': 'Hang from straight arms with relaxed shoulders. You can gently pull your knees up to your chest to take more load off the lower back. Stretches the lats and the spine.',
   'Широчайшие у стойки': 'Lats at the rack',
   'Возьмись обеими руками за стойку на уровне пояса, отведи таз назад и опусти грудь между рук. Спина прямая.': 'Grab the rack with both hands at waist height, push your hips back and drop your chest between your arms. Keep your back straight.',
   'Грудь у стойки': 'Chest at the rack',
