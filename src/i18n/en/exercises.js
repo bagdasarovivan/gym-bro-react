@@ -1,6 +1,26 @@
 // English localization for the exercise catalog.
 
 export const EX_NAMES_EN = {
+  'Подъём гантелей перед собой': 'Front Raise',
+  'Махи в стороны в кроссовере': 'Cable Lateral Raise',
+  'Жим штанги сидя': 'Seated Barbell Press',
+  'Тяга гантелей на наклонной скамье': 'Chest-Supported Dumbbell Row',
+  'Тяга верхнего блока одной рукой': 'Single-Arm Lat Pulldown',
+  'Гуд-морнинг': 'Good Morning',
+  'Сгибания на наклонной скамье': 'Incline Dumbbell Curl',
+  'Сгибания обратным хватом': 'Reverse Curl',
+  'Разгибание запястий': 'Wrist Extension',
+  'Выпады в Смите': 'Smith Machine Lunge',
+  'Сисси-присед': 'Sissy Squat',
+  'Нордические сгибания': 'Nordic Curl',
+  'Подъём на носки в жиме ногами': 'Leg Press Calf Raise',
+  'Дровосек на блоке': 'Cable Woodchop',
+  'Подъём ног лёжа': 'Lying Leg Raise',
+  'Мёртвый жук': 'Dead Bug',
+  'Вакуум': 'Stomach Vacuum',
+  'Трастеры': 'Thrusters',
+  'Прыжки на тумбу': 'Box Jump',
+  'Турецкий подъём': 'Turkish Get-Up',
   'Бабочка': 'Pec Deck',
   'Сведение ног в тренажёре': 'Hip Adduction Machine',
   'Разведение ног в тренажёре': 'Hip Abduction Machine',
@@ -97,6 +117,10 @@ export const EX_NAMES_EN = {
 }
 
 export const VARIANTS_EN = {
+  'Сверху вниз': 'High to low',
+  'Снизу вверх': 'Low to high',
+  'Штанга': 'Barbell',
+  'Гантели': 'Dumbbells',
   'В тренажёре': 'Machine',
   'В Смите': 'Smith machine',
   'С гантелью': 'Dumbbell',
@@ -118,6 +142,106 @@ export const VARIANTS_EN = {
 }
 
 export const EX_INFO_EN = {
+  'Подъём гантелей перед собой': {
+    desc: 'Stand holding dumbbells in front of the thighs. Raise straight arms in front of you to shoulder height and lower slowly.',
+    benefit: 'Isolates the front delts — size and shape at the front of the shoulder.',
+    tips: 'Arms almost straight, no swinging. Do not go above shoulder height. Light weight and control.',
+  },
+  'Махи в стороны в кроссовере': {
+    desc: 'Stand side-on to a low cable with the handle in the far hand. Raise the arm out to shoulder height and lower slowly.',
+    benefit: 'Keeps tension on the side delts through the whole range — wider shoulders.',
+    tips: 'Slightly bent elbow leads the movement. Do not shrug. One arm at a time.',
+  },
+  'Жим штанги сидя': {
+    desc: 'Sit on a bench with back support, bar at chest level. Press it overhead and lower to the upper chest.',
+    benefit: 'A compound shoulder press with back support — heavy weight more safely.',
+    tips: 'Keep your back on the pad, no arching. Elbows slightly in front of the bar. Lower to the upper chest, not behind the head.',
+  },
+  'Тяга гантелей на наклонной скамье': {
+    desc: 'Lie chest-down on an incline bench with dumbbells hanging. Row them to the waist squeezing the shoulder blades and lower.',
+    benefit: 'A row with no lower-back load and no cheating — honest mid-back work.',
+    tips: 'Keep your chest on the bench. Drive the elbows back. Straighten the arms fully at the bottom.',
+  },
+  'Тяга верхнего блока одной рукой': {
+    desc: 'Sit at a high cable with the handle in one hand. Pull it to the shoulder driving the elbow down along the body, then return.',
+    benefit: 'Each side works on its own — evens out strength and helps you feel the lat.',
+    tips: 'Pull with the elbow, not the hand. Do not twist the torso. Let the lat stretch at the top.',
+  },
+  'Гуд-морнинг': {
+    desc: 'Bar on the traps, knees slightly bent. Hinge forward pushing the hips back until the torso is near parallel, then stand up.',
+    benefit: 'Strengthens the lower back and hamstrings — carries over to squats and deadlifts.',
+    tips: 'Keep the back flat at all times. Start light. Only go as low as the hamstring stretch allows.',
+  },
+  'Сгибания на наклонной скамье': {
+    desc: 'Sit on an incline bench with dumbbells hanging. Curl without moving the upper arms and lower slowly.',
+    benefit: 'Works the biceps from a stretched position — a strong stimulus for the long head.',
+    tips: 'Keep the upper arms still and pointing down. Lower all the way. Use less weight than regular curls.',
+  },
+  'Сгибания обратным хватом': {
+    desc: 'Hold a barbell or EZ bar with an overhand grip. Curl it to the shoulders and lower slowly.',
+    benefit: 'Works the brachioradialis and forearm extensors — stronger grip and bigger forearms.',
+    tips: 'Elbows pinned to your sides. Wrists straight. Noticeably lighter than regular curls.',
+  },
+  'Разгибание запястий': {
+    desc: 'Forearms on a bench or thighs, palms down, hands over the edge. Raise the hands and lower slowly.',
+    benefit: 'Strengthens the forearm extensors — balances the grip and helps prevent tennis elbow.',
+    tips: 'Light weight, full range. Only the hands move. High reps.',
+  },
+  'Выпады в Смите': {
+    desc: 'Smith bar on the traps, one foot forward and one back. Lower by bending both knees to 90° and stand up.',
+    benefit: 'Stable lunges without balancing — you can load the legs and glutes harder.',
+    tips: 'Front knee over the foot. Torso upright. Do all reps, then switch legs.',
+  },
+  'Сисси-присед': {
+    desc: 'Holding a support, rise onto your toes and lean back bending the knees and pushing them forward. Return to the start.',
+    benefit: 'Isolates the quads, especially the rectus femoris.',
+    tips: 'Knees to shoulders in a straight line. Go down gradually. Reduce the range if your knees hurt.',
+  },
+  'Нордические сгибания': {
+    desc: 'Kneel with the heels anchored. Lower the torso forward as slowly and as far as you can, then come back up.',
+    benefit: 'One of the best exercises for hamstring strength and injury prevention.',
+    tips: 'Body straight from knees to head. Lower as slowly as possible. Push off with the hands at the bottom if needed.',
+  },
+  'Подъём на носки в жиме ногами': {
+    desc: 'Sit in the leg press with the balls of the feet on the bottom edge and legs almost straight. Push the platform with the toes and return slowly.',
+    benefit: 'An easy way to load the calves heavy without loading the spine.',
+    tips: 'Do not fully lock the knees. Full range. Keep the safety stops engaged.',
+  },
+  'Дровосек на блоке': {
+    desc: 'Stand side-on to the cable holding the handle with both hands. Pull it diagonally across the body while rotating, then return.',
+    benefit: 'Trains the obliques and trunk rotation — useful for strength and sports.',
+    tips: 'Rotate through the torso with arms almost straight. Feet planted. Do both sides.',
+  },
+  'Подъём ног лёжа': {
+    desc: 'Lie on your back with arms by your sides. Raise straight legs to vertical and lower slowly without touching the floor.',
+    benefit: 'Works the lower abs and can be done anywhere.',
+    tips: 'Keep the lower back on the floor. Lower slowly. Bend the knees slightly if it is too hard.',
+  },
+  'Мёртвый жук': {
+    desc: 'Lie on your back, arms up, knees bent at 90°. Lower the opposite arm and leg toward the floor and return, alternating sides.',
+    benefit: 'Teaches core stability — a base for heavy lifts and a healthy back.',
+    tips: 'Keep the lower back pressed to the floor. Move slowly. Exhale as you lower.',
+  },
+  'Вакуум': {
+    desc: 'Exhale fully and pull the belly in as hard as you can, as if pressing the navel to the spine. Hold without inhaling.',
+    benefit: 'Strengthens the transverse abdominis — a tighter waist and a more stable core.',
+    tips: 'Do it on an empty stomach. Start with 10–15 seconds. Do not force the breath-hold.',
+  },
+  'Трастеры': {
+    desc: 'Bar in the front rack, front squat down. As you stand, press the bar overhead in one movement. Lower to the chest and repeat.',
+    benefit: 'A squat and press in one move — works the whole body and spikes the heart rate.',
+    tips: 'Use the leg drive for the press. Elbows high at the bottom. Steady pace without losing form.',
+  },
+  'Прыжки на тумбу': {
+    desc: 'Stand in front of a box, dip and swing the arms to jump onto it with both feet. Stand tall and step down.',
+    benefit: 'Builds explosive leg power and jumping ability.',
+    tips: 'Land softly with knees in line with the toes. Step down instead of jumping. Pick a height you can handle.',
+  },
+  'Турецкий подъём': {
+    desc: 'Lie on your back with a kettlebell in a straight arm over the chest. Stand up step by step without lowering it, then return to the floor the same way.',
+    benefit: 'Builds shoulder and core stability and coordination — the whole body in one movement.',
+    tips: 'Eyes on the kettlebell, arm always straight. Move slowly, step by step. Start with no weight or a light one.',
+  },
   'Бабочка': {
     desc: 'Sit in the machine with forearms or hands on the handles and arms open. Bring the arms together in front of the chest and return slowly.',
     benefit: 'Isolates the chest without loading the triceps. A great finisher after presses.',
