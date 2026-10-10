@@ -326,6 +326,7 @@ export const UI_EN = {
   'МС': 'MS',
   'МСМК': 'MSIC',
   'Элита': 'Elite',
+  'Вариации': 'Variations',
   "⭐ избранные": "⭐ favourites",
   "частые": "most used",
   "ПРОШЛАЯ ТРЕНИРОВКА": "LAST WORKOUT",
