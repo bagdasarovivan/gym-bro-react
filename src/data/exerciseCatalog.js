@@ -102,8 +102,8 @@ export const EXERCISE_IMAGES = {
   'Прыжки на тумбу':null, // /images/box_jump.webp
   'Турецкий подъём':null, // /images/turkish_get_up.webp
   // New exercises: picture not drawn yet (placeholder). Future file in the comment.
-  'Бабочка':null, // /images/pec_deck.webp
-  'Сведение ног в тренажёре':null, // /images/hip_adduction.webp
+  'Бабочка':'/images/pec_deck.webp',
+  'Сведение ног в тренажёре':'/images/hip_adduction.webp',
   'Разведение ног в тренажёре':null, // /images/hip_abduction.webp
   'Подъём на носки стоя':null, // /images/standing_calf_raise.webp
   'Жим гантелей сидя':null, // /images/seated_db_press.webp
