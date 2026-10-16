@@ -105,7 +105,7 @@ export const EXERCISE_IMAGES = {
   'Бабочка':'/images/pec_deck.webp',
   'Сведение ног в тренажёре':'/images/hip_adduction.webp',
   'Разведение ног в тренажёре':null, // /images/hip_abduction.webp
-  'Подъём на носки стоя':null, // /images/standing_calf_raise.webp
+  'Подъём на носки стоя':'/images/standing_calf_raise.webp',
   'Жим гантелей сидя':null, // /images/seated_db_press.webp
   'Гравитрон':null, // /images/assisted_pullup.webp
   'Сумо-становая тяга':null, // /images/sumo_deadlift.webp
