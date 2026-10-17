@@ -86,6 +86,20 @@ const GLYPHS = {
       <path d="M10 27.5V23M16 27.5v-9M22 27.5V14" strokeWidth="0.6" />
     </>
   ),
+  // favourites — engraved star
+  star: (
+    <>
+      <path d="M16 4.5l3.4 7 7.6 1.1-5.5 5.4 1.3 7.6L16 22l-6.8 3.6 1.3-7.6L5 12.6l7.6-1.1z" />
+      <path d="M16 9.4v8.4M12.2 14.6l3.8 3.2 3.8-3.2" strokeWidth="0.7" />
+    </>
+  ),
+  // cardio — heart with a pulse line
+  heart: (
+    <>
+      <path d="M16 26.5S5.5 20.3 5.5 12.6A5.6 5.6 0 0 1 16 9.4a5.6 5.6 0 0 1 10.5 3.2C26.5 20.3 16 26.5 16 26.5z" />
+      <path d="M8.2 16.6h4l1.9-3.4 2.6 6.2 1.9-2.8h5.2" strokeWidth="1.3" />
+    </>
+  ),
   // exercises — exercise manual with a dumbbell emblem
   manual: (
     <>
