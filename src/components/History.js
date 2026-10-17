@@ -1,8 +1,5 @@
 import { useMemo } from 'react'
 import { MUSCLE_FILTERS_ROW1, MUSCLE_FILTERS_ROW2, getExImage, isCardio, normalizeName } from '../data/exerciseCatalog'
-import { noteSpan } from '../data/notes'
-import { NoteGlyph } from './NoteIcon'
-import { NoteLine } from './NoteModal'
 import { fmtMinutes } from '../utils/format'
 import { buildDays, groupsOf, recordEvents, weekKey } from '../data/achievements'
 import { bestSet, recordMetric } from '../utils/records'
@@ -30,7 +27,7 @@ function Delta({ value }) {
   return <span style={{ fontSize: 11, fontWeight: 700, color: same ? 'rgba(255,255,255,0.4)' : up ? GREEN : RED }}>{same ? '=' : up ? '↑' : '↓'} {Math.abs(value)}%</span>
 }
 
-export function HistoryView({ history, allRows, month, setMonth, year, setYear, openDays, setOpenDays, copiedDay, onCopy, onEdit, onDeleteDay, onDeleteExercise, setChip, thm, isDark, notes = {}, onNote }) {
+export function HistoryView({ history, allRows, month, setMonth, year, setYear, openDays, setOpenDays, copiedDay, onCopy, onEdit, onDeleteDay, onDeleteExercise, setChip, thm, isDark }) {
   // Record events over the whole history: "date|exercise" → new PR that day
   const prIndex = useMemo(() => {
     const ev = recordEvents(buildDays(allRows || history))
@@ -52,8 +49,7 @@ export function HistoryView({ history, allRows, month, setMonth, year, setYear, 
 
   // Whole history once loaded (all years), the last 12 months until then
   const rows = allRows || history
-  // months with workouts or day notes
-  const months = [...new Set([...rows.map(w => w.workout_date.slice(0, 7)), ...Object.keys(notes).map(d => d.slice(0, 7))])].sort().reverse()
+  const months = [...new Set(rows.map(w => w.workout_date.slice(0, 7)))].sort().reverse()
   const active = month && months.includes(month) ? month : months[0] || ''
   const inMonth = rows.filter(w => w.workout_date.startsWith(active))
   const byDate = {}
@@ -65,9 +61,6 @@ export function HistoryView({ history, allRows, month, setMonth, year, setYear, 
   const years = [...new Set(months.map(m => m.slice(0, 4)))]
   const activeYear = year && years.includes(year) ? year : active.slice(0, 4)
   const dates = Object.keys(byDate).sort().reverse()
-  // Days shown in the list: workout days + note days of the month. A multi-day note without workouts
-  // (a week of illness) is one card, placed at its last day.
-  const listDates = [...new Set([...dates, ...Object.keys(notes).filter(d => d.startsWith(active) && (noteSpan(notes, d).to === d || !addDays(d, 1).startsWith(active)))])].sort().reverse()
   const cardioSec = inMonth.reduce((sum, w) => sum + (isCardio(normalizeName(w.exercises?.name)) ? (w.sets || []).reduce((a, x) => a + (x.time_sec || 0), 0) : 0), 0)
 
   // Month summary vs the previous month
@@ -106,17 +99,11 @@ export function HistoryView({ history, allRows, month, setMonth, year, setYear, 
   }
   const card = { background: isDark ? '#1c1c1e' : '#fff', borderRadius: 16, border: `1px solid ${thm.border}` }
 
-  const todayStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`
-  const addNoteBtn = onNote && (
-    <button onClick={() => onNote(todayStr)} style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '6px 12px', borderRadius: 99, border: `1px solid ${thm.border}`, background: 'transparent', color: thm.text50, fontSize: 12, fontWeight: 700, cursor: 'pointer' }}>
-      <NoteGlyph kind="note" size={14} color="currentColor" />{t('Пометка')}
-    </button>
-  )
-  if (!months.length) return <div className="section"><div style={{ opacity: 0.5, marginTop: 20, textAlign: 'center' }}>{t('Нет записей')}</div>{addNoteBtn && <div style={{ display: 'flex', justifyContent: 'center', marginTop: 14 }}>{addNoteBtn}</div>}</div>
+  if (!months.length) return <div className="section"><div style={{ opacity: 0.5, marginTop: 20, textAlign: 'center' }}>{t('Нет записей')}</div></div>
 
   // Day list grouped by week
   const groups = []
-  listDates.forEach(d => { const k = weekKey(d); if (!groups.length || groups[groups.length - 1].k !== k) groups.push({ k, dates: [] }); groups[groups.length - 1].dates.push(d) })
+  dates.forEach(d => { const k = weekKey(d); if (!groups.length || groups[groups.length - 1].k !== k) groups.push({ k, dates: [] }); groups[groups.length - 1].dates.push(d) })
 
   return (
     <div className="section">
@@ -135,11 +122,10 @@ export function HistoryView({ history, allRows, month, setMonth, year, setYear, 
         {Array.from({ length: 12 }, (_, i) => `${activeYear}-${String(i + 1).padStart(2, '0')}`).map(m => {
           const n = daysPerMonth[m] || 0
           const sel = m === active
-          const hasNotes = !n && months.includes(m)
           return (
-            <button key={m} disabled={!n && !hasNotes} onClick={() => { setMonth(m); setOpenDays({}) }} style={{
-              padding: '8px 0 6px', borderRadius: 12, border: 'none', cursor: n || hasNotes ? 'pointer' : 'default',
-              background: sel ? ORANGE : (isDark ? '#1c1c1e' : '#fff'), opacity: n || hasNotes ? 1 : 0.35,
+            <button key={m} disabled={!n} onClick={() => { setMonth(m); setOpenDays({}) }} style={{
+              padding: '8px 0 6px', borderRadius: 12, border: 'none', cursor: n ? 'pointer' : 'default',
+              background: sel ? ORANGE : (isDark ? '#1c1c1e' : '#fff'), opacity: n ? 1 : 0.35,
             }}>
               <div style={{ fontSize: 13, fontWeight: 700, color: sel ? '#000' : thm.text }}>{monthShort(m)}</div>
               <div style={{ fontSize: 10, fontWeight: 600, marginTop: 2, color: sel ? 'rgba(0,0,0,0.6)' : n ? ORANGE : thm.text35 }}>{n || '·'}</div>
@@ -150,10 +136,7 @@ export function HistoryView({ history, allRows, month, setMonth, year, setYear, 
 
       {/* Month summary */}
       <div style={{ ...card, padding: '16px 16px 14px', marginBottom: 14 }}>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
-          <div style={{ fontSize: 13, fontWeight: 700, color: thm.text50 }}>{monthLong(active)}</div>
-          {addNoteBtn}
-        </div>
+        <div style={{ fontSize: 13, fontWeight: 700, color: thm.text50, marginBottom: 12 }}>{monthLong(active)}</div>
         <div style={{ display: 'flex', justifyContent: 'space-between', gap: 8 }}>
           {[
             [daysNow, plural(daysNow, ['тренировка', 'тренировки', 'тренировок'], ['workout', 'workouts']), pct(daysNow, daysPrev)],
@@ -193,7 +176,7 @@ export function HistoryView({ history, allRows, month, setMonth, year, setYear, 
       </div>
 
       {groups.map(g => {
-        const gDays = g.dates.filter(d => byDate[d])
+        const gDays = g.dates
         const gVol = gDays.reduce((s, d) => s + dayVolume(byDate[d]), 0)
         return (
           <div key={g.k} style={{ marginBottom: 6 }}>
@@ -201,19 +184,8 @@ export function HistoryView({ history, allRows, month, setMonth, year, setYear, 
               <span>{t('Неделя')} {weekRange(g.k)}</span>
               <span style={{ textTransform: 'none', fontWeight: 600 }}>{gDays.length} {isEn() ? plural(gDays.length, [], ['workout', 'workouts']) : t('трен.')} · {fmtVolume(gVol)}</span>
             </div>
-            {g.dates.map(date => {
+            {gDays.map(date => {
               const ws = byDate[date]
-              const note = notes[date]
-              if (!ws) {
-                // note-only day (or period)
-                const span = noteSpan(notes, date)
-                return (
-                  <div key={date} style={{ ...card, marginBottom: 8, overflow: 'hidden' }}>
-                    <div style={{ fontSize: 12, fontWeight: 700, color: thm.text40, padding: '10px 14px 0' }}>{span.from !== span.to ? `${dayTitle(span.from)} — ${dayTitle(span.to)}` : dayTitle(date)}</div>
-                    <NoteLine note={note} thm={thm} onClick={onNote ? () => onNote(date) : undefined} />
-                  </div>
-                )
-              }
               const isOpen = openDays[date]
               const names = [...new Set(ws.map(w => normalizeName(w.exercises?.name)).filter(Boolean))]
               const groupsCount = {}
@@ -226,7 +198,7 @@ export function HistoryView({ history, allRows, month, setMonth, year, setYear, 
                 <div key={date} style={{ ...card, marginBottom: 8, overflow: 'hidden' }}>
                   <button onClick={() => setOpenDays(p => ({ ...p, [date]: !p[date] }))} style={{ width: '100%', background: 'none', border: 'none', cursor: 'pointer', padding: '13px 14px', textAlign: 'left', color: thm.text }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                      <span style={{ flex: 1, fontSize: 16, fontWeight: 700, display: 'flex', alignItems: 'center', gap: 7 }}>{dayTitle(date)}{note && <NoteGlyph kind={note.kind} size={15} />}</span>
+                      <span style={{ flex: 1, fontSize: 16, fontWeight: 700 }}>{dayTitle(date)}</span>
                       {prs > 0 && <span style={{ fontSize: 11, fontWeight: 800, color: ORANGE, background: 'rgba(var(--accent-rgb),0.12)', borderRadius: 99, padding: '3px 8px' }}>🏆 {prs}</span>}
                       <span style={{ fontSize: 15, fontWeight: 800, color: ORANGE }}>{dayVolume(ws) > 0 || !names.some(n => isCardio(n)) ? fmtVolume(dayVolume(ws)) : fmtMinutes(ws.reduce((a, w) => a + (isCardio(normalizeName(w.exercises?.name)) ? (w.sets || []).reduce((b, x) => b + (x.time_sec || 0), 0) : 0), 0))}</span>
                       <span style={{ fontSize: 11, color: thm.text30, transform: isOpen ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s' }}>▼</span>
@@ -243,7 +215,6 @@ export function HistoryView({ history, allRows, month, setMonth, year, setYear, 
                   </button>
                   {isOpen && (
                     <div style={{ borderTop: `1px solid ${thm.border}` }}>
-                      {note && <div style={{ borderBottom: `1px solid ${thm.border}` }}><NoteLine note={note} span={noteSpan(notes, date)} thm={thm} onClick={onNote ? () => onNote(date) : undefined} /></div>}
                       {ws.map(w => {
                         const name = normalizeName(w.exercises?.name)
                         const metric = recordMetric(name)
@@ -282,7 +253,6 @@ export function HistoryView({ history, allRows, month, setMonth, year, setYear, 
                       <div className="day-actions" style={{ margin: 0, borderRadius: 0 }}>
                         <button className={`day-action-btn${copiedDay === date ? ' ok' : ''}`} onClick={() => onCopy(date, ws)}>{copiedDay === date ? t('✅ Скопировано') : t('📋 Копировать')}</button>
                         <button className="day-action-btn" onClick={() => onEdit(date, ws)}>{t('✏️ Изменить')}</button>
-                        {onNote && !note && <button className="day-action-btn" onClick={() => onNote(date)}>{t('Пометка')}</button>}
                         <button className="day-action-btn del" onClick={() => onDeleteDay(date, ws)}>{t('🗑 Удалить')}</button>
                       </div>
                     </div>
