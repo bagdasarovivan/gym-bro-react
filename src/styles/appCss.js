@@ -144,7 +144,7 @@ input[type=number]::-webkit-inner-spin-button{-webkit-appearance:none}
 .edit-save-btn{width:100%;padding:14px;background:var(--accent);border:none;border-radius:14px;font-size:16px;font-weight:700;color:#000;cursor:pointer;margin-top:14px}
 .nav-bar{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:480px;background:rgba(0,0,0,0.9);border-top:1px solid rgba(255,255,255,0.06);display:flex;padding:10px 0 26px;z-index:50;backdrop-filter:blur(24px)}
 .nav-item{flex:1;display:flex;flex-direction:column;align-items:center;gap:4px;cursor:pointer;transition:opacity 0.15s;padding:4px 0}
-.nav-icon{font-size:22px}
+.nav-icon{font-size:22px;height:26px;display:flex;align-items:center;justify-content:center}
 .nav-lbl{font-size:10px;font-weight:600;letter-spacing:0.2px}
 @media(max-width:480px){.nav-bar{width:100%}}
 .timer-modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:150;display:flex;align-items:flex-end;justify-content:center;backdrop-filter:blur(8px);animation:fov 0.2s ease}
