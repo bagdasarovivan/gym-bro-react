@@ -25,6 +25,7 @@ import { fetchAllRows } from './utils/db'
 import { buildCopyText, cardioText, fmtMinutes, formatDateShort, formatMonth, localDateStr } from './utils/format'
 import { NoteModal, NoteLine } from './components/NoteModal'
 import { NoteGlyph } from './components/NoteIcon'
+import { VicIcon } from './components/VicIcons'
 import { injuryWarnings, noteKind, noteSpan, pauseDates } from './data/notes'
 import { baseExName, bestSet, e1rm, exMetric, isRepsType, recordMetric, setFilled, setValue, uiSetToStored } from './utils/records'
 
@@ -52,13 +53,6 @@ const ActionCard = ({ icon, title, sub, onClick, thm, last }) => (
   </button>
 )
 
-// Flame icon in the accent colour (an emoji can't be recoloured)
-const Flame = ({ size = 16 }) => (
-  <svg width={size} height={size} viewBox="0 0 24 24" aria-hidden="true" style={{ display: 'block', filter: 'drop-shadow(0 0 3px rgba(var(--accent-rgb),0.5))' }}>
-    <path fill="var(--accent)" d="M12 2c.6 3.2 2.6 4.9 4.3 6.9C18 10.9 19 12.9 19 15.2 19 19 15.9 22 12 22s-7-3-7-6.8c0-2.4 1.1-4.3 2.6-5.8.2 1.6 1 2.8 2.2 3.4C9.4 9.6 10 5.3 12 2z"/>
-    <path fill="#fff" fillOpacity="0.6" d="M12 12.6c1.4 1.4 2.8 2.6 2.8 4.5A2.8 2.8 0 0 1 12 19.9a2.8 2.8 0 0 1-2.8-2.8c0-1.3.6-2.3 1.5-3 .2.8.6 1.2 1.2 1.4-.2-1.1-.1-2.1.1-2.9z"/>
-  </svg>
-)
 // Cardio entry on the workout screen: minutes (picker) + optional distance and calories (typed)
 const CARDIO_MIN = [...Array.from({ length: 61 }, (_, i) => i), ...Array.from({ length: 24 }, (_, i) => 65 + i * 5)]
 const CardioInputs = ({ s, onChange }) => {
@@ -1318,28 +1312,28 @@ export default function App() {
           <button onClick={() => setShowWeightModal(true)} aria-label={t('Вес тела')} style={{
             background: showWeightModal ? 'rgba(var(--accent-rgb),0.08)' : thm.btnBg,
             border: showWeightModal ? '1.5px solid var(--accent)' : `1px solid ${thm.btnBorder}`,
-            borderRadius:10,padding:'0',width:36,height:36,cursor:'pointer',color:thm.text70,
+            borderRadius:10,padding:'0',width:36,height:36,cursor:'pointer',color:'var(--accent)',
             fontSize:18,display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0
-          }}>🧍</button>
+          }}><VicIcon name="kettlebell" size={22}/></button>
           <button onClick={() => { const isOpen=timerSecs!==null||stopwatchRunning||timerMode==='stopwatch'; if(isOpen){setTimerSecs(null);setTimerPaused(false);setStopwatchRunning(false);setStopwatchSecs(0);setTimerMode('countdown')}else{setTimerSecs(timerDuration);setTimerPaused(true)} }} style={{
             background: (timerSecs!==null||stopwatchRunning||timerMode==='stopwatch') ? 'rgba(var(--accent-rgb),0.08)' : thm.btnBg,
             border: (timerSecs!==null||stopwatchRunning||timerMode==='stopwatch') ? '1.5px solid var(--accent)' : `1px solid ${thm.btnBorder}`,
             borderRadius:10,padding:'0',width:36,height:36,cursor:'pointer',
-            color: (timerSecs!==null||stopwatchRunning||timerMode==='stopwatch') ? 'rgba(255,255,255,0.8)' : thm.text70,
+            color:'var(--accent)',
             fontSize:18,display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0
-          }}>⏱</button>
+          }}><VicIcon name="watch" size={22}/></button>
           {(streak >= 1 || achievements) && <button onClick={openStreakModal} aria-label={t('Достижения')} style={{position:'relative',
             background:'rgba(var(--accent-rgb),0.12)',border:'1px solid rgba(var(--accent-rgb),0.3)',
             borderRadius:10,padding:'0 10px',height:36,cursor:'pointer',gap:3,
             fontSize:14,fontWeight:800,color:'var(--accent)',display:'flex',alignItems:'center',flexShrink:0,whiteSpace:'nowrap'
-          }}>{streak >= 1 ? <>{streak}<Flame size={17}/></> : '🏅'}{achUnviewed && <span style={{position:'absolute',top:-3,right:-3,width:9,height:9,borderRadius:'50%',background:'var(--accent)',border:'2px solid #000'}}/>}</button>}
+          }}>{streak >= 1 ? <>{streak}<VicIcon name="lantern" size={23}/></> : <VicIcon name="lantern" size={23}/>}{achUnviewed && <span style={{position:'absolute',top:-3,right:-3,width:9,height:9,borderRadius:'50%',background:'var(--accent)',border:'2px solid #000'}}/>}</button>}
           <button onClick={() => setTab(t => t === 'settings' ? 'add' : 'settings')} style={{
             background: tab==='settings' ? 'rgba(var(--accent-rgb),0.08)' : thm.btnBg,
             border: tab==='settings' ? '1.5px solid var(--accent)' : `1px solid ${thm.btnBorder}`,
             borderRadius:10,padding:'0',width:36,height:36,cursor:'pointer',
-            color: tab==='settings' ? 'rgba(255,255,255,0.8)' : thm.text50,fontSize:18,
+            color:'var(--accent)',fontSize:18,
             display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0
-          }}>⚙️</button>
+          }}><VicIcon name="gear" size={22}/></button>
         </div>
       </div>
       {showWarmup && (
@@ -2085,7 +2079,7 @@ export default function App() {
       {streakAlert && streakAlert.type === 'month' && (
         <div className="alert-toast" style={{borderColor:'rgba(var(--accent-rgb),0.3)'}}>
           <div className="alert-toast-icon">
-            {streakAlert.count>=20?'👑':streakAlert.count>=10?'🏆':streakAlert.count>=5?'⚡':<Flame size={32}/>}
+            {streakAlert.count>=20?'👑':streakAlert.count>=10?'🏆':streakAlert.count>=5?'⚡':<VicIcon name="lantern" size={34} color="var(--accent)"/>}
           </div>
           <div>
             <div className="alert-toast-title">{t('{n}-я тренировка месяца!',{n:streakAlert.count})}</div>
@@ -2302,9 +2296,9 @@ export default function App() {
 
 
       <div className="nav-bar">
-        {[{id:'add',icon:'➕',label:t('Тренировка')},{id:'history',icon:'📜',label:t('История')},{id:'progress',icon:'📈',label:t('Прогресс')},{id:'exercises',icon:'📋',label:t('Упражнения')}].map(t=>(
+        {[{id:'add',icon:'barbell',label:t('Тренировка')},{id:'history',icon:'book',label:t('История')},{id:'progress',icon:'stairs',label:t('Прогресс')},{id:'exercises',icon:'manual',label:t('Упражнения')}].map(t=>(
           <div key={t.id} className="nav-item" style={{opacity:tab===t.id?1:0.62}} onClick={()=>{setTab(t.id);if(t.id!=='add'){setWorkoutStarted(false);setSelectedEx(null)}}}>
-            <span className="nav-icon">{t.icon}</span>
+            <span className="nav-icon"><VicIcon name={t.icon} size={26} color={tab===t.id?'var(--accent)':thm.text70}/></span>
             <span className="nav-lbl" style={{color:tab===t.id?'var(--accent)':thm.text}}>{t.label}</span>
           </div>
         ))}
