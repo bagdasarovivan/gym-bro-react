@@ -88,7 +88,7 @@ export function recordEvents(days) {
 }
 
 // ── Permanent achievements ───────────────────────────────────────────────────
-function permanent(days, bodyWeights, routineDates, sex) {
+function permanent(days, bodyWeights, routineDates, sex, pauses = null) {
   const list = []
   const add = (def, series, opts = {}) => {
     const earned = crossings(series, def.tiers)
@@ -111,7 +111,8 @@ function permanent(days, bodyWeights, routineDates, sex) {
     for (let k = weekKey(days[0].date); k <= thisWeek; k = addDays(k, 7)) {
       const dates = perWeek.get(k) || []
       if (dates.length >= 2) { run++; weekSeries.push({ date: dates[1], value: run }) }
-      else if (k !== thisWeek) run = 0 // the current week is still in progress
+      // the current week is still in progress; a week with 3+ days of illness / injury / vacation is paused
+      else if (k !== thisWeek && !(pauses && Array.from({ length: 7 }, (_, i) => addDays(k, i)).filter(d => pauses.has(d)).length >= 3)) run = 0
     }
     curRun = run
   }
@@ -543,11 +544,11 @@ function monthly(month, days, recordEventsList, routineDates, volByMonth, ids) {
 // ── Entry point ─────────────────────────────────────────────────────────────
 // routineLog: { w: ['YYYY-MM-DD', ...], s: [...] } — completed warm-ups / stretches
 // monthPicks: { 'YYYY-MM': { ids, swaps, out } } stored challenge choice per month; seed: per-user string
-export function computeAchievements({ rows, bodyWeights = [], routineLog = {}, today, sex = 'male', monthPicks = {}, seed = '' }) {
+export function computeAchievements({ rows, bodyWeights = [], routineLog = {}, today, sex = 'male', monthPicks = {}, seed = '', pauses = null }) {
   const days = buildDays(rows)
   const bw = [...(bodyWeights || [])].sort((a, b) => a.measured_on.localeCompare(b.measured_on))
   const routineDates = [...(routineLog.w || []), ...(routineLog.s || [])].sort()
-  const perm = permanent(days, bw, routineDates, sex)
+  const perm = permanent(days, bw, routineDates, sex, pauses)
 
   const volByMonth = {}
   days.forEach(d => { const m = d.date.slice(0, 7); volByMonth[m] = (volByMonth[m] || 0) + d.items.reduce((s, it) => s + volume(it.sets), 0) })

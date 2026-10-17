@@ -131,7 +131,6 @@ export const EXERCISE_ANATOMY_SRC = {
   'Дровосек на блоке': 'obliques abs / delts_front serratus',
   'Подъём ног лёжа': 'abs hip_flexors / obliques',
   'Мёртвый жук': 'abs obliques / hip_flexors',
-  'Вакуум': 'abs obliques /',
   'Трастеры': 'rectus_femoris vastus_lateralis vastus_medialis glutes_max delts_front / triceps delts_side abs',
   'Прыжки на тумбу': 'rectus_femoris vastus_lateralis vastus_medialis glutes_max / gastrocnemius hamstrings',
   'Турецкий подъём': 'delts_front abs obliques / glutes_max triceps',

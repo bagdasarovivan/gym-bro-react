@@ -13,7 +13,7 @@ export const isRepsType = (t) => t === 'bodyweight' || t === 'bodyweight_plus'
 
 export function exMetric(name) {
   const t = EXERCISE_TYPE[baseExName(name)] || EXERCISE_TYPE[name] || 'light'
-  return t === 'timed' ? 'time' : isRepsType(t) ? 'reps' : 'weight'
+  return t === 'timed' || t === 'cardio' ? 'time' : isRepsType(t) ? 'reps' : 'weight'
 }
 
 // Estimated one-rep max (Epley): weight × (1 + reps / 30); a single rep is the weight itself.
@@ -32,10 +32,23 @@ export const recordMetric = (name) => { const m = exMetric(name); return m === '
 
 // A set as edited on the workout screen → the stored shape ({weight, reps, time_sec}).
 // Timed exercises keep seconds in `weight` and the optional extra load in `timedWeight`.
+// Cardio keeps minutes in `min`, distance in `km` and calories in `kcal`.
 export function uiSetToStored(s, exType) {
+  if (exType === 'cardio') {
+    const n = (v) => Number(String(v ?? '').replace(',', '.')) || 0 // km / kcal are typed as text ("4,2")
+    return { weight: 0, reps: 0, time_sec: Math.round((s.min || 0) * 60), distance_km: Math.round(n(s.km) * 100) / 100, calories: Math.round(n(s.kcal)) }
+  }
   if (exType === 'timed') return { weight: s.timedWeight || 0, reps: 0, time_sec: s.weight || 0 }
   if (exType === 'bodyweight') return { weight: 0, reps: s.reps || 0, time_sec: 0 }
   return { weight: s.weight || 0, reps: s.reps || 0, time_sec: 0 }
+}
+
+// A set on the workout screen counts once its main value is filled in
+export function setFilled(s, exType) {
+  if (exType === 'cardio') return (s.min || 0) > 0
+  if (exType === 'timed') return s.weight > 0
+  if (isRepsType(exType)) return s.reps > 0
+  return s.weight > 0 && s.reps > 0
 }
 
 // Лучший подход: максимальный вес (при равном весе — больше повторений), время или повторения

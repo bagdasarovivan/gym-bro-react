@@ -16,14 +16,17 @@ import { ModalItem } from './components/ModalItem'
 import { MuscleMap } from './components/MuscleMap'
 import { PlansSheet, TodayPlanCard } from './components/Plans'
 import { ExerciseMuscleMap, ExerciseStats, ExerciseVariants, exerciseIndex } from './components/ExerciseStats'
-import { DEFAULT_FAVORITES, EXERCISES, EXERCISE_IMAGES, EXERCISE_INFO, EXERCISE_MUSCLES, EXERCISE_TYPE, LIGHT_WEIGHTS, MUSCLE_FILTERS_ROW1, MUSCLE_FILTERS_ROW2, MUSCLE_FILTER_MAP, MUSCLE_LABELS, REPS_OPTIONS, TIME_OPTIONS, VARIANT_EXERCISES, getDefaultVariant, getExImage, getVariantOptions, getWarmupSets, getWeightOptions, normalizeName } from './data/exerciseCatalog'
+import { DEFAULT_FAVORITES, EXERCISES, EXERCISE_IMAGES, EXERCISE_INFO, EXERCISE_MUSCLES, EXERCISE_TYPE, LIGHT_WEIGHTS, MUSCLE_FILTERS_ROW1, MUSCLE_FILTERS_ROW2, MUSCLE_FILTER_MAP, MUSCLE_LABELS, REPS_OPTIONS, TIME_OPTIONS, VARIANT_EXERCISES, getDefaultVariant, getExImage, getVariantOptions, getWarmupSets, getWeightOptions, isCardio, normalizeName } from './data/exerciseCatalog'
 import { RANK_LEVELS, RANK_QUOTES, getMotivation, getRank } from './data/motivation'
 import { calcAnatomyLoad } from './data/muscleLoad'
 import { PLAN_DAYS } from './data/plans'
 import { CSS_ALL } from './styles/appCss'
 import { fetchAllRows } from './utils/db'
-import { buildCopyText, formatDateShort, formatMonth, localDateStr } from './utils/format'
-import { baseExName, bestSet, e1rm, exMetric, isRepsType, recordMetric, setValue, uiSetToStored } from './utils/records'
+import { buildCopyText, cardioText, fmtMinutes, formatDateShort, formatMonth, localDateStr } from './utils/format'
+import { NoteModal, NoteLine } from './components/NoteModal'
+import { NoteGlyph } from './components/NoteIcon'
+import { injuryWarnings, noteKind, noteSpan, pauseDates } from './data/notes'
+import { baseExName, bestSet, e1rm, exMetric, isRepsType, recordMetric, setFilled, setValue, uiSetToStored } from './utils/records'
 
 const DEFAULT_SETTINGS = { username: '', weight: '', height: '', units: 'kg', theme: 'dark', language: 'ru', accent: 'orange' }
 
@@ -56,6 +59,26 @@ const Flame = ({ size = 16 }) => (
     <path fill="#fff" fillOpacity="0.6" d="M12 12.6c1.4 1.4 2.8 2.6 2.8 4.5A2.8 2.8 0 0 1 12 19.9a2.8 2.8 0 0 1-2.8-2.8c0-1.3.6-2.3 1.5-3 .2.8.6 1.2 1.2 1.4-.2-1.1-.1-2.1.1-2.9z"/>
   </svg>
 )
+// Cardio entry on the workout screen: minutes (picker) + optional distance and calories (typed)
+const CARDIO_MIN = [...Array.from({ length: 61 }, (_, i) => i), ...Array.from({ length: 24 }, (_, i) => 65 + i * 5)]
+const CardioInputs = ({ s, onChange }) => {
+  const field = (key, label, placeholder, mode) => (
+    <div style={{ flex: 1, minWidth: 0 }}>
+      <div className="dpicker-label">{label}</div>
+      <input className="dpicker-btn" type="text" inputMode={mode} value={s[key] ?? ''} placeholder={placeholder}
+        onChange={e => onChange({ [key]: e.target.value.replace(/[^0-9.,]/g, '').slice(0, 6) })}
+        style={{ cursor: 'text', textAlign: 'center', display: 'block', boxSizing: 'border-box' }} />
+    </div>
+  )
+  return (
+    <>
+      <DropdownPicker options={CARDIO_MIN} value={s.min || 0} onChange={v => onChange({ min: v })} unit={t('мин')} label={t('Время')} />
+      {field('km', t('Км'), '—', 'decimal')}
+      {field('kcal', t('Ккал'), '—', 'numeric')}
+    </>
+  )
+}
+
 const applyAccent = (id) => {
   const a = ACCENTS.find(x => x.id === id) || ACCENTS[0]
   const root = document.documentElement
@@ -147,6 +170,11 @@ export default function App() {
   const [weightsStatus, setWeightsStatus] = useState('loading')
   const [showWeightModal, setShowWeightModal] = useState(false)
   const [showWarmup, setShowWarmup] = useState(false)
+  // Day notes (table day_notes): { 'YYYY-MM-DD': { note_date, kind, body_part, text } }; status as for body weights
+  const [notes, setNotes] = useState({})
+  const [notesStatus, setNotesStatus] = useState('loading')
+  const [noteModal, setNoteModal] = useState(null)   // date being edited
+  const [workoutNote, setWorkoutNote] = useState('')
   const [showStretch, setShowStretch] = useState(false)
   const [settings, setSettings] = useState(DEFAULT_SETTINGS)
   setPrefs(settings) // language and units for t() / formatters during this render
@@ -232,9 +260,45 @@ export default function App() {
     return true
   }
 
+  // ── Day notes ──────────────────────────────────────────────────────────────
+  const isMissingNotes = (error) => !!error && (error.code === '42P01' || error.code === 'PGRST205' || (/day_notes/.test(error.message || '') && /not find|does not exist/i.test(error.message || '')))
+  useEffect(() => {
+    if (!user) return
+    let cancelled = false
+    ;(async () => {
+      const { data, error } = await supabase.from('day_notes').select('note_date,kind,body_part,text').eq('user_id', user.id).order('note_date')
+      if (cancelled) return
+      if (error) { setNotesStatus(isMissingNotes(error) ? 'missing' : 'error'); return }
+      setNotes(Object.fromEntries((data || []).map(n => [n.note_date, n])))
+      setNotesStatus('ok')
+    })()
+    return () => { cancelled = true }
+  }, [user])
+  // Write the same note to every date of `dates`; `removeDates` are cleared (a period that got shorter)
+  const saveNotes = async (dates, fields, removeDates = []) => {
+    const rows = dates.map(d => ({ user_id: user.id, note_date: d, ...fields }))
+    const { error } = await supabase.from('day_notes').upsert(rows, { onConflict: 'user_id,note_date' })
+    if (error) { if (isMissingNotes(error)) setNotesStatus('missing'); return false }
+    if (removeDates.length) await supabase.from('day_notes').delete().eq('user_id', user.id).in('note_date', removeDates)
+    setNotes(prev => {
+      const next = { ...prev }
+      removeDates.forEach(d => { delete next[d] })
+      dates.forEach(d => { next[d] = { note_date: d, ...fields } })
+      return next
+    })
+    setNotesStatus('ok')
+    return true
+  }
+  const deleteNotes = async (dates) => {
+    const { error } = await supabase.from('day_notes').delete().eq('user_id', user.id).in('note_date', dates)
+    if (error) return false
+    setNotes(prev => { const next = { ...prev }; dates.forEach(d => { delete next[d] }); return next })
+    return true
+  }
+
   const exportWorkouts = async (period) => {
     setShowExportModal(false)
-    let query = supabase.from('workouts').select('workout_date,exercises(name),sets(set_no,weight,reps,time_sec)').eq('user_id', user.id).order('workout_date', { ascending: false })
+    let query = supabase.from('workouts').select('workout_date,exercises(name),sets(*)').eq('user_id', user.id).order('workout_date', { ascending: false })
     if (period !== 'all') {
       const days = period === '7d' ? 7 : period === '30d' ? 30 : period === '3m' ? 90 : period === '6m' ? 180 : 365
       const from = localDateStr(new Date(Date.now() - days * 86400000))
@@ -279,8 +343,9 @@ export default function App() {
         const validSets = sets.filter(s => s.weight > 0 || s.reps > 0 || s.time_sec > 0)
         if (!validSets.length) return null
         const ruExName = exName(normalizeName(rawName))
+        const cardio = isCardio(normalizeName(rawName))
         const setLines = validSets.map((s, i) => {
-          const label = s.time_sec > 0
+          const label = cardio ? cardioText(s) : s.time_sec > 0
             ? (s.weight > 0 ? `${t('Подход {n}',{n:i+1})}: ${s.time_sec} ${t('сек')} × ${kgToDisplay(s.weight)} ${wUnit}` : `${t('Подход {n}',{n:i+1})}: ${s.time_sec} ${t('сек')}`)
             : s.weight > 0 ? `${t('Подход {n}',{n:i+1})}: ${kgToDisplay(s.weight)} ${wUnit} × ${s.reps}` : `${t('Подход {n}',{n:i+1})}: ${s.reps} ${t('повт')}`
           return `<div style="padding:2px 0;color:rgba(255,255,255,0.6);font-size:11px;">${escapeHtml(label)}</div>`
@@ -438,6 +503,7 @@ export default function App() {
       if (draft && Array.isArray(draft.exercises) && draft.exercises.length) {
         setWorkoutExercises(draft.exercises)
         if (draft.date) setWorkoutDate(draft.date)
+        if (draft.note) setWorkoutNote(draft.note)
         setWorkoutStarted(true)
         setDraftRestored(true)
         setTimeout(() => setDraftRestored(false), 3500)
@@ -453,10 +519,10 @@ export default function App() {
     if (!user || !draftReadyRef.current) return
     try {
       const key = 'gymBroDraft_' + user.id
-      if (workoutExercises.length) localStorage.setItem(key, JSON.stringify({ date: workoutDate, exercises: workoutExercises, savedAt: Date.now() }))
+      if (workoutExercises.length) localStorage.setItem(key, JSON.stringify({ date: workoutDate, exercises: workoutExercises, note: workoutNote, savedAt: Date.now() }))
       else localStorage.removeItem(key)
     } catch {}
-  }, [workoutExercises, workoutDate, user])
+  }, [workoutExercises, workoutDate, workoutNote, user])
 
   // Auth listener. Supabase fires several events on start (INITIAL_SESSION, TOKEN_REFRESHED…)
   // with a new user object each time — keep the same object while the user id is unchanged,
@@ -558,7 +624,7 @@ export default function App() {
     ;(async () => {
       const all = []
       for (let from = 0; ; from += PAGE) {
-        const { data, error } = await supabase.from('workouts').select('id,workout_date,exercises(name),sets(set_no,weight,reps,time_sec)')
+        const { data, error } = await supabase.from('workouts').select('id,workout_date,exercises(name),sets(*)')
           .eq('user_id', user.id).gte('workout_date', sinceStr)
           .order('workout_date', { ascending: false }).order('id', { ascending: false })
           .range(from, from + PAGE - 1)
@@ -598,7 +664,7 @@ export default function App() {
     async function load() {
       // Рекорды по всей истории. Каждая вариация («Жим лёжа (Узкий)») — отдельный рекорд, как и на графике.
       // Record for weight exercises = best estimated 1RM (100×5 beats 100×1); plank — time, ab wheel — reps.
-      const pData = await fetchAllRows(() => supabase.from('workouts').select('id,workout_date,exercises(name),sets(set_no,weight,reps,time_sec)').eq('user_id', user.id).order('id'))
+      const pData = await fetchAllRows(() => supabase.from('workouts').select('id,workout_date,exercises(name),sets(*)').eq('user_id', user.id).order('id'))
       if (!cancelled) setAllRows(pData)
       const map = {}
       pData.forEach(w => {
@@ -656,7 +722,7 @@ export default function App() {
       }
       if (cancelled) return
       const pts = Object.entries(byDate).sort(([a],[b])=>a.localeCompare(b)).map(([date,{orm,best,e1,e1best}])=>({
-        val: parseFloat(orm.toFixed(1)),
+        val: isCardio(chartEx) && metric === 'time' ? Math.round(orm / 6) / 10 : parseFloat(orm.toFixed(1)),
         e1rm: e1 ? parseFloat(e1.toFixed(1)) : null,
         e1Weight: e1best?.weight || 0,
         e1Reps: e1best?.reps || 0,
@@ -679,7 +745,7 @@ export default function App() {
     async function load() {
       let { data: ex } = await supabase.from('exercises').select('id').eq('name',selectedEx).order('id').limit(1).maybeSingle()
       if (!ex) { setLastSession(null); return }
-      const { data } = await supabase.from('workouts').select('workout_date,sets(set_no,weight,reps,time_sec)').eq('exercise_id',ex.id).eq('user_id', user.id).order('workout_date',{ascending:false}).limit(1).maybeSingle()
+      const { data } = await supabase.from('workouts').select('workout_date,sets(*)').eq('exercise_id',ex.id).eq('user_id', user.id).order('workout_date',{ascending:false}).limit(1).maybeSingle()
       setLastSession(data || null)
     }
     load()
@@ -734,7 +800,7 @@ export default function App() {
       ])
       const allExIds = [...(exDbExact||[]), ...(exDbGrip||[])].map(e => e.id)
       if (allExIds.length) {
-        const { data: lastW } = await supabase.from('workouts').select('workout_date,sets(set_no,weight,reps,time_sec)').in('exercise_id', allExIds).eq('user_id', user.id).order('workout_date',{ascending:false}).limit(1).single()
+        const { data: lastW } = await supabase.from('workouts').select('workout_date,sets(*)').in('exercise_id', allExIds).eq('user_id', user.id).order('workout_date',{ascending:false}).limit(1).single()
         if (lastW) {
           setWorkoutExercises(prev => prev.map(e => e.tempId === tempId ? {...e, lastSession: lastW} : e))
         }
@@ -835,9 +901,9 @@ export default function App() {
 
   const achievements = useMemo(() => {
     if (!allRows || !achReady || weightsStatus === 'loading') return null
-    try { return computeAchievements({ rows: allRows, bodyWeights, routineLog, today: localDateStr(new Date()), sex: settings.sex || 'male', monthPicks, seed: user?.id || '' }) }
+    try { return computeAchievements({ rows: allRows, bodyWeights, routineLog, today: localDateStr(new Date()), sex: settings.sex || 'male', monthPicks, seed: user?.id || '', pauses: pauseDates(notes) }) }
     catch (e) { console.error('achievements', e); return null }
-  }, [allRows, achReady, bodyWeights, weightsStatus, routineLog, settings.sex, monthPicks, user?.id])
+  }, [allRows, achReady, bodyWeights, weightsStatus, routineLog, settings.sex, monthPicks, user?.id, notes])
 
   // Monthly challenges: freeze the month's pick once shown, and swap one on request (max 3 per month)
   const saveMonthPicks = useCallback((month, entry) => {
@@ -992,6 +1058,22 @@ export default function App() {
     setActivePlans(prev => prev.filter(p => p.id !== plan.id))
   }
 
+  // Insert sets. Cardio distance / calories go to columns added by the 20261017 migration: zero values are
+  // left out, and if the columns don't exist yet the sets are saved without them (time is kept).
+  const insertSets = async (rows) => {
+    const clean = rows.map(r => {
+      const x = { ...r }
+      if (!(Number(x.distance_km) > 0)) delete x.distance_km
+      if (!(Number(x.calories) > 0)) delete x.calories
+      return x
+    })
+    let res = await supabase.from('sets').insert(clean)
+    if (res.error && clean.some(r => 'distance_km' in r || 'calories' in r) && /distance_km|calories|PGRST204/.test(`${res.error.code} ${res.error.message}`)) {
+      res = await supabase.from('sets').insert(clean.map(({ distance_km, calories, ...r }) => r))
+    }
+    return res
+  }
+
   const saveWorkout = async () => {
     if (!workoutExercises.length) return
     if (savingRef.current) return
@@ -1003,7 +1085,7 @@ export default function App() {
     for (const exItem of workoutExercises) {
       const exType = EXERCISE_TYPE[exItem.name] || 'light'
       const exIsTimed = exType === 'timed'
-      const filled = exItem.sets.filter(s => exIsTimed ? s.weight > 0 : isRepsType(exType) ? s.reps > 0 : (s.weight > 0 && s.reps > 0))
+      const filled = exItem.sets.filter(s => setFilled(s, exType))
       if (!filled.length) { savedItems.add(exItem); continue }
       const saveName = exSaveName(exItem)
       try {
@@ -1017,7 +1099,7 @@ export default function App() {
         if (!ex) throw new Error('exercise')
         const { data: w, error: e3 } = await supabase.from('workouts').insert({ workout_date: workoutDate, exercise_id: ex.id, user_id: user.id }).select().single()
         if (e3 || !w) throw e3 || new Error('workout')
-        const { error: e4 } = await supabase.from('sets').insert(filled.map((s,i) => ({
+        const { error: e4 } = await insertSets(filled.map((s,i) => exType === 'cardio' ? { workout_id: w.id, set_no: i+1, ...uiSetToStored(s, 'cardio') } : ({
           workout_id: w.id, set_no: i+1,
           weight: exIsTimed ? (s.timedWeight||0) : (s.weight||0),
           reps: exIsTimed ? 0 : (s.reps||0),
@@ -1040,6 +1122,14 @@ export default function App() {
     }
     // everything is in the database: drop the draft right away (a reload must not restore and re-save it)
     try { localStorage.removeItem('gymBroDraft_' + user.id) } catch {}
+    // Workout note → the day's note (appended to an existing note of that day)
+    if (workoutNote.trim()) {
+      const cur = notes[workoutDate]
+      const text = cur?.text ? `${cur.text}\n${workoutNote.trim()}` : workoutNote.trim()
+      const ok = await saveNotes([workoutDate], { kind: cur?.kind || 'note', body_part: cur?.body_part || null, text: text.slice(0, 500) })
+      if (ok) setWorkoutNote('')
+      else { setSaveError(t('Тренировка сохранена, а заметка — нет. Пометки ещё не настроены в базе.')); setTimeout(() => setSaveError(null), 8000) }
+    }
     try {
       const thisM2 = localDateStr(new Date()).slice(0,7)
       const { data: sessData } = await supabase.from('workouts').select('workout_date').eq('user_id', user.id).gte('workout_date', thisM2 + '-01')
@@ -1086,7 +1176,9 @@ export default function App() {
 
   const openCalDay = async (day) => {
     const dateStr = `${calYear}-${String(calMonth+1).padStart(2,'0')}-${String(day).padStart(2,'0')}`
-    const { data } = await supabase.from('workouts').select('id,exercises(name),sets(set_no,weight,reps,time_sec)').eq('workout_date',dateStr).eq('user_id', user.id)
+    const trained = calData[day] !== undefined
+    const { data } = trained ? await supabase.from('workouts').select('id,exercises(name),sets(*)').eq('workout_date',dateStr).eq('user_id', user.id) : { data: [] }
+    if (!trained && !notes[dateStr]) { setNoteModal(dateStr); return } // empty day → straight to a new note
     setCalDayModal({ date: dateStr, workouts: data || [] })
   }
 
@@ -1096,8 +1188,9 @@ export default function App() {
     for (const { workoutId, sets: newSets } of changes) {
       const { error: e1 } = await supabase.from('sets').delete().eq('workout_id', workoutId)
       if (e1) { ok = false; continue }
-      const rows = newSets.map((s,i) => ({ workout_id:workoutId, set_no:i+1, weight:parseFloat(s.weight)||0, reps:parseInt(s.reps)||0, time_sec: s.time_sec != null ? parseFloat(s.time_sec)||0 : null }))
-      if (rows.length) { const { error: e2 } = await supabase.from('sets').insert(rows); if (e2) ok = false }
+      const rows = newSets.map((s,i) => ({ workout_id:workoutId, set_no:i+1, weight:parseFloat(s.weight)||0, reps:parseInt(s.reps)||0, time_sec: s.time_sec != null ? parseFloat(s.time_sec)||0 : null,
+        ...(s.cardio ? { distance_km: parseFloat(String(s.distance_km ?? '').replace(',','.'))||0, calories: parseInt(s.calories)||0 } : {}) }))
+      if (rows.length) { const { error: e2 } = await insertSets(rows); if (e2) ok = false }
     }
     setDataVersion(v => v + 1)
     if (ok) setEditModal(null)
@@ -1125,7 +1218,7 @@ export default function App() {
   // kg/lbs helpers
   const kgToDisplay = (kg) => num(dispW(kg))
   // Set as a short chip: "100×5", "12 повт", "60s×10кг"
-  const setChip = (s) => s.time_sec>0 ? (s.weight>0 ? `${s.time_sec}s×${kgToDisplay(s.weight)}${wUnit}` : `${s.time_sec}s`) : (s.weight>0 ? `${kgToDisplay(s.weight)}×${s.reps}` : `${s.reps} ${t('повт')}`)
+  const setChip = (s, name) => (name && isCardio(normalizeName(name))) ? cardioText(s) : s.time_sec>0 ? (s.weight>0 ? `${s.time_sec}s×${kgToDisplay(s.weight)}${wUnit}` : `${s.time_sec}s`) : (s.weight>0 ? `${kgToDisplay(s.weight)}×${s.reps}` : `${s.reps} ${t('повт')}`)
   const wUnit = settings.units === 'lbs' ? 'lbs' : t('кг')
   // "100 кг × 5 (≈117 кг)", "12 повт", "90 сек"
   const fmtRecordSet = (metric, s, value) => metric === 'time' ? `${s.time_sec} ${t('сек')}`
@@ -1383,7 +1476,7 @@ export default function App() {
                         <span style={{fontSize:15,fontWeight:700,color:thm.text85}}>{exName(ex.name)}</span>
                         {ex.grip && ex.grip !== getDefaultVariant(ex.name) && <span style={{fontSize:11,color:'rgba(var(--accent-rgb),0.8)',marginLeft:6,fontWeight:600}}>({ex.grip})</span>}
                       </div>
-                      <span style={{fontSize:12,color:thm.text30,marginRight:4}}>{ex.sets.filter(s=>exType2==='timed'?s.weight>0:isRepsType(exType2)?s.reps>0:(s.weight>0&&s.reps>0)).length} {t('подх.')}</span>
+                      <span style={{fontSize:12,color:thm.text30,marginRight:4}}>{exType2==='cardio' ? (ex.sets.some(s=>setFilled(s,exType2)) ? fmtMinutes(ex.sets.reduce((a,s)=>a+(s.min||0)*60,0)) : '') : `${ex.sets.filter(s=>setFilled(s,exType2)).length} ${t('подх.')}`}</span>
                       <button onClick={e=>{e.stopPropagation();setWorkoutExercises(prev=>prev.filter((_,i)=>i!==exIdx))}}
                         style={{background:'rgba(255,59,48,0.1)',border:'none',borderRadius:8,padding:'4px 8px',color:'#FF453A',cursor:'pointer',fontSize:12,fontWeight:700,marginRight:4}}>✕</button>
                       <span style={{color:thm.text40,fontSize:20,display:'inline-block',transform:isOpen?'rotate(180deg)':'none',transition:'transform 0.2s',padding:'2px 8px',minWidth:32,textAlign:'center'}}>▼</span>
@@ -1391,7 +1484,7 @@ export default function App() {
                     {isOpen && (
                       <div style={{padding:'0 14px 14px'}}>
                         {ex.target && (() => {
-                          const doneN = ex.sets.filter(s=>exType2==='timed'?s.weight>0:isRepsType(exType2)?s.reps>0:(s.weight>0&&s.reps>0)).length
+                          const doneN = ex.sets.filter(s=>setFilled(s,exType2)).length
                           const reached = doneN >= ex.target.sets
                           return (
                             <div style={{display:'flex',alignItems:'center',gap:8,fontSize:13,marginBottom:10,padding:'8px 10px',borderRadius:10,background:'rgba(var(--accent-rgb),0.1)',border:'1px solid rgba(var(--accent-rgb),0.25)'}}>
@@ -1401,14 +1494,21 @@ export default function App() {
                             </div>
                           )
                         })()}
+                        {injuryWarnings(notes, ex.name, workoutDate).map(w => (
+                          <div key={w.body_part} style={{display:'flex',alignItems:'center',gap:10,fontSize:12,lineHeight:1.35,marginBottom:10,padding:'8px 10px',borderRadius:10,
+                            background:'color-mix(in srgb, #E0685A 10%, transparent)',border:'1px solid color-mix(in srgb, #E0685A 35%, transparent)',color:thm.text85}}>
+                            <NoteGlyph kind="injury" size={18}/>
+                            <span>{t('Осторожно: травма ({part}) {date}. Работай легче и без боли.', { part: t(w.part.label).toLowerCase(), date: new Date(w.date+'T12:00:00').toLocaleDateString(locale(),{day:'numeric',month:'short'}).replace('.','') })}</span>
+                          </div>
+                        ))}
                         {ex.lastSession && (
                           <div style={{fontSize:12,color:thm.text35,marginBottom:10,padding:'7px 10px',background:thm.card2,borderRadius:8}}>
-                            💡 {t('Прошлый раз:')} {ex.lastSession.sets?.sort((a,b)=>a.set_no-b.set_no).slice(-3).map(setChip).join(' · ')}
+                            💡 {t('Прошлый раз:')} {ex.lastSession.sets?.sort((a,b)=>a.set_no-b.set_no).slice(-3).map(x=>setChip(x, ex.name)).join(' · ')}
                           </div>
                         )}
                         {rec.pr && (
                           <div style={{fontSize:12,color:thm.text35,marginTop:ex.lastSession?-4:0,marginBottom:10,padding:'0 10px'}}>
-                            🏆 {t('Рекорд:')} {fmtRecordSet(rec.metric, rec.pr, rec.pr.value)}
+                            🏆 {t('Рекорд:')} {exType2==='cardio' ? fmtMinutes(rec.pr.time_sec) : fmtRecordSet(rec.metric, rec.pr, rec.pr.value)}
                           </div>
                         )}
                         {ex.grip !== null && ex.grip !== undefined && (
@@ -1428,7 +1528,7 @@ export default function App() {
                         )}
                         {(() => {
                           const workingWeight = ex.sets[0]?.weight || 0
-                          const warmups = exType2 === 'timed' ? [] : getWarmupSets(ex.name, workingWeight)
+                          const warmups = exType2 === 'timed' || exType2 === 'cardio' ? [] : getWarmupSets(ex.name, workingWeight)
                           return (
                             <>
                               {ex.sets.map((s,si) => (
@@ -1436,7 +1536,9 @@ export default function App() {
                                   {beats[si]
                                     ? <span className="set-num" title={t('Новый рекорд')} style={{opacity:1,fontSize:14}}>🏆</span>
                                     : <span className="set-num">{si+1}</span>}
-                                  {exType2 === 'timed' ? (
+                                  {exType2 === 'cardio' ? (
+                                    <CardioInputs s={s} onChange={patch=>setWorkoutExercises(prev=>prev.map((e,i)=>i!==exIdx?e:{...e,sets:e.sets.map((ss,j)=>j!==si?ss:{...ss,...patch})}))}/>
+                                  ) : exType2 === 'timed' ? (
                                     <>
                                       <DropdownPicker options={TIME_OPTIONS} value={s.weight} onChange={v=>setWorkoutExercises(prev=>prev.map((e,i)=>i!==exIdx?e:{...e,sets:e.sets.map((ss,j)=>j!==si?ss:{...ss,weight:v})}))} unit="s" label={t('Подход {n}',{n:si+1})}/>
                                       <span className="set-sep">×</span>
@@ -1461,7 +1563,7 @@ export default function App() {
                                 </div>
                               ))}
                               <div className="set-btns" style={{marginTop:4}}>
-                                <button className="set-btn" onClick={()=>setWorkoutExercises(prev=>prev.map((e,i)=>i!==exIdx?e:{...e,sets:[...e.sets,{weight:e.sets[e.sets.length-1]?.weight||0,reps:e.sets[e.sets.length-1]?.reps||0,timedWeight:e.sets[e.sets.length-1]?.timedWeight||0}]}))}>{t('➕ Подход')}</button>
+                                <button className="set-btn" onClick={()=>setWorkoutExercises(prev=>prev.map((e,i)=>i!==exIdx?e:{...e,sets:[...e.sets,{weight:e.sets[e.sets.length-1]?.weight||0,reps:e.sets[e.sets.length-1]?.reps||0,timedWeight:e.sets[e.sets.length-1]?.timedWeight||0,min:e.sets[e.sets.length-1]?.min||0}]}))}>{exType2==='cardio' ? t('➕ Отрезок') : t('➕ Подход')}</button>
                                 <button className="set-btn" onClick={()=>setWorkoutExercises(prev=>prev.map((e,i)=>i!==exIdx?e:{...e,sets:e.sets.length>1?e.sets.slice(0,-1):e.sets}))} style={{opacity:ex.sets.length<=1?0.35:1}}>{t('➖ Убрать')}</button>
                               </div>
                             </>
@@ -1485,6 +1587,16 @@ export default function App() {
               <ActionCard thm={thm} last icon="🧘" title={t('Растяжка')} sub={t('Восстановление после нагрузки')} onClick={()=>setShowStretch(true)}/>
               </>)}
               {workoutExercises.length > 0 && (
+                <div style={{marginBottom:12}}>
+                  <div style={{display:'flex',alignItems:'center',gap:8,fontSize:12,fontWeight:600,color:thm.text45,margin:'4px 2px 8px'}}>
+                    <NoteGlyph kind="note" size={16}/>{t('Заметка к тренировке')}
+                  </div>
+                  <textarea value={workoutNote} onChange={e=>setWorkoutNote(e.target.value)} rows={2} maxLength={500}
+                    placeholder={t('Например: плохо спал, болело плечо')}
+                    style={{width:'100%',boxSizing:'border-box',borderRadius:12,border:`1px solid ${thm.border}`,background:thm.card2,color:thm.text,padding:'10px 12px',fontSize:14,fontFamily:'inherit',resize:'vertical'}}/>
+                </div>
+              )}
+              {workoutExercises.length > 0 && (
                 <button className={`save-btn${saved?' done':''}`} onClick={saveWorkout} disabled={saving || saved}>
                   {saved ? t('✅ Сохранено!') : saving ? t('⏳ Сохранение...') : t('💾 Сохранить тренировку ({n} упр.)',{n:workoutExercises.length})}
                 </button>
@@ -1507,7 +1619,8 @@ export default function App() {
         <HistoryView history={history} allRows={allRows} month={historyMonth} setMonth={setHistoryMonth} year={historyYear} setYear={setHistoryYear}
           openDays={openDays} setOpenDays={setOpenDays} copiedDay={copiedDay} onCopy={copyDay}
           onEdit={(date, ws) => setEditModal({ date, workouts: ws.map(w => ({ ...w, sets: w.sets ? [...w.sets] : [] })) })}
-          onDeleteDay={deleteDay} onDeleteExercise={deleteWorkout} setChip={setChip} thm={thm} isDark={isDark}/>
+          onDeleteDay={deleteDay} onDeleteExercise={deleteWorkout} setChip={setChip} thm={thm} isDark={isDark}
+          notes={notes} onNote={setNoteModal}/>
       )}
 
       {tab === 'progress' && (() => {
@@ -1556,8 +1669,12 @@ export default function App() {
             {Array(offset).fill(null).map((_,i)=><div key={`e${i}`} className="cal-cell empty"/>)}
             {Array(daysInMonth).fill(null).map((_,i)=>{
               const day=i+1; const ds=`${calYear}-${String(calMonth+1).padStart(2,'0')}-${String(day).padStart(2,'0')}`
-              const trained=calData[day]!==undefined; const vol=calData[day]||0
-              return <div key={day} className={`cal-cell${trained?' trained':''}${ds===todayStr?' today':''}`} onClick={()=>trained&&openCalDay(day)}>{day}{trained&&vol>0&&<div className="cal-vol">{(()=>{const v=isLbs()?Math.round(vol*KG_TO_LB):vol;return v>=1000?`${(v/1000).toFixed(1)}K`:v})()}</div>}</div>
+              const trained=calData[day]!==undefined; const vol=calData[day]||0; const note=notes[ds]
+              return <div key={day} className={`cal-cell${trained?' trained':''}${ds===todayStr?' today':''}`} onClick={()=>openCalDay(day)}
+                style={{position:'relative',cursor:'pointer',...(note&&!trained?{background:`color-mix(in srgb, ${noteKind(note.kind).color} 14%, transparent)`,color:noteKind(note.kind).color}:{})}}>
+                {day}{trained&&vol>0&&<div className="cal-vol">{(()=>{const v=isLbs()?Math.round(vol*KG_TO_LB):vol;return v>=1000?`${(v/1000).toFixed(1)}K`:v})()}</div>}
+                {note&&<span style={{position:'absolute',top:2,right:2}}><NoteGlyph kind={note.kind} size={11}/></span>}
+              </div>
             })}
           </div>
           <button onClick={()=>setOpenPrs(p=>({...p,__all__:!p.__all__}))} style={{
@@ -1579,11 +1696,11 @@ export default function App() {
                 <button style={{width:'100%',background:'none',border:'none',cursor:'pointer',padding:'11px 16px',display:'flex',alignItems:'center',gap:10,textAlign:'left'}} onClick={()=>setOpenPrs(p=>({...p,[name]:!p[name]}))}>
                   {img ? <img src={img} alt={name} loading="lazy" decoding="async" style={{width:32,height:32,borderRadius:7,objectFit:'cover',flexShrink:0}} onError={e=>e.target.style.display='none'}/> : <div style={{width:32,height:32,borderRadius:7,background:thm.btnBg,display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0,fontSize:16}}>🏋️</div>}
                   <span style={{flex:1,color:thm.text85,fontSize:14,fontWeight:600}}>{exName(normalizeName(name))}</span>
-                  <span style={{color:'var(--accent)',fontSize:14,fontWeight:700,marginRight:8}}>{pr.metric==='time' ? `${pr.time_sec} ${t('сек')}` : pr.metric==='reps' ? `${pr.reps} ${t('повт')}${pr.weight>0?` +${kgToDisplay(pr.weight)}`:''}` : `${kgToDisplay(pr.weight)} × ${pr.reps}`}</span>
+                  <span style={{color:'var(--accent)',fontSize:14,fontWeight:700,marginRight:8}}>{isCardio(normalizeName(name)) ? fmtMinutes(pr.time_sec) : pr.metric==='time' ? `${pr.time_sec} ${t('сек')}` : pr.metric==='reps' ? `${pr.reps} ${t('повт')}${pr.weight>0?` +${kgToDisplay(pr.weight)}`:''}` : `${kgToDisplay(pr.weight)} × ${pr.reps}`}</span>
                   <span style={{color:thm.text25,fontSize:11,display:'inline-block',transition:'transform 0.2s',transform:isOpen?'rotate(180deg)':'none'}}>▼</span>
                 </button>
                 {isOpen && <div style={{padding:'2px 16px 12px 58px',display:'flex',gap:16,flexWrap:'wrap',alignItems:'center'}}>
-                  <span style={{fontSize:13,color:thm.text50,fontWeight:600}}>{pr.metric==='time' ? `${pr.time_sec} ${t('сек')}${pr.weight>0?` × ${kgToDisplay(pr.weight)} ${wUnit}`:''}` : pr.metric==='reps' ? `${pr.reps} ${t('повт')}${pr.weight>0?` ${t('с доп. весом')} ${kgToDisplay(pr.weight)} ${wUnit}`:''}` : `${kgToDisplay(pr.weight)} ${wUnit} × ${pr.reps} ${t('повт')} · ${t('1ПМ')} ≈ ${kgToDisplay(Math.round(pr.value*10)/10)} ${wUnit}`}</span>
+                  <span style={{fontSize:13,color:thm.text50,fontWeight:600}}>{isCardio(normalizeName(name)) ? `${t('Самая долгая')}: ${fmtMinutes(pr.time_sec)}` : pr.metric==='time' ? `${pr.time_sec} ${t('сек')}${pr.weight>0?` × ${kgToDisplay(pr.weight)} ${wUnit}`:''}` : pr.metric==='reps' ? `${pr.reps} ${t('повт')}${pr.weight>0?` ${t('с доп. весом')} ${kgToDisplay(pr.weight)} ${wUnit}`:''}` : `${kgToDisplay(pr.weight)} ${wUnit} × ${pr.reps} ${t('повт')} · ${t('1ПМ')} ≈ ${kgToDisplay(Math.round(pr.value*10)/10)} ${wUnit}`}</span>
                   <span style={{fontSize:12,color:thm.text30}}>{new Date(pr.date+'T12:00:00').toLocaleDateString(locale(),{day:'numeric',month:'short',year:'numeric'})}</span>
                 </div>}
               </div>
@@ -1606,7 +1723,7 @@ export default function App() {
               if (settings.units === 'lbs' && (base[0]?.metric === 'weight' || base[0]?.metric === 'e1rm')) return base.map(p => ({...p, val: Math.round(p.val * 2.20462 * 10) / 10}))
               return base
             })()} period={chartPeriod} setPeriod={setChartPeriod} totalPoints={chartData.length}
-              unit={chartData[0]?.metric === 'time' ? t('сек') : chartData[0]?.metric === 'reps' ? t('повт') : wUnit} dark={isDark}/>
+              unit={chartData[0]?.metric === 'time' ? (isCardio(chartEx) ? t('мин') : t('сек')) : chartData[0]?.metric === 'reps' ? t('повт') : wUnit} dark={isDark}/>
           </div>
         </div>
         )
@@ -1636,16 +1753,24 @@ export default function App() {
             <div className="modal-list">
               {calDayModal.workouts.map(w=>(
                 <div key={w.id} style={{padding:'12px 10px',borderRadius:12,marginBottom:6,background:thm.card2,border:`1px solid ${thm.border}`}}>
-                  <div style={{fontSize:14,fontWeight:700,marginBottom:7,color:thm.text}}>{normalizeName(w.exercises?.name)}</div>
-                  <div className="chips">{w.sets?.sort((a,b)=>a.set_no-b.set_no).map((s,i)=><span key={i} className="chip">{setChip(s)}</span>)}</div>
+                  <div style={{fontSize:14,fontWeight:700,marginBottom:7,color:thm.text}}>{exName(normalizeName(w.exercises?.name))}</div>
+                  <div className="chips">{w.sets?.sort((a,b)=>a.set_no-b.set_no).map((s,i)=><span key={i} className="chip">{setChip(s, w.exercises?.name)}</span>)}</div>
                 </div>
               ))}
+              {notes[calDayModal.date]
+                ? <div style={{borderRadius:12,marginBottom:6,background:thm.card2,border:`1px solid ${thm.border}`}}>
+                    <NoteLine note={notes[calDayModal.date]} span={noteSpan(notes, calDayModal.date)} thm={thm} onClick={()=>{setNoteModal(calDayModal.date);setCalDayModal(null)}}/>
+                  </div>
+                : <button onClick={()=>{setNoteModal(calDayModal.date);setCalDayModal(null)}} style={{width:'100%',padding:'12px',borderRadius:12,border:`1px dashed ${thm.border}`,background:'transparent',color:thm.text50,fontSize:14,fontWeight:600,cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',gap:8}}>
+                    <NoteGlyph kind="note" size={16} color="currentColor"/>{t('Добавить пометку')}
+                  </button>}
             </div>
           </div>
         </div>
       )}
 
       {editModal && <EditModal data={editModal} onClose={()=>setEditModal(null)} onSave={saveEdit}/>}
+      {noteModal && <NoteModal date={noteModal} notes={notes} status={notesStatus} onSave={saveNotes} onDelete={deleteNotes} onClose={()=>setNoteModal(null)} thm={thm}/>}
 
       {tab === 'settings' && (
         <div className="section">
@@ -1744,7 +1869,7 @@ export default function App() {
         const filtered = allExNames.filter(name => {
           const primaryMuscles = EXERCISE_MUSCLES[name]?.primary || []
           if (exTabFilter === 'favorites') return favorites.includes(name) && (name.toLowerCase().includes(exTabSearch.toLowerCase()) || exName(name).toLowerCase().includes(exTabSearch.toLowerCase()))
-          const matchesFilter = exTabFilter === 'all' || (MUSCLE_FILTER_MAP[exTabFilter] || []).some(m => primaryMuscles.includes(m))
+          const matchesFilter = exTabFilter === 'all' || (exTabFilter === 'cardio' ? isCardio(name) : (MUSCLE_FILTER_MAP[exTabFilter] || []).some(m => primaryMuscles.includes(m)))
           const matchesSearch = name.toLowerCase().includes(exTabSearch.toLowerCase()) || exName(name).toLowerCase().includes(exTabSearch.toLowerCase())
           return matchesFilter && matchesSearch
         }).sort((a,b) => {
@@ -1766,6 +1891,9 @@ export default function App() {
                 <button className={`muscle-chip-fav${exTabFilter==='favorites'?' active':''}`}
                   style={exTabFilter!=='favorites'?{background:thm.btnBg,color:thm.text50,border:`1px solid ${thm.border}`}:{border:'none'}}
                   onClick={()=>setExTabFilter('favorites')}>{t('⭐ Избранные')}</button>
+                <button className={`muscle-chip-fav${exTabFilter==='cardio'?' active':''}`}
+                  style={exTabFilter!=='cardio'?{background:thm.btnBg,color:thm.text50,border:`1px solid ${thm.border}`}:{border:'none'}}
+                  onClick={()=>setExTabFilter('cardio')}>{t('Кардио')}</button>
               </div>
               <div className="muscle-filters-divider"/>
               <div className="muscle-filters-row">
@@ -1811,7 +1939,7 @@ export default function App() {
                   <div style={{flex:1,minWidth:0}}>
                     <div className="ex-list-name" style={{color:thm.text}}>{exName(name)}</div>
                     <div style={{fontSize:12,marginTop:2}}>
-                      <span style={{color:thm.text60}}>{primaryMuscles.slice(0,2).map(m=>muscleLabel(m, MUSCLE_LABELS[m]||m)).join(' · ')}</span>
+                      <span style={{color:thm.text60}}>{isCardio(name) ? t('Кардио') : primaryMuscles.slice(0,2).map(m=>muscleLabel(m, MUSCLE_LABELS[m]||m)).join(' · ')}</span>
                       {secondaryMuscles.length > 0 && <span style={{color:thm.text30,fontSize:11}}>{' · '}{secondaryMuscles.slice(0,2).map(m=>muscleLabel(m, MUSCLE_LABELS[m]||m)).join(', ')}</span>}
                     </div>
                   </div>
