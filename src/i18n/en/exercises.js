@@ -48,7 +48,7 @@ export const EX_NAMES_EN = {
   'Гребной тренажёр': 'Rowing Machine',
   'Степпер': 'Stair Climber',
   'Скакалка': 'Jump Rope',
-  'Бег на улице': 'Outdoor Run',
+  'Бег': 'Running',
   'Жим лёжа': 'Bench Press',
   'Приседания': 'Squat',
   'Становая тяга': 'Deadlift',
@@ -178,8 +178,8 @@ export const EX_INFO_EN = {
     benefit: 'Raises the heart rate fast and trains calves, coordination and endurance.',
     tips: 'Jump low, on your toes. Turn with the wrists, not the shoulders. Elbows close to the body.',
   },
-  'Бег на улице': {
-    desc: 'Run outdoors or on a track at a comfortable pace. Log the time and distance.',
+  'Бег': {
+    desc: 'Run at a comfortable pace — outdoors, on a track or in a park. Log the time and distance.',
     benefit: 'Builds endurance and heart health, helps stay in shape and relieves stress.',
     tips: 'Start slow. Short, quick steps. Good shoes and a warm-up before running.',
   },

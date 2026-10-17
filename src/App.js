@@ -121,6 +121,7 @@ export default function App() {
   const [lastSession, setLastSession] = useState(null)
   const [showExModal, setShowExModal] = useState(false)
   const [modalSearch, setModalSearch] = useState('')
+  const [exModalKind, setExModalKind] = useState('strength') // add-exercise sheet: 'strength' | 'cardio'
   const [prs, setPrs] = useState([])
   const [openPrs, setOpenPrs] = useState({})
   const [stats, setStats] = useState(null)
@@ -175,6 +176,7 @@ export default function App() {
   const [notesStatus, setNotesStatus] = useState('loading')
   const [noteModal, setNoteModal] = useState(null)   // date being edited
   const [workoutNote, setWorkoutNote] = useState('')
+  const [workoutNoteOpen, setWorkoutNoteOpen] = useState(false)
   const [showStretch, setShowStretch] = useState(false)
   const [settings, setSettings] = useState(DEFAULT_SETTINGS)
   setPrefs(settings) // language and units for t() / formatters during this render
@@ -503,7 +505,7 @@ export default function App() {
       if (draft && Array.isArray(draft.exercises) && draft.exercises.length) {
         setWorkoutExercises(draft.exercises)
         if (draft.date) setWorkoutDate(draft.date)
-        if (draft.note) setWorkoutNote(draft.note)
+        if (draft.note) { setWorkoutNote(draft.note); setWorkoutNoteOpen(true) }
         setWorkoutStarted(true)
         setDraftRestored(true)
         setTimeout(() => setDraftRestored(false), 3500)
@@ -1127,7 +1129,7 @@ export default function App() {
       const cur = notes[workoutDate]
       const text = cur?.text ? `${cur.text}\n${workoutNote.trim()}` : workoutNote.trim()
       const ok = await saveNotes([workoutDate], { kind: cur?.kind || 'note', body_part: cur?.body_part || null, text: text.slice(0, 500) })
-      if (ok) setWorkoutNote('')
+      if (ok) { setWorkoutNote(''); setWorkoutNoteOpen(false) }
       else { setSaveError(t('Тренировка сохранена, а заметка — нет. Пометки ещё не настроены в базе.')); setTimeout(() => setSaveError(null), 8000) }
     }
     try {
@@ -1170,7 +1172,7 @@ export default function App() {
   }
 
   const copyDay = async (date, workouts) => {
-    try { await navigator.clipboard.writeText(buildCopyText(date, workouts)) } catch {}
+    try { await navigator.clipboard.writeText(buildCopyText(date, workouts, notes[date])) } catch {}
     setCopiedDay(date); setTimeout(() => setCopiedDay(null), 2000)
   }
 
@@ -1203,8 +1205,10 @@ export default function App() {
     return exercises.filter(e => e.name.toLowerCase().includes(q) || exName(e.name).toLowerCase().includes(q))
   }, [exercises, modalSearch, settings.language]) // eslint-disable-line react-hooks/exhaustive-deps
   const favSet = useMemo(() => new Set(favorites), [favorites])
-  const favFiltered = useMemo(() => filtered.filter(e => favSet.has(e.name)), [filtered, favSet])
-  const restFiltered = useMemo(() => filtered.filter(e => !favSet.has(e.name)), [filtered, favSet])
+  // Strength and cardio are separate tabs of the add-exercise sheet; a search looks in both
+  const kindFiltered = useMemo(() => modalSearch.trim() ? filtered : filtered.filter(e => isCardio(e.name) === (exModalKind === 'cardio')), [filtered, modalSearch, exModalKind])
+  const favFiltered = useMemo(() => kindFiltered.filter(e => favSet.has(e.name)), [kindFiltered, favSet])
+  const restFiltered = useMemo(() => kindFiltered.filter(e => !favSet.has(e.name)), [kindFiltered, favSet])
   const grouped = history.reduce((acc,w) => { if(!acc[w.workout_date]) acc[w.workout_date]=[]; acc[w.workout_date].push(w); return acc }, {})
   const calMonthName = new Date(calYear,calMonth).toLocaleDateString(locale(),{month:'long',year:'numeric'})
   const firstDow = new Date(calYear,calMonth,1).getDay()
@@ -1574,7 +1578,7 @@ export default function App() {
                   </div>
                 )
               })}
-              <ActionCard thm={thm} icon="＋" title={t('Добавить упражнение')} sub={t('Выбрать вручную')} onClick={()=>setShowExModal(true)}/>
+              <ActionCard thm={thm} icon="＋" title={t('Добавить упражнение')} sub={t('Выбрать вручную')} onClick={()=>{setExModalKind('strength');setShowExModal(true)}}/>
               {/* Plan — only shown when no exercises added yet */}
               {workoutExercises.length === 0 && <div style={{display:'flex',flexDirection:'column',alignItems:'stretch'}}>
                 {activePlans.map(plan => <TodayPlanCard key={plan.id} full plan={plan} thm={thm} onStart={loadPlanDay} onOpen={()=>setShowPlanModal('my')}/>)}
@@ -1588,12 +1592,19 @@ export default function App() {
               </>)}
               {workoutExercises.length > 0 && (
                 <div style={{marginBottom:12}}>
-                  <div style={{display:'flex',alignItems:'center',gap:8,fontSize:12,fontWeight:600,color:thm.text45,margin:'4px 2px 8px'}}>
-                    <NoteGlyph kind="note" size={16}/>{t('Заметка к тренировке')}
-                  </div>
-                  <textarea value={workoutNote} onChange={e=>setWorkoutNote(e.target.value)} rows={2} maxLength={500}
-                    placeholder={t('Например: плохо спал, болело плечо')}
-                    style={{width:'100%',boxSizing:'border-box',borderRadius:12,border:`1px solid ${thm.border}`,background:thm.card2,color:thm.text,padding:'10px 12px',fontSize:14,fontFamily:'inherit',resize:'vertical'}}/>
+                  {!workoutNoteOpen ? (
+                    <button onClick={()=>setWorkoutNoteOpen(true)} style={{width:'100%',padding:'11px 14px',borderRadius:12,border:`1px dashed ${thm.border}`,background:'transparent',color:thm.text50,fontSize:14,fontWeight:600,cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',gap:8}}>
+                      <NoteGlyph kind="note" size={16}/>{t('Заметка к тренировке')}
+                    </button>
+                  ) : (<>
+                    <div style={{display:'flex',alignItems:'center',gap:8,fontSize:12,fontWeight:600,color:thm.text45,margin:'4px 2px 8px'}}>
+                      <NoteGlyph kind="note" size={16}/><span style={{flex:1}}>{t('Заметка к тренировке')}</span>
+                      <button onClick={()=>{setWorkoutNote('');setWorkoutNoteOpen(false)}} aria-label={t('Убрать заметку')} style={{background:'none',border:'none',color:thm.text40,fontSize:15,cursor:'pointer'}}>✕</button>
+                    </div>
+                    <textarea autoFocus value={workoutNote} onChange={e=>setWorkoutNote(e.target.value)} rows={2} maxLength={500}
+                      placeholder={t('Например: плохо спал, болело плечо')}
+                      style={{width:'100%',boxSizing:'border-box',borderRadius:12,border:`1px solid ${thm.border}`,background:thm.card2,color:thm.text,padding:'10px 12px',fontSize:14,fontFamily:'inherit',resize:'vertical'}}/>
+                  </>)}
                 </div>
               )}
               {workoutExercises.length > 0 && (
@@ -1736,6 +1747,14 @@ export default function App() {
             <div className="modal-hdr">
               <div className="modal-title">{t('Выбери упражнение')}</div>
               <div className="modal-srch-wrap"><span className="modal-srch-icon">🔍</span><input className="modal-srch" placeholder={t('Поиск...')} value={modalSearch} onChange={e=>setModalSearch(e.target.value)}/></div>
+              {!modalSearch.trim() && (
+                <div style={{display:'flex',gap:4,padding:3,borderRadius:12,background:isDark?'rgba(255,255,255,0.06)':'rgba(0,0,0,0.05)',marginTop:10}}>
+                  {[['strength',t('Силовые')],['cardio',t('Кардио')]].map(([id,label])=>(
+                    <button key={id} onClick={()=>setExModalKind(id)} style={{flex:1,padding:'8px 0',borderRadius:9,border:'none',cursor:'pointer',fontSize:14,fontWeight:700,
+                      background:exModalKind===id?'var(--accent)':'transparent',color:exModalKind===id?'#000':thm.text50}}>{label}</button>
+                  ))}
+                </div>
+              )}
             </div>
             <div className="modal-list">
               {!modalSearch&&favFiltered.length>0&&<><div className="modal-sect-lbl">{t('⭐ Избранные')}</div>{favFiltered.map(ex=><ModalItem key={ex.id} ex={ex} lang={settings.language} onAdd={addExToWorkout} isFav={true} onToggleFav={toggleFav}/>)}<div className="modal-sect-lbl">{t('Все упражнения')}</div></>}
