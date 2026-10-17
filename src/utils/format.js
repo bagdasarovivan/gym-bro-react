@@ -30,8 +30,9 @@ export function formatSetsText(sets) {
 
 export function buildCopyText(date, workouts) {
   const lines = [`📅 ${date} · ${workouts.length} ${t('упр.')}${isLbs() ? ' · lbs' : ''}`]
-  const reversed = [...workouts].reverse()
-  reversed.forEach(w => {
+  // in the order the exercises were logged (by id), whatever order the caller passes
+  const ordered = [...workouts].sort((a, b) => (a.id || 0) - (b.id || 0))
+  ordered.forEach(w => {
     lines.push(`${exName(w.exercises?.name)}: ${formatSetsText(w.sets)}`)
   })
   return lines.join('\n')
