@@ -73,6 +73,13 @@ const CardioInputs = ({ s, onChange }) => {
   )
 }
 
+// Flame icon in the accent colour (an emoji can't be recoloured)
+const Flame = ({ size = 16 }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" aria-hidden="true" style={{ display: 'block', filter: 'drop-shadow(0 0 3px rgba(var(--accent-rgb),0.5))' }}>
+    <path fill="var(--accent)" d="M12 2c.6 3.2 2.6 4.9 4.3 6.9C18 10.9 19 12.9 19 15.2 19 19 15.9 22 12 22s-7-3-7-6.8c0-2.4 1.1-4.3 2.6-5.8.2 1.6 1 2.8 2.2 3.4C9.4 9.6 10 5.3 12 2z"/>
+    <path fill="#fff" fillOpacity="0.6" d="M12 12.6c1.4 1.4 2.8 2.6 2.8 4.5A2.8 2.8 0 0 1 12 19.9a2.8 2.8 0 0 1-2.8-2.8c0-1.3.6-2.3 1.5-3 .2.8.6 1.2 1.2 1.4-.2-1.1-.1-2.1.1-2.9z"/>
+  </svg>
+)
 const applyAccent = (id) => {
   const a = ACCENTS.find(x => x.id === id) || ACCENTS[0]
   const root = document.documentElement
@@ -1326,7 +1333,7 @@ export default function App() {
             background:'rgba(var(--accent-rgb),0.12)',border:'1px solid rgba(var(--accent-rgb),0.3)',
             borderRadius:10,padding:'0 10px',height:36,cursor:'pointer',gap:3,
             fontSize:14,fontWeight:800,color:'var(--accent)',display:'flex',alignItems:'center',flexShrink:0,whiteSpace:'nowrap'
-          }}>{streak >= 1 ? <>{streak}<VicIcon name="lantern" size={23}/></> : <VicIcon name="lantern" size={23}/>}{achUnviewed && <span style={{position:'absolute',top:-3,right:-3,width:9,height:9,borderRadius:'50%',background:'var(--accent)',border:'2px solid #000'}}/>}</button>}
+          }}>{streak >= 1 ? <>{streak}<Flame size={17}/></> : '🏅'}{achUnviewed && <span style={{position:'absolute',top:-3,right:-3,width:9,height:9,borderRadius:'50%',background:'var(--accent)',border:'2px solid #000'}}/>}</button>}
           <button onClick={() => setTab(t => t === 'settings' ? 'add' : 'settings')} style={{
             background: tab==='settings' ? 'rgba(var(--accent-rgb),0.08)' : thm.btnBg,
             border: tab==='settings' ? '1.5px solid var(--accent)' : `1px solid ${thm.btnBorder}`,
@@ -2086,7 +2093,7 @@ export default function App() {
       {streakAlert && streakAlert.type === 'month' && (
         <div className="alert-toast" style={{borderColor:'rgba(var(--accent-rgb),0.3)'}}>
           <div className="alert-toast-icon">
-            {streakAlert.count>=20?'👑':streakAlert.count>=10?'🏆':streakAlert.count>=5?'⚡':<VicIcon name="lantern" size={34} color="var(--accent)"/>}
+            {streakAlert.count>=20?'👑':streakAlert.count>=10?'🏆':streakAlert.count>=5?'⚡':<Flame size={32}/>}
           </div>
           <div>
             <div className="alert-toast-title">{t('{n}-я тренировка месяца!',{n:streakAlert.count})}</div>
