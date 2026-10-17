@@ -3,6 +3,7 @@ import { buildDays, tierOf } from '../data/achievements'
 import { GRIP_MUSCLES, getVariantOptions, EXERCISE_MUSCLES, MUSCLE_LABELS, GRIP_EXERCISES, VARIANT_EXERCISES } from '../data/exerciseCatalog'
 import { getAnatomy, ANATOMY_LABELS } from '../data/muscleLoad'
 import { e1rm, recordMetric } from '../utils/records'
+import { cardioText } from '../utils/format'
 import { anatomyLabel, dispW, fmtVolume, fmtW, locale, muscleLabel, num, plural, t, variantName } from '../i18n'
 import { MuscleMap } from './MuscleMap'
 
@@ -83,6 +84,7 @@ export function agoLabel(date) {
 const fmtDateShort = (d) => new Date(d + 'T12:00:00').toLocaleDateString(locale(), { day: 'numeric', month: 'short' })
 
 function setText(x, metric) {
+  if (x.distance_km != null || x.calories != null || (metric === 'time' && x.time_sec >= 60 && !(x.weight > 0))) return cardioText(x)
   if (metric === 'time') return fmtTime(x.time_sec || 0) + (x.weight > 0 ? ` +${num(dispW(x.weight))}` : '')
   if (metric === 'reps') return x.weight > 0 ? `+${num(dispW(x.weight))}×${x.reps || 0}` : `${x.reps || 0}`
   return `${num(dispW(x.weight || 0))}×${x.reps || 0}`

@@ -203,7 +203,7 @@ input[type=number]::-webkit-inner-spin-button{-webkit-appearance:none}
 .ex-tab-search{width:100%;background:#2c2c2e;border:none;border-radius:14px;padding:12px 16px 12px 40px;color:white;font-size:15px;outline:none;margin-bottom:14px}
 .ex-tab-search::placeholder{color:rgba(255,255,255,0.3)}
 .muscle-filters{display:flex;flex-direction:column;gap:6px;margin-bottom:14px}
-.muscle-filters-fav-row{display:flex}
+.muscle-filters-fav-row{display:flex;gap:6px}
 .muscle-chip-fav{padding:7px 16px;border-radius:99px;border:none;cursor:pointer;font-size:13px;font-weight:600;transition:all 0.15s;background:#2c2c2e;color:rgba(255,255,255,0.5)}
 .muscle-chip-fav.active{background:var(--accent);color:#000;border:none}
 .muscle-filters-divider{height:1px;background:rgba(255,255,255,0.08);margin:4px 0}

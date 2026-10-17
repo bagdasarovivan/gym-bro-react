@@ -17,7 +17,6 @@ export const EX_NAMES_EN = {
   'Дровосек на блоке': 'Cable Woodchop',
   'Подъём ног лёжа': 'Lying Leg Raise',
   'Мёртвый жук': 'Dead Bug',
-  'Вакуум': 'Stomach Vacuum',
   'Трастеры': 'Thrusters',
   'Прыжки на тумбу': 'Box Jump',
   'Турецкий подъём': 'Turkish Get-Up',
@@ -43,6 +42,13 @@ export const EX_NAMES_EN = {
   'Разгибание руки в наклоне': 'Triceps Kickback',
   'Фермерская прогулка': 'Farmer\'s Walk',
   'Бёрпи': 'Burpee',
+  'Беговая дорожка': 'Treadmill',
+  'Велотренажёр': 'Stationary Bike',
+  'Эллипс': 'Elliptical',
+  'Гребной тренажёр': 'Rowing Machine',
+  'Степпер': 'Stair Climber',
+  'Скакалка': 'Jump Rope',
+  'Бег на улице': 'Outdoor Run',
   'Жим лёжа': 'Bench Press',
   'Приседания': 'Squat',
   'Становая тяга': 'Deadlift',
@@ -142,6 +148,41 @@ export const VARIANTS_EN = {
 }
 
 export const EX_INFO_EN = {
+  'Беговая дорожка': {
+    desc: 'Walk or run on the treadmill at a steady pace. Set speed and incline to your goal: brisk uphill walk or easy run.',
+    benefit: 'Trains the heart and endurance and burns calories without outdoor impact.',
+    tips: 'Don\'t hold the rails. Back straight, natural stride. For fat loss — 30–45 min of incline walking.',
+  },
+  'Велотренажёр': {
+    desc: 'Pedal the stationary bike at a steady pace or in intervals. Set the seat so the leg is almost straight at the bottom.',
+    benefit: 'Cardio without load on knees and back — good for warm-up, cool-down and recovery.',
+    tips: 'Don\'t lock the knee at the bottom. Keep the torso still. Resistance hard but steady.',
+  },
+  'Эллипс': {
+    desc: 'Smooth leg and arm movement on the elliptical. Legs and arms work at the same time.',
+    benefit: 'Works the whole body and the heart with almost no joint stress.',
+    tips: 'Keep the whole foot on the pedals. Push and pull the handles to work the upper body. Hold a steady pace.',
+  },
+  'Гребной тренажёр': {
+    desc: 'Sit, strap your feet, grab the handle. Drive with the legs, lean back and pull the handle to the lower chest. Return in reverse.',
+    benefit: 'Full-body cardio: legs, back and arms work in every stroke.',
+    tips: 'Order: legs — body — arms, then back: arms — body — legs. Back straight. Power comes from the legs.',
+  },
+  'Степпер': {
+    desc: 'Climb the stairs on a stair machine or step on a stepper at a steady pace.',
+    benefit: 'Hits glutes and legs hard and raises the heart rate fast.',
+    tips: 'Don\'t lean your weight on the rails. Place the whole foot. Torso slightly forward, back straight.',
+  },
+  'Скакалка': {
+    desc: 'Jump over the rope on the balls of your feet, turning it with the wrists. Steady or in intervals.',
+    benefit: 'Raises the heart rate fast and trains calves, coordination and endurance.',
+    tips: 'Jump low, on your toes. Turn with the wrists, not the shoulders. Elbows close to the body.',
+  },
+  'Бег на улице': {
+    desc: 'Run outdoors or on a track at a comfortable pace. Log the time and distance.',
+    benefit: 'Builds endurance and heart health, helps stay in shape and relieves stress.',
+    tips: 'Start slow. Short, quick steps. Good shoes and a warm-up before running.',
+  },
   'Подъём гантелей перед собой': {
     desc: 'Stand holding dumbbells in front of the thighs. Raise straight arms in front of you to shoulder height and lower slowly.',
     benefit: 'Isolates the front delts — size and shape at the front of the shoulder.',
@@ -221,11 +262,6 @@ export const EX_INFO_EN = {
     desc: 'Lie on your back, arms up, knees bent at 90°. Lower the opposite arm and leg toward the floor and return, alternating sides.',
     benefit: 'Teaches core stability — a base for heavy lifts and a healthy back.',
     tips: 'Keep the lower back pressed to the floor. Move slowly. Exhale as you lower.',
-  },
-  'Вакуум': {
-    desc: 'Exhale fully and pull the belly in as hard as you can, as if pressing the navel to the spine. Hold without inhaling.',
-    benefit: 'Strengthens the transverse abdominis — a tighter waist and a more stable core.',
-    tips: 'Do it on an empty stomach. Start with 10–15 seconds. Do not force the breath-hold.',
   },
   'Трастеры': {
     desc: 'Bar in the front rack, front squat down. As you stand, press the bar overhead in one movement. Lower to the chest and repeat.',
@@ -682,6 +718,7 @@ export const MUSCLE_FILTER_LABELS_EN = {
   'Пресс': 'Abs',
   'Ягодицы': 'Glutes',
   'Икры': 'Calves',
+  'Кардио': 'Cardio',
 }
 
 export const CATALOG_MISC_EN = {
