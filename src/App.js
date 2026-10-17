@@ -1624,8 +1624,7 @@ export default function App() {
         <HistoryView history={history} allRows={allRows} month={historyMonth} setMonth={setHistoryMonth} year={historyYear} setYear={setHistoryYear}
           openDays={openDays} setOpenDays={setOpenDays} copiedDay={copiedDay} onCopy={copyDay}
           onEdit={(date, ws) => setEditModal({ date, workouts: ws.map(w => ({ ...w, sets: w.sets ? [...w.sets] : [] })) })}
-          onDeleteDay={deleteDay} onDeleteExercise={deleteWorkout} setChip={setChip} thm={thm} isDark={isDark}
-          notes={notes} onNote={setNoteModal}/>
+          onDeleteDay={deleteDay} onDeleteExercise={deleteWorkout} setChip={setChip} thm={thm} isDark={isDark}/>
       )}
 
       {tab === 'progress' && (() => {
