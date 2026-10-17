@@ -106,9 +106,9 @@ export const EXERCISE_IMAGES = {
   'Сведение ног в тренажёре':'/images/hip_adduction.webp',
   'Разведение ног в тренажёре':null, // /images/hip_abduction.webp
   'Подъём на носки стоя':'/images/standing_calf_raise.webp',
-  'Жим гантелей сидя':null, // /images/seated_db_press.webp
-  'Гравитрон':null, // /images/assisted_pullup.webp
-  'Сумо-становая тяга':null, // /images/sumo_deadlift.webp
+  'Жим гантелей сидя':'/images/seated_db_press.webp',
+  'Гравитрон':'/images/assisted_pullup.webp',
+  'Сумо-становая тяга':'/images/sumo_deadlift.webp',
   'Зашагивания на тумбу':null, // /images/step_up.webp
   'Скручивания на блоке':null, // /images/cable_crunch.webp
   'Обратные отжимания от скамьи':null, // /images/bench_dips.webp
