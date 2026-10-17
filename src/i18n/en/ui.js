@@ -326,6 +326,8 @@ export const UI_EN = {
   'МС': 'MS',
   'МСМК': 'MSIC',
   'Элита': 'Elite',
+  'Силовые': 'Strength',
+  'Убрать заметку': 'Remove note',
   'Болезнь': 'Illness',
   'Травма': 'Injury',
   'Отпуск': 'Vacation',

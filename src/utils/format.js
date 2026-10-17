@@ -2,6 +2,7 @@
 /* eslint-disable no-unused-vars */
 import { dispW, exName, isLbs, locale, num, t, wUnit } from '../i18n'
 import { isCardio } from '../data/exerciseCatalog'
+import { noteKind } from '../data/notes'
 
 export const localDateStr = (d) => `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`
 
@@ -39,8 +40,10 @@ export function formatSetsText(sets, cardio = false) {
   return sorted.map(s => s.time_sec > 0 ? (s.weight > 0 ? `${s.time_sec}s×${num(dispW(s.weight))}${wUnit()}` : `${s.time_sec}s`) : (s.weight > 0 ? `${num(dispW(s.weight))}×${s.reps}` : `${s.reps} ${t('повт')}`)).join(', ')
 }
 
-export function buildCopyText(date, workouts) {
+export function buildCopyText(date, workouts, dayNote = null) {
   const lines = [`📅 ${date} · ${workouts.length} ${t('упр.')}${isLbs() ? ' · lbs' : ''}`]
+  // the day's note (illness, injury, workout note…) goes right under the date
+  if (dayNote && (dayNote.text || dayNote.kind !== 'note')) lines.push(`${t(noteKind(dayNote.kind).label)}${dayNote.text ? `: ${dayNote.text}` : ''}`)
   // in the order the exercises were logged (by id), whatever order the caller passes
   const ordered = [...workouts].sort((a, b) => (a.id || 0) - (b.id || 0))
   ordered.forEach(w => {
