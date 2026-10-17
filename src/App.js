@@ -1743,9 +1743,10 @@ export default function App() {
               <div className="modal-srch-wrap"><span className="modal-srch-icon">🔍</span><input className="modal-srch" placeholder={t('Поиск...')} value={modalSearch} onChange={e=>setModalSearch(e.target.value)}/></div>
               {!modalSearch.trim() && (
                 <div style={{display:'flex',gap:4,padding:3,borderRadius:12,background:isDark?'rgba(255,255,255,0.06)':'rgba(0,0,0,0.05)',marginTop:10}}>
-                  {[['strength',t('Силовые')],['cardio',t('Кардио')]].map(([id,label])=>(
+                  {[['strength','barbell',t('Силовые')],['cardio','heart',t('Кардио')]].map(([id,icon,label])=>(
                     <button key={id} onClick={()=>setExModalKind(id)} style={{flex:1,padding:'8px 0',borderRadius:9,border:'none',cursor:'pointer',fontSize:14,fontWeight:700,
-                      background:exModalKind===id?'var(--accent)':'transparent',color:exModalKind===id?'#000':thm.text50}}>{label}</button>
+                      display:'flex',alignItems:'center',justifyContent:'center',gap:7,
+                      background:exModalKind===id?'var(--accent)':'transparent',color:exModalKind===id?'#000':thm.text50}}><VicIcon name={icon} size={18} strokeWidth={exModalKind===id?1.8:1.5}/>{label}</button>
                   ))}
                 </div>
               )}
@@ -1882,7 +1883,8 @@ export default function App() {
         const filtered = allExNames.filter(name => {
           const primaryMuscles = EXERCISE_MUSCLES[name]?.primary || []
           if (exTabFilter === 'favorites') return favorites.includes(name) && (name.toLowerCase().includes(exTabSearch.toLowerCase()) || exName(name).toLowerCase().includes(exTabSearch.toLowerCase()))
-          const matchesFilter = exTabFilter === 'all' || (exTabFilter === 'cardio' ? isCardio(name) : (MUSCLE_FILTER_MAP[exTabFilter] || []).some(m => primaryMuscles.includes(m)))
+          // Strength (all / a muscle group) never lists cardio; the Cardio segment lists only cardio
+          const matchesFilter = exTabFilter === 'cardio' ? isCardio(name) : !isCardio(name) && (exTabFilter === 'all' || (MUSCLE_FILTER_MAP[exTabFilter] || []).some(m => primaryMuscles.includes(m)))
           const matchesSearch = name.toLowerCase().includes(exTabSearch.toLowerCase()) || exName(name).toLowerCase().includes(exTabSearch.toLowerCase())
           return matchesFilter && matchesSearch
         }).sort((a,b) => {
@@ -1900,15 +1902,20 @@ export default function App() {
                 onChange={e=>setExTabSearch(e.target.value)} style={{color:thm.text,background:thm.input}}/>
             </div>
             <div className="muscle-filters">
-              <div className="muscle-filters-fav-row">
-                <button className={`muscle-chip-fav${exTabFilter==='favorites'?' active':''}`}
-                  style={exTabFilter!=='favorites'?{background:thm.btnBg,color:thm.text50,border:`1px solid ${thm.border}`}:{border:'none'}}
-                  onClick={()=>setExTabFilter('favorites')}>{t('⭐ Избранные')}</button>
-                <button className={`muscle-chip-fav${exTabFilter==='cardio'?' active':''}`}
-                  style={exTabFilter!=='cardio'?{background:thm.btnBg,color:thm.text50,border:`1px solid ${thm.border}`}:{border:'none'}}
-                  onClick={()=>setExTabFilter('cardio')}>{t('Кардио')}</button>
+              {/* Segments: favourites / strength (+ muscle groups below) / cardio */}
+              <div style={{display:'flex',gap:3,padding:3,borderRadius:14,background:isDark?'rgba(255,255,255,0.06)':'rgba(0,0,0,0.05)',marginBottom:12}}>
+                {[['favorites','star',t('Избранные')],['strength','barbell',t('Силовые')],['cardio','heart',t('Кардио')]].map(([id,icon,label]) => {
+                  const on = id === 'strength' ? !['favorites','cardio'].includes(exTabFilter) : exTabFilter === id
+                  return (
+                    <button key={id} onClick={()=>setExTabFilter(id === 'strength' ? (on ? exTabFilter : 'all') : id)} style={{flex:1,height:40,borderRadius:11,border:'none',cursor:'pointer',
+                      display:'flex',alignItems:'center',justifyContent:'center',gap:7,fontSize:14,fontWeight:700,
+                      background:on?'var(--accent)':'transparent',color:on?'#000':thm.text50,transition:'background 0.15s'}}>
+                      <VicIcon name={icon} size={19} strokeWidth={on?1.8:1.5}/>{label}
+                    </button>
+                  )
+                })}
               </div>
-              <div className="muscle-filters-divider"/>
+              {!['favorites','cardio'].includes(exTabFilter) && (<>
               <div className="muscle-filters-row">
                 {MUSCLE_FILTERS_ROW1.map(f => (
                   <button key={f.id} className={`muscle-chip${exTabFilter===f.id?' active':''}`}
@@ -1923,6 +1930,7 @@ export default function App() {
                     onClick={()=>setExTabFilter(f.id)}>{t(f.label)}</button>
                 ))}
               </div>
+              </>)}
             </div>
             <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',margin:'-4px 2px 10px'}}>
               <span style={{fontSize:12,color:thm.text40}}>{filtered.length} {plural(filtered.length,['упражнение','упражнения','упражнений'],['exercise','exercises'])}</span>
