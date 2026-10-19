@@ -124,13 +124,13 @@ export const EXERCISE_IMAGES = {
   'Подъём коленей на брусьях':null, // /images/knee_raise_dip_station.webp
   'Обратная гиперэкстензия':null, // /images/reverse_hyper.webp
   'Пуловер на блоке':null, // /images/straight_arm_pulldown.webp
-  'Приседания в Смите':null, // /images/smith_squat.webp
-  'Румынская тяга с гантелями':null, // /images/db_romanian_deadlift.webp
+  'Приседания в Смите':'/images/smith_squat.webp',
+  'Румынская тяга с гантелями':'/images/db_romanian_deadlift.webp',
   'Разгибание руки в наклоне':null, // /images/triceps_kickback.webp
   'Фермерская прогулка':null, // /images/farmers_walk.webp
   'Бёрпи':null, // /images/burpee.webp
   // Кардио
-  'Беговая дорожка':null, // /images/cardio/treadmill.webp
+  'Беговая дорожка':'/images/cardio/treadmill.webp',
   'Велотренажёр':null, // /images/cardio/stationary_bike.webp
   'Эллипс':null, // /images/cardio/elliptical.webp
   'Гребной тренажёр':null, // /images/cardio/rowing_machine.webp
