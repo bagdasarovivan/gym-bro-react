@@ -115,9 +115,9 @@ export const EXERCISE_IMAGES = {
   'Гравитрон':'/images/assisted_pullup.webp',
   'Сумо-становая тяга':'/images/sumo_deadlift.webp',
   'Зашагивания на тумбу':null, // /images/step_up.webp
-  'Скручивания на блоке':null, // /images/cable_crunch.webp
+  'Скручивания на блоке':'/images/cable_crunch.webp',
   'Обратные отжимания от скамьи':null, // /images/bench_dips.webp
-  'Тяга в рычажном тренажёре':null, // /images/machine_row.webp
+  'Тяга в рычажном тренажёре':'/images/machine_row.webp',
   'Хип-траст в тренажёре':null, // /images/machine_hip_thrust.webp
   'Боковая планка':null, // /images/side_plank.webp
   'Велосипед на пресс':null, // /images/bicycle_crunch.webp
@@ -131,7 +131,7 @@ export const EXERCISE_IMAGES = {
   'Бёрпи':null, // /images/burpee.webp
   // Кардио
   'Беговая дорожка':'/images/cardio/treadmill.webp',
-  'Велотренажёр':null, // /images/cardio/stationary_bike.webp
+  'Велотренажёр':'/images/cardio/stationary_bike.webp',
   'Эллипс':null, // /images/cardio/elliptical.webp
   'Гребной тренажёр':null, // /images/cardio/rowing_machine.webp
   'Степпер':null, // /images/cardio/stair_climber.webp
