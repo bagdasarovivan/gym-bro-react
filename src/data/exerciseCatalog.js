@@ -123,7 +123,7 @@ export const EXERCISE_IMAGES = {
   'Велосипед на пресс':null, // /images/bicycle_crunch.webp
   'Подъём коленей на брусьях':null, // /images/knee_raise_dip_station.webp
   'Обратная гиперэкстензия':null, // /images/reverse_hyper.webp
-  'Пуловер на блоке':null, // /images/straight_arm_pulldown.webp
+  'Пуловер на блоке':'/images/straight_arm_pulldown.webp',
   'Приседания в Смите':'/images/smith_squat.webp',
   'Румынская тяга с гантелями':'/images/db_romanian_deadlift.webp',
   'Разгибание руки в наклоне':null, // /images/triceps_kickback.webp
@@ -132,7 +132,7 @@ export const EXERCISE_IMAGES = {
   // Кардио
   'Беговая дорожка':'/images/cardio/treadmill.webp',
   'Велотренажёр':'/images/cardio/stationary_bike.webp',
-  'Эллипс':null, // /images/cardio/elliptical.webp
+  'Эллипс':'/images/cardio/elliptical.webp',
   'Гребной тренажёр':null, // /images/cardio/rowing_machine.webp
   'Степпер':null, // /images/cardio/stair_climber.webp
   'Скакалка':null, // /images/cardio/jump_rope.webp
