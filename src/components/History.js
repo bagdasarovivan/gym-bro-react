@@ -215,6 +215,12 @@ export function HistoryView({ history, allRows, month, setMonth, year, setYear, 
                   </button>
                   {isOpen && (
                     <div style={{ borderTop: `1px solid ${thm.border}` }}>
+                      {/* day actions right under the header of the opened day */}
+                      <div className="day-actions" style={{ margin: 0, borderRadius: 0, borderBottom: `1px solid ${thm.border}` }}>
+                        <button className={`day-action-btn${copiedDay === date ? ' ok' : ''}`} onClick={() => onCopy(date, ws)}>{copiedDay === date ? t('✅ Скопировано') : t('📋 Копировать')}</button>
+                        <button className="day-action-btn" onClick={() => onEdit(date, ws)}>{t('✏️ Изменить')}</button>
+                        <button className="day-action-btn del" onClick={() => onDeleteDay(date, ws)}>{t('🗑 Удалить')}</button>
+                      </div>
                       {ws.map(w => {
                         const name = normalizeName(w.exercises?.name)
                         const metric = recordMetric(name)
@@ -250,11 +256,6 @@ export function HistoryView({ history, allRows, month, setMonth, year, setYear, 
                           </div>
                         )
                       })}
-                      <div className="day-actions" style={{ margin: 0, borderRadius: 0 }}>
-                        <button className={`day-action-btn${copiedDay === date ? ' ok' : ''}`} onClick={() => onCopy(date, ws)}>{copiedDay === date ? t('✅ Скопировано') : t('📋 Копировать')}</button>
-                        <button className="day-action-btn" onClick={() => onEdit(date, ws)}>{t('✏️ Изменить')}</button>
-                        <button className="day-action-btn del" onClick={() => onDeleteDay(date, ws)}>{t('🗑 Удалить')}</button>
-                      </div>
                     </div>
                   )}
                 </div>
