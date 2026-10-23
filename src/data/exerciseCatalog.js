@@ -89,7 +89,7 @@ export const EXERCISE_IMAGES = {
   // New exercises: picture not drawn yet (placeholder). Future file in the comment.
   'Подъём гантелей перед собой':null, // /images/front_raise.webp
   'Махи в стороны в кроссовере':null, // /images/cable_lateral_raise.webp
-  'Жим штанги сидя':null, // /images/seated_barbell_press.webp
+  'Жим штанги сидя':'/images/seated_barbell_press.webp',
   'Тяга гантелей на наклонной скамье':null, // /images/chest_supported_row.webp
   'Тяга верхнего блока одной рукой':null, // /images/single_arm_pulldown.webp
   'Гуд-морнинг':null, // /images/good_morning.webp
@@ -118,7 +118,7 @@ export const EXERCISE_IMAGES = {
   'Скручивания на блоке':'/images/cable_crunch.webp',
   'Обратные отжимания от скамьи':null, // /images/bench_dips.webp
   'Тяга в рычажном тренажёре':'/images/machine_row.webp',
-  'Хип-траст в тренажёре':null, // /images/machine_hip_thrust.webp
+  'Хип-траст в тренажёре':'/images/machine_hip_thrust.webp',
   'Боковая планка':null, // /images/side_plank.webp
   'Велосипед на пресс':null, // /images/bicycle_crunch.webp
   'Подъём коленей на брусьях':null, // /images/knee_raise_dip_station.webp
@@ -133,7 +133,7 @@ export const EXERCISE_IMAGES = {
   'Беговая дорожка':'/images/cardio/treadmill.webp',
   'Велотренажёр':'/images/cardio/stationary_bike.webp',
   'Эллипс':'/images/cardio/elliptical.webp',
-  'Гребной тренажёр':null, // /images/cardio/rowing_machine.webp
+  'Гребной тренажёр':'/images/cardio/rowing_machine.webp',
   'Степпер':null, // /images/cardio/stair_climber.webp
   'Скакалка':null, // /images/cardio/jump_rope.webp
   'Бег':null, // /images/cardio/running.webp
