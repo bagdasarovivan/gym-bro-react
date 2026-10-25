@@ -87,7 +87,7 @@ export const EXERCISE_TYPE = {
 
 export const EXERCISE_IMAGES = {
   // New exercises: picture not drawn yet (placeholder). Future file in the comment.
-  'Подъём гантелей перед собой':null, // /images/front_raise.webp
+  'Подъём гантелей перед собой':'/images/front_raise.webp',
   'Махи в стороны в кроссовере':null, // /images/cable_lateral_raise.webp
   'Жим штанги сидя':'/images/seated_barbell_press.webp',
   'Тяга гантелей на наклонной скамье':null, // /images/chest_supported_row.webp
@@ -136,7 +136,7 @@ export const EXERCISE_IMAGES = {
   'Гребной тренажёр':'/images/cardio/rowing_machine.webp',
   'Степпер':null, // /images/cardio/stair_climber.webp
   'Скакалка':null, // /images/cardio/jump_rope.webp
-  'Бег':null, // /images/cardio/running.webp
+  'Бег':'/images/cardio/running.webp',
   // Грудь
   'Жим лёжа':'/images/bench.webp',
   'Жим гантелей лёжа':'/images/dumbbell_bench.webp',
