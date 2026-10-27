@@ -109,12 +109,12 @@ export const EXERCISE_IMAGES = {
   // New exercises: picture not drawn yet (placeholder). Future file in the comment.
   'Бабочка':'/images/pec_deck.webp',
   'Сведение ног в тренажёре':'/images/hip_adduction.webp',
-  'Разведение ног в тренажёре':null, // /images/hip_abduction.webp
+  'Разведение ног в тренажёре':'/images/hip_abduction.webp',
   'Подъём на носки стоя':'/images/standing_calf_raise.webp',
   'Жим гантелей сидя':'/images/seated_db_press.webp',
   'Гравитрон':'/images/assisted_pullup.webp',
   'Сумо-становая тяга':'/images/sumo_deadlift.webp',
-  'Зашагивания на тумбу':null, // /images/step_up.webp
+  'Зашагивания на тумбу':'/images/step_up.webp',
   'Скручивания на блоке':'/images/cable_crunch.webp',
   'Обратные отжимания от скамьи':null, // /images/bench_dips.webp
   'Тяга в рычажном тренажёре':'/images/machine_row.webp',
@@ -126,7 +126,7 @@ export const EXERCISE_IMAGES = {
   'Пуловер на блоке':'/images/straight_arm_pulldown.webp',
   'Приседания в Смите':'/images/smith_squat.webp',
   'Румынская тяга с гантелями':'/images/db_romanian_deadlift.webp',
-  'Разгибание руки в наклоне':null, // /images/triceps_kickback.webp
+  'Разгибание руки в наклоне':'/images/triceps_kickback.webp',
   'Фермерская прогулка':null, // /images/farmers_walk.webp
   'Бёрпи':null, // /images/burpee.webp
   // Кардио
