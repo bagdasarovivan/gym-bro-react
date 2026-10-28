@@ -274,7 +274,14 @@ export default function App() {
       const { data, error } = await supabase.from('day_notes').select('note_date,kind,body_part,text').eq('user_id', user.id).order('note_date')
       if (cancelled) return
       if (error) { setNotesStatus(isMissingNotes(error) ? 'missing' : 'error'); return }
-      setNotes(Object.fromEntries((data || []).map(n => [n.note_date, n])))
+      // Note texts are kept for a month: older notes lose their text but keep their kind,
+      // so the calendar still shows that something was noted that day.
+      const cutoff = localDateStr(new Date(Date.now() - 30 * 86400000))
+      const rows = (data || []).map(n => (n.note_date < cutoff && n.text ? { ...n, text: null } : n))
+      if ((data || []).some(n => n.note_date < cutoff && n.text)) {
+        supabase.from('day_notes').update({ text: null }).eq('user_id', user.id).lt('note_date', cutoff).not('text', 'is', null).then(() => {})
+      }
+      setNotes(Object.fromEntries(rows.map(n => [n.note_date, n])))
       setNotesStatus('ok')
     })()
     return () => { cancelled = true }
