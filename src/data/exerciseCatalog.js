@@ -134,8 +134,8 @@ export const EXERCISE_IMAGES = {
   'Велотренажёр':'/images/cardio/stationary_bike.webp',
   'Эллипс':'/images/cardio/elliptical.webp',
   'Гребной тренажёр':'/images/cardio/rowing_machine.webp',
-  'Степпер':null, // /images/cardio/stair_climber.webp
-  'Скакалка':null, // /images/cardio/jump_rope.webp
+  'Степпер':'/images/cardio/stair_climber.webp',
+  'Скакалка':'/images/cardio/jump_rope.webp',
   'Бег':'/images/cardio/running.webp',
   // Грудь
   'Жим лёжа':'/images/bench.webp',
