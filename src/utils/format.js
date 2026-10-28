@@ -42,12 +42,12 @@ export function formatSetsText(sets, cardio = false) {
 
 export function buildCopyText(date, workouts, dayNote = null) {
   const lines = [`📅 ${date} · ${workouts.length} ${t('упр.')}${isLbs() ? ' · lbs' : ''}`]
-  // the day's note (illness, injury, workout note…) goes right under the date
-  if (dayNote && (dayNote.text || dayNote.kind !== 'note')) lines.push(`${t(noteKind(dayNote.kind).label)}${dayNote.text ? `: ${dayNote.text}` : ''}`)
   // in the order the exercises were logged (by id), whatever order the caller passes
   const ordered = [...workouts].sort((a, b) => (a.id || 0) - (b.id || 0))
   ordered.forEach(w => {
     lines.push(`${exName(w.exercises?.name)}: ${formatSetsText(w.sets, isCardio(w.exercises?.name))}`)
   })
+  // the day's note (illness, injury, workout note…) goes last, after the exercises
+  if (dayNote && (dayNote.text || dayNote.kind !== 'note')) lines.push(`${t(noteKind(dayNote.kind).label)}${dayNote.text ? `: ${dayNote.text}` : ''}`)
   return lines.join('\n')
 }
