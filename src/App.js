@@ -164,6 +164,7 @@ export default function App() {
   const [workoutExercises, setWorkoutExercises] = useState([])
   const [draftRestored, setDraftRestored] = useState(false)
   const draftReadyRef = useRef(false)
+  const restoredDraftRef = useRef(false)   // a draft was restored at start → check it isn't already saved
   const [kbHeight, setKbHeight] = useState(0)
   const historyLoaded = useRef(false)
   const [loadingPlan, setLoadingPlan] = useState(false)
@@ -200,6 +201,7 @@ export default function App() {
   const [showPlanModal, setShowPlanModal] = useState(false)
   const [showRatingModal, setShowRatingModal] = useState(false)
   const [pendingRatingPlan, setPendingRatingPlan] = useState(null)
+  const ratingExercisesRef = useRef([])               // the saved workout, for the plan rating after it is cleared
   const [planOnboarding, setPlanOnboarding] = useState(false)
   const [planNotice, setPlanNotice] = useState(null)   // weight changes after a plan workout
   const [editSetModal, setEditSetModal] = useState(null) // {exIdx, setIdx, weight, reps}
@@ -509,6 +511,7 @@ export default function App() {
         if (draft.note) { setWorkoutNote(draft.note); setWorkoutNoteOpen(true) }
         setWorkoutStarted(true)
         setDraftRestored(true)
+        restoredDraftRef.current = true
         setTimeout(() => setDraftRestored(false), 3500)
       } else {
         // no draft for this account: never keep another account's workout in progress
@@ -526,6 +529,23 @@ export default function App() {
       else localStorage.removeItem(key)
     } catch {}
   }, [workoutExercises, workoutDate, workoutNote, user])
+
+  // A restored draft that is already in the database (saved earlier, then the draft came back) is dropped,
+  // so pressing «Save» again can't duplicate the workout.
+  useEffect(() => {
+    if (!restoredDraftRef.current || !allRows) return
+    restoredDraftRef.current = false
+    const filledEx = workoutExercises.filter(ex => ex.sets.some(st => setFilled(st, EXERCISE_TYPE[ex.name] || 'light')))
+    if (!filledEx.length) return
+    const saved = filledEx.every(ex => {
+      const key = normalizeName(exSaveName(ex)), n = ex.sets.filter(st => setFilled(st, EXERCISE_TYPE[ex.name] || 'light')).length
+      return allRows.some(w => w.workout_date === workoutDate && normalizeName(w.exercises?.name) === key && (w.sets || []).length === n)
+    })
+    if (saved) {
+      setWorkoutExercises([]); setWorkoutStarted(false); setWorkoutNote(''); setWorkoutNoteOpen(false); setDraftRestored(false)
+      try { localStorage.removeItem('gymBroDraft_' + user.id) } catch {}
+    }
+  }, [allRows, workoutExercises]) // eslint-disable-line react-hooks/exhaustive-deps
 
   // Auth listener. Supabase fires several events on start (INITIAL_SESSION, TOKEN_REFRESHED…)
   // with a new user object each time — keep the same object while the user id is unchanged,
@@ -697,7 +717,7 @@ export default function App() {
       setCalData(map)
     }
     load()
-  }, [tab, calYear, calMonth, user])
+  }, [tab, calYear, calMonth, user, dataVersion])
 
   useEffect(() => {
     if (!chartEx || tab !== 'progress' || !user) return
@@ -1123,15 +1143,18 @@ export default function App() {
       setTimeout(() => setSaveError(null), 8000)
       return
     }
-    // everything is in the database: drop the draft right away (a reload must not restore and re-save it)
+    // Everything is in the database: clear the workout and its draft right away. Clearing the state (not only
+    // localStorage) matters: while the exercises stay on screen any later state change rewrites the draft,
+    // and the next app start would restore an already saved workout.
+    const finished = workoutExercises, noteToSave = workoutNote.trim()
     try { localStorage.removeItem('gymBroDraft_' + user.id) } catch {}
+    setWorkoutExercises([]); setWorkoutStarted(false); setWorkoutNote(''); setWorkoutNoteOpen(false)
     // Workout note → the day's note (appended to an existing note of that day)
-    if (workoutNote.trim()) {
+    if (noteToSave) {
       const cur = notes[workoutDate]
-      const text = cur?.text ? `${cur.text}\n${workoutNote.trim()}` : workoutNote.trim()
+      const text = cur?.text ? `${cur.text}\n${noteToSave}` : noteToSave
       const ok = await saveNotes([workoutDate], { kind: cur?.kind || 'note', body_part: cur?.body_part || null, text: text.slice(0, 500) })
-      if (ok) { setWorkoutNote(''); setWorkoutNoteOpen(false) }
-      else { setSaveError(t('Тренировка сохранена, а заметка — нет. Пометки ещё не настроены в базе.')); setTimeout(() => setSaveError(null), 8000) }
+      if (!ok) { setSaveError(t('Тренировка сохранена, а заметка — нет. Пометки ещё не настроены в базе.')); setTimeout(() => setSaveError(null), 8000) }
     }
     try {
       const thisM2 = localDateStr(new Date()).slice(0,7)
@@ -1142,17 +1165,15 @@ export default function App() {
       setTimeout(() => setStreakAlert(null), 4500)
     } catch {}
     // Check if any plan exercises were in this workout
-    const planEx = workoutExercises.find(e => e.planId)
+    const planEx = finished.find(e => e.planId)
     if (planEx) {
       const plan = activePlans.find(p => p.id === planEx.planId)
       if (plan) {
+        ratingExercisesRef.current = finished
         setPendingRatingPlan(plan)
         setShowRatingModal(true)
-        return
       }
     }
-    setSaved(true)
-    setTimeout(() => { setSaved(false); setWorkoutStarted(false); setWorkoutExercises([]) }, 1000)
   }
 
   const deleteWorkout = async (workoutId) => {
@@ -2281,10 +2302,10 @@ export default function App() {
                         <button key={r.key} onClick={async ()=>{
                           // a set counts as completed when it was filled in; the heaviest weight seeds a plan weight of 0
                           const completedMap = {}, liftedMap = {}
-                          for (const ex of workoutExercises) {
+                          for (const ex of ratingExercisesRef.current) {
                             if (ex.planId === pendingRatingPlan.id) {
                               const ty = EXERCISE_TYPE[ex.name] || 'light'
-                              const done = ex.sets.filter(s => isRepsType(ty) ? s.reps > 0 : (s.weight > 0 && s.reps > 0))
+                              const done = ex.sets.filter(s => setFilled(s, ty))
                               completedMap[ex.name] = done.length
                               liftedMap[ex.name] = Math.max(0, ...done.map(s => s.weight || 0))
                             }
@@ -2295,14 +2316,13 @@ export default function App() {
                           } catch {}
                           setShowRatingModal(false)
                           setPendingRatingPlan(null)
-                          setSaved(true)
-                          setTimeout(() => { setSaved(false); setWorkoutStarted(false); setWorkoutExercises([]) }, 1000)
+                          ratingExercisesRef.current = []
                         }} style={{padding:'14px',borderRadius:14,border:'1px solid rgba(255,255,255,0.1)',background:'rgba(255,255,255,0.06)',color:'rgba(255,255,255,0.85)',fontSize:15,fontWeight:600,cursor:'pointer'}}>
                           {r.label}
                         </button>
                       ))}
                     </div>
-                    <button onClick={()=>{ setShowRatingModal(false); setPendingRatingPlan(null); setSaved(true); setTimeout(() => { setSaved(false); setWorkoutStarted(false); setWorkoutExercises([]) }, 1000) }}
+                    <button onClick={()=>{ setShowRatingModal(false); setPendingRatingPlan(null); ratingExercisesRef.current = [] }}
                       style={{background:'none',border:'none',color:'rgba(255,255,255,0.4)',fontSize:14,cursor:'pointer',padding:8}}>{t('Пропустить')}</button>
                   </div>
                 </div>
