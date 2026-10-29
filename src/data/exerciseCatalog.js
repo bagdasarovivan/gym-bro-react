@@ -88,9 +88,9 @@ export const EXERCISE_TYPE = {
 export const EXERCISE_IMAGES = {
   // New exercises: picture not drawn yet (placeholder). Future file in the comment.
   'Подъём гантелей перед собой':'/images/front_raise.webp',
-  'Махи в стороны в кроссовере':null, // /images/cable_lateral_raise.webp
+  'Махи в стороны в кроссовере':'/images/cable_lateral_raise.webp',
   'Жим штанги сидя':'/images/seated_barbell_press.webp',
-  'Тяга гантелей на наклонной скамье':null, // /images/chest_supported_row.webp
+  'Тяга гантелей на наклонной скамье':'/images/chest_supported_row.webp',
   'Тяга верхнего блока одной рукой':null, // /images/single_arm_pulldown.webp
   'Гуд-морнинг':null, // /images/good_morning.webp
   'Сгибания на наклонной скамье':null, // /images/incline_curl.webp
