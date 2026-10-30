@@ -91,9 +91,9 @@ export const EXERCISE_IMAGES = {
   'Махи в стороны в кроссовере':'/images/cable_lateral_raise.webp',
   'Жим штанги сидя':'/images/seated_barbell_press.webp',
   'Тяга гантелей на наклонной скамье':'/images/chest_supported_row.webp',
-  'Тяга верхнего блока одной рукой':null, // /images/single_arm_pulldown.webp
-  'Гуд-морнинг':null, // /images/good_morning.webp
-  'Сгибания на наклонной скамье':null, // /images/incline_curl.webp
+  'Тяга верхнего блока одной рукой':'/images/single_arm_pulldown.webp',
+  'Гуд-морнинг':'/images/good_morning.webp',
+  'Сгибания на наклонной скамье':'/images/incline_curl.webp',
   'Сгибания обратным хватом':null, // /images/reverse_curl.webp
   'Разгибание запястий':null, // /images/wrist_extension.webp
   'Выпады в Смите':null, // /images/smith_lunge.webp
@@ -365,6 +365,7 @@ export const GRIP_MUSCLES = {
   'Тяга в рычажном тренажёре': {
     'Нейтральный': { primary: ['lats','upper_back'], secondary: ['biceps'] },
     'Широкий': { primary: ['upper_back'], secondary: ['lats','shoulders'] },
+    'Обратный': { primary: ['lats'], secondary: ['biceps','upper_back'] },
   },
   'Пуловер на блоке': {
     'Прямая рукоять': { primary: ['lats'], secondary: ['triceps'] },
