@@ -94,14 +94,14 @@ export const EXERCISE_IMAGES = {
   'Тяга верхнего блока одной рукой':'/images/single_arm_pulldown.webp',
   'Гуд-морнинг':'/images/good_morning.webp',
   'Сгибания на наклонной скамье':'/images/incline_curl.webp',
-  'Сгибания обратным хватом':null, // /images/reverse_curl.webp
+  'Сгибания обратным хватом':'/images/reverse_curl.webp',
   'Разгибание запястий':null, // /images/wrist_extension.webp
   'Выпады в Смите':null, // /images/smith_lunge.webp
   'Сисси-присед':null, // /images/sissy_squat.webp
   'Нордические сгибания':null, // /images/nordic_curl.webp
   'Подъём на носки в жиме ногами':null, // /images/leg_press_calf_raise.webp
   'Дровосек на блоке':null, // /images/cable_woodchop.webp
-  'Подъём ног лёжа':null, // /images/lying_leg_raise.webp
+  'Подъём ног лёжа':'/images/lying_leg_raise.webp',
   'Мёртвый жук':null, // /images/dead_bug.webp
   'Трастеры':null, // /images/thrusters.webp
   'Прыжки на тумбу':null, // /images/box_jump.webp
@@ -119,7 +119,7 @@ export const EXERCISE_IMAGES = {
   'Обратные отжимания от скамьи':null, // /images/bench_dips.webp
   'Тяга в рычажном тренажёре':'/images/machine_row.webp',
   'Хип-траст в тренажёре':'/images/machine_hip_thrust.webp',
-  'Боковая планка':null, // /images/side_plank.webp
+  'Боковая планка':'/images/side_plank.webp',
   'Велосипед на пресс':null, // /images/bicycle_crunch.webp
   'Подъём коленей на брусьях':null, // /images/knee_raise_dip_station.webp
   'Обратная гиперэкстензия':null, // /images/reverse_hyper.webp
