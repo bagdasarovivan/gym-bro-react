@@ -1,18 +1,16 @@
 // Каталог упражнений: типы, картинки, группы мышц, хваты и вариации, описания, разминка, старые названия.
 /* eslint-disable no-unused-vars */
 
-// Weight lists for the pickers (kg). 2.5 kg steps where plates allow it.
-const steps = (from, to, step) => Array.from({ length: Math.round((to - from) / step) + 1 }, (_, i) => Math.round((from + i * step) * 10) / 10)
-const uniq = (...lists) => [...new Set(lists.flat())].sort((a, b) => a - b)
+export const HEAVY_WEIGHTS = Array.from({ length: 141 }, (_, i) => i * 5)
 
-// Barbell: 0–300 kg by 2.5, then to 700 by 5
-export const HEAVY_WEIGHTS = uniq(steps(0, 300, 2.5), steps(300, 700, 5))
+// 0–700 кг
+export const LIGHT_WEIGHTS = [...new Set([
+  ...Array.from({ length: 11 }, (_, i) => i),
+  ...Array.from({ length: 21 }, (_, i) => 10 + i * 2),
+  ...Array.from({ length: 21 }, (_, i) => 50 + i * 5),
+])].sort((a, b) => a - b)
 
-// Dumbbells / light: every kilo up to 50 plus the 2.5 marks (12.5, 17.5…), then to 150 by 2.5
-export const LIGHT_WEIGHTS = uniq(steps(0, 50, 1), steps(0, 50, 2.5), steps(50, 150, 2.5))
-
-// Machines: 0–100 kg by 2.5, then to 600 by 5 (leg press 300+)
-export const MACHINE_WEIGHTS = uniq(steps(0, 100, 2.5), steps(100, 600, 5))
+export const MACHINE_WEIGHTS = Array.from({ length: 61 }, (_, i) => i * 5)
 
 export const REPS_OPTIONS = Array.from({ length: 51 }, (_, i) => i)
 
