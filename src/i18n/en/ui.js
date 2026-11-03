@@ -326,6 +326,7 @@ export const UI_EN = {
   'МС': 'MS',
   'МСМК': 'MSIC',
   'Элита': 'Elite',
+  'Добавить {w}': 'Add {w}',
   'Нет интернета — тренировка сохранена на телефоне и отправится, когда появится связь': 'No connection — the workout is saved on your phone and will be sent when you are back online',
   'Нет интернета. Тренировку можно записать — она сохранится на телефоне и отправится позже.': 'No connection. You can still log a workout — it is saved on your phone and sent later.',
   'Ждут отправки: {w}. Отправятся, когда появится интернет.': 'Waiting to be sent: {w}. They will be sent when you are back online.',

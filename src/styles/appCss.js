@@ -40,9 +40,11 @@ input[type=number]::-webkit-inner-spin-button{-webkit-appearance:none}
 .sets-lbl{font-size:13px;font-weight:600;opacity:0.35;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:12px}
 .set-row{display:flex;gap:10px;margin-bottom:16px;align-items:flex-end}
 .set-num{opacity:0.25;width:18px;font-size:13px;font-weight:500;flex-shrink:0;text-align:center;padding-bottom:14px}
+.plus-small-btn{flex-shrink:0;align-self:flex-end;height:51px;min-width:42px;padding:0 4px;border-radius:12px;border:1.5px solid rgba(var(--accent-rgb),0.45);background:rgba(var(--accent-rgb),0.12);color:var(--accent);font-size:13px;font-weight:800;cursor:pointer}
+.plus-small-btn:active{background:rgba(var(--accent-rgb),0.28)}
 .set-sep{opacity:0.2;flex-shrink:0;font-size:16px;padding-bottom:14px}
-.dpicker-wrap{flex:1;position:relative;z-index:10}.dpicker-wrap.is-open{z-index:200}
-.dpicker-label{font-size:11px;font-weight:600;opacity:0.35;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px}
+.dpicker-wrap{flex:1;min-width:0;position:relative;z-index:10}.dpicker-wrap.is-open{z-index:200}
+.dpicker-label{font-size:11px;font-weight:600;opacity:0.35;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .dpicker-btn{width:100%;background:#1c1c1e;border:1.5px solid rgba(255,255,255,0.08);border-radius:12px;padding:14px 14px;color:white;font-size:17px;font-weight:600;cursor:pointer;display:flex;align-items:center;justify-content:space-between;transition:all 0.15s;text-align:left}
 .dpicker-btn.open{border-color:rgba(var(--accent-rgb),0.5);background:#1c1c1e}
 .dpicker-btn:active{background:#2c2c2e}

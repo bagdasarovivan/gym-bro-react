@@ -1702,6 +1702,13 @@ export default function App() {
                                   ) : (
                                     <>
                                       <DropdownPicker options={weightOptions(wOpts)} value={dispW(s.weight)} onChange={v=>setWorkoutExercises(prev=>prev.map((e,i)=>i!==exIdx?e:{...e,sets:e.sets.map((ss,j)=>j!==si?ss:{...ss,weight:toKg(v)})}))} unit={wUnit} label={exType2==='bodyweight_plus' ? t('Подход {n} — +вес',{n:si+1}) : t('Подход {n} — Вес',{n:si+1})}/>
+                                      {/* free weights: one tap adds 2.5 kg (5 lbs) to this set, for weights between the picker steps */}
+                                      {exType2 !== 'machine' && (
+                                        <button className="plus-small-btn" aria-label={t('Добавить {w}', { w: isLbs() ? '5 lbs' : '2,5 кг' })}
+                                          onClick={()=>setWorkoutExercises(prev=>prev.map((e,i)=>i!==exIdx?e:{...e,sets:e.sets.map((ss,j)=>j!==si?ss:{...ss,weight:toKg(dispW(ss.weight||0)+(isLbs()?5:2.5))})}))}>
+                                          +{isLbs() ? '5' : '2,5'}
+                                        </button>
+                                      )}
                                       <span className="set-sep">×</span>
                                       <DropdownPicker options={REPS_OPTIONS} value={s.reps} onChange={v=>setWorkoutExercises(prev=>prev.map((e,i)=>i!==exIdx?e:{...e,sets:e.sets.map((ss,j)=>j!==si?ss:{...ss,reps:v})}))} unit={t('повт')} label={t('Подход {n} — Повт',{n:si+1})}/>
                                     </>

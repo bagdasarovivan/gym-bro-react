@@ -1,5 +1,9 @@
 /* eslint-disable no-unused-vars */
 import { useState, useEffect, useRef } from 'react'
+import { num } from '../i18n'
+
+// numbers with a decimal comma in Russian (82,5)
+const show = (v) => (typeof v === 'number' ? num(v) : v)
 
 export function DropdownPicker({ options, value, onChange, unit = '', label = '', labelFn = null }) {
   const [open, setOpen] = useState(false)
@@ -37,7 +41,7 @@ export function DropdownPicker({ options, value, onChange, unit = '', label = ''
     <div className={`dpicker-wrap${open ? ' is-open' : ''}`} ref={ref}>
       {label && <div className="dpicker-label">{label}</div>}
       <button className={`dpicker-btn${open?' open':''}`} onClick={() => setOpen(o => !o)}>
-        <span className="dpicker-val">{labelFn ? (value ? labelFn(value) : '') : value}{!labelFn && unit && <span className="dpicker-unit"> {unit}</span>}</span>
+        <span className="dpicker-val">{labelFn ? (value ? labelFn(value) : '') : show(value)}{!labelFn && unit && <span className="dpicker-unit"> {unit}</span>}</span>
         <span className="dpicker-chevron">⌄</span>
       </button>
       {open && (
@@ -46,7 +50,7 @@ export function DropdownPicker({ options, value, onChange, unit = '', label = ''
             <div key={opt} data-val={opt}
               className={`dpicker-opt${opt === value ? ' active' : ''}`}
               onClick={() => { onChange(opt); setOpen(false) }}>
-              {labelFn ? labelFn(opt) : opt} {!labelFn && unit && <span className="dpicker-opt-unit">{unit}</span>}
+              {labelFn ? labelFn(opt) : show(opt)} {!labelFn && unit && <span className="dpicker-opt-unit">{unit}</span>}
             </div>
           ))}
         </div>
