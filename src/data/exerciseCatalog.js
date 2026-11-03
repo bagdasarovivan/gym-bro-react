@@ -1,16 +1,18 @@
 // Каталог упражнений: типы, картинки, группы мышц, хваты и вариации, описания, разминка, старые названия.
 /* eslint-disable no-unused-vars */
 
-export const HEAVY_WEIGHTS = Array.from({ length: 141 }, (_, i) => i * 5)
+// Weight lists for the pickers (kg). 2.5 kg steps where plates allow it.
+const steps = (from, to, step) => Array.from({ length: Math.round((to - from) / step) + 1 }, (_, i) => Math.round((from + i * step) * 10) / 10)
+const uniq = (...lists) => [...new Set(lists.flat())].sort((a, b) => a - b)
 
-// 0–700 кг
-export const LIGHT_WEIGHTS = [...new Set([
-  ...Array.from({ length: 11 }, (_, i) => i),
-  ...Array.from({ length: 21 }, (_, i) => 10 + i * 2),
-  ...Array.from({ length: 21 }, (_, i) => 50 + i * 5),
-])].sort((a, b) => a - b)
+// Barbell: 0–300 kg by 2.5, then to 700 by 5
+export const HEAVY_WEIGHTS = uniq(steps(0, 300, 2.5), steps(300, 700, 5))
 
-export const MACHINE_WEIGHTS = Array.from({ length: 61 }, (_, i) => i * 5)
+// Dumbbells / light: every kilo up to 50 plus the 2.5 marks (12.5, 17.5…), then to 150 by 2.5
+export const LIGHT_WEIGHTS = uniq(steps(0, 50, 1), steps(0, 50, 2.5), steps(50, 150, 2.5))
+
+// Machines: 0–100 kg by 2.5, then to 600 by 5 (leg press 300+)
+export const MACHINE_WEIGHTS = uniq(steps(0, 100, 2.5), steps(100, 600, 5))
 
 export const REPS_OPTIONS = Array.from({ length: 51 }, (_, i) => i)
 
@@ -408,6 +410,19 @@ export const GRIP_MUSCLES = {
   'Подъём гантелей на бицепс': {
     'Обычный':     { primary: ['biceps'],   secondary: ['forearms'] },
     'Молоток':     { primary: ['biceps','forearms'], secondary: [] },
+    'Поочерёдно':  { primary: ['biceps'],   secondary: ['forearms'] },
+  },
+  'Подъём штанги на бицепс': {
+    'Прямой гриф': { primary: ['biceps'],   secondary: ['forearms'] },
+    'EZ-гриф':     { primary: ['biceps'],   secondary: ['forearms'] },
+    'Узкий хват':  { primary: ['biceps'],   secondary: ['forearms'] },
+    'Широкий хват':{ primary: ['biceps'],   secondary: ['forearms'] },
+  },
+  'Сгибания на блоке': {
+    'Прямая рукоять': { primary: ['biceps'], secondary: ['forearms'] },
+    'EZ-рукоять':  { primary: ['biceps'],   secondary: ['forearms'] },
+    'Канат': { primary: ['biceps','forearms'], secondary: [] },
+    'Одной рукой': { primary: ['biceps'],   secondary: ['forearms'] },
   },
   'Колесо для пресса': {
     'С колен':     { primary: ['abs'],      secondary: ['lats','shoulders'] },
@@ -416,7 +431,7 @@ export const GRIP_MUSCLES = {
 }
 
 // Упражнения, где выбор называется «Вариация», а не «Хват»
-export const VARIANT_EXERCISES = new Set(['Подъём гантелей на бицепс', 'Колесо для пресса', 'Подъём на носки стоя', 'Зашагивания на тумбу', 'Скручивания на блоке', 'Пуловер на блоке', 'Разгибание руки в наклоне', 'Дровосек на блоке', 'Трастеры'])
+export const VARIANT_EXERCISES = new Set(['Подъём гантелей на бицепс', 'Подъём штанги на бицепс', 'Сгибания на блоке', 'Колесо для пресса', 'Подъём на носки стоя', 'Зашагивания на тумбу', 'Скручивания на блоке', 'Пуловер на блоке', 'Разгибание руки в наклоне', 'Дровосек на блоке', 'Трастеры'])
 
 GRIP_EXERCISES.push(...VARIANT_EXERCISES)
 
