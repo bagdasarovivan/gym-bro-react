@@ -167,6 +167,7 @@ export default function App() {
   const restoredDraftRef = useRef(false)   // a draft was restored at start → check it isn't already saved
   const [kbHeight, setKbHeight] = useState(0)
   const historyLoaded = useRef(false)
+  const rowsHydratedRef = useRef(false)
   const [loadingPlan, setLoadingPlan] = useState(false)
   // Body weight log (table body_weights): status 'loading' | 'ok' | 'missing' (table not created yet) | 'error'
   const [bodyWeights, setBodyWeights] = useState([])
@@ -176,6 +177,10 @@ export default function App() {
   // Day notes (table day_notes): { 'YYYY-MM-DD': { note_date, kind, body_part, text } }; status as for body weights
   const [notes, setNotes] = useState({})
   const [notesStatus, setNotesStatus] = useState('loading')
+  // Offline: workouts waiting to be sent, connection state
+  const [queue, setQueue] = useState([])
+  const [queueSending, setQueueSending] = useState(false)
+  const [online, setOnline] = useState(() => (typeof navigator === 'undefined' ? true : navigator.onLine))
   const [noteModal, setNoteModal] = useState(null)   // date being edited
   const [workoutNote, setWorkoutNote] = useState('')
   const [workoutNoteOpen, setWorkoutNoteOpen] = useState(false)
@@ -265,15 +270,32 @@ export default function App() {
     return true
   }
 
+  // ── Offline queue: load it for this account and send it whenever the connection is back ──
+  useEffect(() => {
+    if (!user) { setQueue([]); return }
+    try { const q = JSON.parse(localStorage.getItem('gymBroQueue_' + user.id) || '[]'); setQueue(Array.isArray(q) ? q : []) } catch { setQueue([]) }
+    const tryFlush = () => { setOnline(navigator.onLine); if (navigator.onLine) flushRef.current() }
+    const goOffline = () => setOnline(false)
+    const onVisible = () => { if (document.visibilityState === 'visible') tryFlush() }
+    const t0 = setTimeout(tryFlush, 1500)
+    window.addEventListener('online', tryFlush)
+    window.addEventListener('offline', goOffline)
+    document.addEventListener('visibilitychange', onVisible)
+    return () => { clearTimeout(t0); window.removeEventListener('online', tryFlush); window.removeEventListener('offline', goOffline); document.removeEventListener('visibilitychange', onVisible) }
+  }, [user])
+
   // ── Day notes ──────────────────────────────────────────────────────────────
   const isMissingNotes = (error) => !!error && (error.code === '42P01' || error.code === 'PGRST205' || (/day_notes/.test(error.message || '') && /not find|does not exist/i.test(error.message || '')))
   useEffect(() => {
     if (!user) return
     let cancelled = false
     ;(async () => {
+      const ck = 'gymBroNotes_' + user.id
+      try { const c = JSON.parse(localStorage.getItem(ck) || 'null'); if (c && typeof c === 'object' && !cancelled) setNotes(c) } catch {}
       const { data, error } = await supabase.from('day_notes').select('note_date,kind,body_part,text').eq('user_id', user.id).order('note_date')
       if (cancelled) return
       if (error) { setNotesStatus(isMissingNotes(error) ? 'missing' : 'error'); return }
+      try { localStorage.setItem(ck, JSON.stringify(Object.fromEntries((data || []).map(n => [n.note_date, n])))) } catch {}
       // Note texts are kept for a month: older notes lose their text but keep their kind,
       // so the calendar still shows that something was noted that day.
       const cutoff = localDateStr(new Date(Date.now() - 30 * 86400000))
@@ -618,11 +640,12 @@ export default function App() {
       const thisM = localDateStr(new Date()).slice(0,7)
       const { data: wDates } = await supabase.from('workouts').select('workout_date').eq('user_id', user.id).gte('workout_date', thisM + '-01')
       if (!wDates) return
-      const monthCount = new Set(wDates.map(w => w.workout_date)).size
+      // workouts still waiting in the offline queue count too
+      const monthCount = new Set([...wDates.map(w => w.workout_date), ...queue.map(j => j.date).filter(d => d.startsWith(thisM))]).size
       setStreak(monthCount)
     }
     load()
-  }, [dataVersion, user])
+  }, [dataVersion, user, queue.length]) // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     async function loadPlans() {
@@ -691,11 +714,9 @@ export default function App() {
   useEffect(() => {
     if (!user) return
     let cancelled = false
-    async function load() {
-      // Рекорды по всей истории. Каждая вариация («Жим лёжа (Узкий)») — отдельный рекорд, как и на графике.
-      // Record for weight exercises = best estimated 1RM (100×5 beats 100×1); plank — time, ab wheel — reps.
-      const pData = await fetchAllRows(() => supabase.from('workouts').select('id,workout_date,exercises(name),sets(*)').eq('user_id', user.id).order('id'))
-      if (!cancelled) setAllRows(pData)
+    const cacheKey = 'gymBroRows_' + user.id
+    const applyRows = (pData) => {
+      setAllRows(pData)
       const map = {}
       pData.forEach(w => {
         const name = normalizeName(w.exercises?.name); if (!name) return
@@ -707,7 +728,22 @@ export default function App() {
         if (better) map[name] = { metric, value, weight: best.weight || 0, reps: best.reps || 0, time_sec: best.time_sec || 0, date: w.workout_date }
       })
       const order = { weight: 0, reps: 1, time: 2 }
-      if (!cancelled) setPrs(Object.entries(map).sort((a,b) => (order[a[1].metric] - order[b[1].metric]) || (b[1].value - a[1].value)))
+      setPrs(Object.entries(map).sort((a,b) => (order[a[1].metric] - order[b[1].metric]) || (b[1].value - a[1].value)))
+    }
+    async function load() {
+      // Offline-first: show the copy saved on the phone right away, then refresh it from the database.
+      if (!rowsHydratedRef.current) {
+        rowsHydratedRef.current = true
+        try { const c = JSON.parse(localStorage.getItem(cacheKey) || 'null'); if (Array.isArray(c) && !cancelled) applyRows(c) } catch {}
+      }
+      // Рекорды по всей истории. Каждая вариация («Жим лёжа (Узкий)») — отдельный рекорд, как и на графике.
+      // Record for weight exercises = best estimated 1RM (100×5 beats 100×1); plank — time, ab wheel — reps.
+      try {
+        const pData = await fetchAllRows(() => supabase.from('workouts').select('id,workout_date,exercises(name),sets(*)').eq('user_id', user.id).order('id'), { strict: true })
+        if (cancelled) return
+        applyRows(pData)
+        try { localStorage.setItem(cacheKey, JSON.stringify(pData)) } catch {}
+      } catch {} // no connection: keep the cached rows
     }
     load()
     return () => { cancelled = true }
@@ -1104,6 +1140,58 @@ export default function App() {
     return res
   }
 
+  // One exercise of a workout → database: the exercise name row, the workout row and its sets.
+  // setRows are in the stored shape without workout_id ({ set_no, weight, reps, time_sec, … }).
+  const saveExerciseToDb = async (date, saveName, setRows) => {
+    let { data: ex, error: e1 } = await supabase.from('exercises').select('id').eq('name', saveName).order('id').limit(1).maybeSingle()
+    if (e1) throw e1
+    if (!ex) {
+      const { data: inserted, error: e2 } = await supabase.from('exercises').insert({ name: saveName }).select().single()
+      if (e2) throw e2
+      ex = inserted
+    }
+    if (!ex) throw new Error('exercise')
+    const { data: w, error: e3 } = await supabase.from('workouts').insert({ workout_date: date, exercise_id: ex.id, user_id: user.id }).select().single()
+    if (e3 || !w) throw e3 || new Error('workout')
+    const { error: e4 } = await insertSets(setRows.map(r => ({ workout_id: w.id, ...r })))
+    if (e4) { await supabase.from('workouts').delete().eq('id', w.id); throw e4 }
+  }
+  // No connection (as opposed to a database error): the request never reached Supabase
+  const isNetworkError = (e) => !navigator.onLine || /fetch|network|load failed|timed? ?out|offline/i.test(`${e?.message || ''} ${e?.details || ''} ${e || ''}`)
+
+  // ── Offline queue: workouts saved without a connection wait on the phone and are sent later ──
+  const queueKey = () => 'gymBroQueue_' + user.id
+  const readQueue = () => { try { const q = JSON.parse(localStorage.getItem(queueKey()) || '[]'); return Array.isArray(q) ? q : [] } catch { return [] } }
+  const writeQueue = (q) => { try { if (q.length) localStorage.setItem(queueKey(), JSON.stringify(q)); else localStorage.removeItem(queueKey()) } catch {} setQueue([...q]) }
+  const flushingRef = useRef(false)
+  const flushQueue = async () => {
+    if (!user || flushingRef.current || !navigator.onLine) return
+    const q = readQueue()
+    if (!q.length) return
+    flushingRef.current = true; setQueueSending(true)
+    let sent = false
+    try {
+      for (const job of q) {
+        for (const it of job.items) {
+          if (it.done) continue
+          try { await saveExerciseToDb(job.date, it.saveName, it.rows); it.done = true; it.error = false; sent = true }
+          catch (e) { if (isNetworkError(e)) throw e; it.error = true }
+          writeQueue(q)
+        }
+        if (job.note && !job.noteDone) {
+          const cur = notes[job.date]
+          const text = cur?.text ? `${cur.text}\n${job.note}` : job.note
+          if (await saveNotes([job.date], { kind: cur?.kind || 'note', body_part: cur?.body_part || null, text: text.slice(0, 500) })) job.noteDone = true
+        }
+      }
+    } catch {} // the connection dropped again: the rest waits for the next try
+    writeQueue(q.filter(j => j.items.some(i => !i.done) || (j.note && !j.noteDone)))
+    flushingRef.current = false; setQueueSending(false)
+    if (sent) setDataVersion(v => v + 1)
+  }
+  const flushRef = useRef(flushQueue)
+  flushRef.current = flushQueue
+
   const saveWorkout = async () => {
     if (!workoutExercises.length) return
     if (savingRef.current) return
@@ -1111,35 +1199,33 @@ export default function App() {
     setSaving(true); setSaveError(null)
     // Every Supabase call is checked: exercises that failed stay on screen (and in the draft) so the
     // user can retry; exercises that were saved are removed so a retry does not duplicate them.
-    const savedItems = new Set(), failed = []
+    // Without a connection the exercises go to the offline queue instead and are sent later.
+    const savedItems = new Set(), failed = [], offline = []
     for (const exItem of workoutExercises) {
       const exType = EXERCISE_TYPE[exItem.name] || 'light'
       const exIsTimed = exType === 'timed'
       const filled = exItem.sets.filter(s => setFilled(s, exType))
       if (!filled.length) { savedItems.add(exItem); continue }
       const saveName = exSaveName(exItem)
+      const rows = filled.map((s,i) => exType === 'cardio' ? { set_no: i+1, ...uiSetToStored(s, 'cardio') } : ({
+        set_no: i+1,
+        weight: exIsTimed ? (s.timedWeight||0) : (s.weight||0),
+        reps: exIsTimed ? 0 : (s.reps||0),
+        time_sec: exIsTimed ? (s.weight||0) : null
+      }))
+      if (!navigator.onLine) { offline.push({ exItem, saveName, rows }); continue }
       try {
-        let { data: ex, error: e1 } = await supabase.from('exercises').select('id').eq('name', saveName).order('id').limit(1).maybeSingle()
-        if (e1) throw e1
-        if (!ex) {
-          const { data: inserted, error: e2 } = await supabase.from('exercises').insert({ name: saveName }).select().single()
-          if (e2) throw e2
-          ex = inserted
-        }
-        if (!ex) throw new Error('exercise')
-        const { data: w, error: e3 } = await supabase.from('workouts').insert({ workout_date: workoutDate, exercise_id: ex.id, user_id: user.id }).select().single()
-        if (e3 || !w) throw e3 || new Error('workout')
-        const { error: e4 } = await insertSets(filled.map((s,i) => exType === 'cardio' ? { workout_id: w.id, set_no: i+1, ...uiSetToStored(s, 'cardio') } : ({
-          workout_id: w.id, set_no: i+1,
-          weight: exIsTimed ? (s.timedWeight||0) : (s.weight||0),
-          reps: exIsTimed ? 0 : (s.reps||0),
-          time_sec: exIsTimed ? (s.weight||0) : null
-        })))
-        if (e4) { await supabase.from('workouts').delete().eq('id', w.id); throw e4 }
+        await saveExerciseToDb(workoutDate, saveName, rows)
         savedItems.add(exItem)
-      } catch {
-        failed.push(exItem)
+      } catch (e) {
+        if (isNetworkError(e)) offline.push({ exItem, saveName, rows })
+        else failed.push(exItem)
       }
+    }
+    const noteToSave = workoutNote.trim()
+    if (offline.length) {
+      writeQueue([...readQueue(), { id: Date.now(), date: workoutDate, items: offline.map(o => ({ saveName: o.saveName, rows: o.rows })), note: failed.length ? '' : noteToSave }])
+      offline.forEach(o => savedItems.add(o.exItem))
     }
     savingRef.current = false
     setSaving(false)
@@ -1153,9 +1239,18 @@ export default function App() {
     // Everything is in the database: clear the workout and its draft right away. Clearing the state (not only
     // localStorage) matters: while the exercises stay on screen any later state change rewrites the draft,
     // and the next app start would restore an already saved workout.
-    const finished = workoutExercises, noteToSave = workoutNote.trim()
+    const finished = workoutExercises
     try { localStorage.removeItem('gymBroDraft_' + user.id) } catch {}
     setWorkoutExercises([]); setWorkoutStarted(false); setWorkoutNote(''); setWorkoutNoteOpen(false)
+    if (offline.length) {
+      // saved on the phone: count this workout of the month locally and say it will be sent later
+      const m = workoutDate.slice(0, 7), thisM = localDateStr(new Date()).slice(0, 7)
+      const monthCount = new Set([...(allRows || []).map(w => w.workout_date), ...readQueue().map(j => j.date)].filter(d => d.startsWith(thisM))).size
+      if (m === thisM) setStreak(monthCount)
+      setStreakAlert({ type: 'month', count: monthCount, msg: t('Нет интернета — тренировка сохранена на телефоне и отправится, когда появится связь') })
+      setTimeout(() => setStreakAlert(null), 6000)
+      return
+    }
     // Workout note → the day's note (appended to an existing note of that day)
     if (noteToSave) {
       const cur = notes[workoutDate]
@@ -1371,6 +1466,24 @@ export default function App() {
           }}><VicIcon name="gear" size={22}/></button>
         </div>
       </div>
+      {/* Offline: no connection and/or workouts waiting to be sent */}
+      {(queue.length > 0 || !online) && (() => {
+        const n = queue.length, hasError = queue.some(j => j.items.some(i => i.error && !i.done))
+        return (
+          <div style={{margin:'10px 16px 0',padding:'10px 12px',borderRadius:12,display:'flex',alignItems:'center',gap:10,fontSize:13,lineHeight:1.35,
+            background:'rgba(var(--accent-rgb),0.1)',border:'1px solid rgba(var(--accent-rgb),0.3)',color:thm.text85}}>
+            <span style={{fontSize:16}}>{online ? '⏳' : '📴'}</span>
+            <span style={{flex:1}}>
+              {n === 0 ? t('Нет интернета. Тренировку можно записать — она сохранится на телефоне и отправится позже.')
+                : !online ? t('Ждут отправки: {w}. Отправятся, когда появится интернет.', { w: workoutsN(n) })
+                : queueSending ? t('Отправляю: {w}…', { w: workoutsN(n) })
+                : hasError ? t('Не удалось отправить: {w}. Попробуй ещё раз.', { w: workoutsN(n) })
+                : t('Ждут отправки: {w}', { w: workoutsN(n) })}
+            </span>
+            {n > 0 && online && !queueSending && <button onClick={()=>flushRef.current()} style={{padding:'6px 10px',borderRadius:9,border:'none',background:'var(--accent)',color:'#000',fontSize:12,fontWeight:700,cursor:'pointer'}}>{t('Отправить')}</button>}
+          </div>
+        )
+      })()}
       {showWarmup && (
         <WarmupModal onClose={() => setShowWarmup(false)} onComplete={() => logRoutine('w')}/>
       )}
