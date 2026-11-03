@@ -143,6 +143,13 @@ export const VARIANTS_EN = {
   'Обратный': 'Reverse',
   'Обычный': 'Regular',
   'Молоток': 'Hammer',
+  'Поочерёдно': 'Alternating',
+  'Прямой гриф': 'Straight bar',
+  'EZ-гриф': 'EZ bar',
+  'Узкий хват': 'Close grip',
+  'Широкий хват': 'Wide grip',
+  'EZ-рукоять': 'EZ handle',
+  'Одной рукой': 'One arm',
   'С колен': 'Kneeling',
   'Стоя': 'Standing',
 }

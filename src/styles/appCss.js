@@ -75,7 +75,7 @@ input[type=number]::-webkit-inner-spin-button{-webkit-appearance:none}
 .day-chev.open{transform:rotate(180deg);opacity:0.6}
 .day-body{background:#1c1c1e;border-radius:0 0 14px 14px;overflow:hidden;margin-bottom:2px}
 .day-actions{display:flex;border-bottom:1px solid rgba(255,255,255,0.05)}
-.day-action-btn{flex:1;padding:10px;background:none;border:none;color:rgba(255,255,255,0.4);font-size:13px;font-weight:500;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:5px}
+.day-action-btn{flex:1;padding:10px 6px;white-space:nowrap;background:none;border:none;color:rgba(255,255,255,0.4);font-size:13px;font-weight:500;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:5px}
 .day-action-btn:hover{color:rgba(255,255,255,0.8)}
 .day-action-btn.ok{color:var(--accent)}
 .day-action-btn+.day-action-btn{border-left:1px solid rgba(255,255,255,0.05)}
