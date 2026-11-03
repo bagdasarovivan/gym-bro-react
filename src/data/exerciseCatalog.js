@@ -102,7 +102,7 @@ export const EXERCISE_IMAGES = {
   'Подъём на носки в жиме ногами':null, // /images/leg_press_calf_raise.webp
   'Дровосек на блоке':null, // /images/cable_woodchop.webp
   'Подъём ног лёжа':'/images/lying_leg_raise.webp',
-  'Мёртвый жук':null, // /images/dead_bug.webp
+  'Мёртвый жук':'/images/dead_bug.webp',
   'Трастеры':null, // /images/thrusters.webp
   'Прыжки на тумбу':null, // /images/box_jump.webp
   'Турецкий подъём':null, // /images/turkish_get_up.webp
@@ -120,8 +120,8 @@ export const EXERCISE_IMAGES = {
   'Тяга в рычажном тренажёре':'/images/machine_row.webp',
   'Хип-траст в тренажёре':'/images/machine_hip_thrust.webp',
   'Боковая планка':'/images/side_plank.webp',
-  'Велосипед на пресс':null, // /images/bicycle_crunch.webp
-  'Подъём коленей на брусьях':null, // /images/knee_raise_dip_station.webp
+  'Велосипед на пресс':'/images/bicycle_crunch.webp',
+  'Подъём коленей на брусьях':'/images/knee_raise_dip_station.webp',
   'Обратная гиперэкстензия':null, // /images/reverse_hyper.webp
   'Пуловер на блоке':'/images/straight_arm_pulldown.webp',
   'Приседания в Смите':'/images/smith_squat.webp',
