@@ -96,15 +96,15 @@ export const EXERCISE_IMAGES = {
   'Сгибания на наклонной скамье':'/images/incline_curl.webp',
   'Сгибания обратным хватом':'/images/reverse_curl.webp',
   'Разгибание запястий':null, // /images/wrist_extension.webp
-  'Выпады в Смите':null, // /images/smith_lunge.webp
-  'Сисси-присед':null, // /images/sissy_squat.webp
-  'Нордические сгибания':null, // /images/nordic_curl.webp
+  'Выпады в Смите':'/images/smith_lunge.webp',
+  'Сисси-присед':'/images/sissy_squat.webp',
+  'Нордические сгибания':'/images/nordic_curl.webp',
   'Подъём на носки в жиме ногами':null, // /images/leg_press_calf_raise.webp
-  'Дровосек на блоке':null, // /images/cable_woodchop.webp
+  'Дровосек на блоке':'/images/cable_woodchop.webp',
   'Подъём ног лёжа':'/images/lying_leg_raise.webp',
   'Мёртвый жук':'/images/dead_bug.webp',
-  'Трастеры':null, // /images/thrusters.webp
-  'Прыжки на тумбу':null, // /images/box_jump.webp
+  'Трастеры':'/images/thrusters.webp',
+  'Прыжки на тумбу':'/images/box_jump.webp',
   'Турецкий подъём':null, // /images/turkish_get_up.webp
   // New exercises: picture not drawn yet (placeholder). Future file in the comment.
   'Бабочка':'/images/pec_deck.webp',
@@ -116,18 +116,18 @@ export const EXERCISE_IMAGES = {
   'Сумо-становая тяга':'/images/sumo_deadlift.webp',
   'Зашагивания на тумбу':'/images/step_up.webp',
   'Скручивания на блоке':'/images/cable_crunch.webp',
-  'Обратные отжимания от скамьи':null, // /images/bench_dips.webp
+  'Обратные отжимания от скамьи':'/images/bench_dips.webp',
   'Тяга в рычажном тренажёре':'/images/machine_row.webp',
   'Хип-траст в тренажёре':'/images/machine_hip_thrust.webp',
   'Боковая планка':'/images/side_plank.webp',
   'Велосипед на пресс':'/images/bicycle_crunch.webp',
   'Подъём коленей на брусьях':'/images/knee_raise_dip_station.webp',
-  'Обратная гиперэкстензия':null, // /images/reverse_hyper.webp
+  'Обратная гиперэкстензия':'/images/reverse_hyper.webp',
   'Пуловер на блоке':'/images/straight_arm_pulldown.webp',
   'Приседания в Смите':'/images/smith_squat.webp',
   'Румынская тяга с гантелями':'/images/db_romanian_deadlift.webp',
   'Разгибание руки в наклоне':'/images/triceps_kickback.webp',
-  'Фермерская прогулка':null, // /images/farmers_walk.webp
+  'Фермерская прогулка':'/images/farmers_walk.webp',
   'Бёрпи':null, // /images/burpee.webp
   // Кардио
   'Беговая дорожка':'/images/cardio/treadmill.webp',
