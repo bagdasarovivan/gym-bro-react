@@ -167,6 +167,7 @@ export const EXERCISE_ANATOMY_SRC = {
   'Жим гантелей лёжа':        'chest_lower / chest_upper delts_front triceps',
   'Жим гантелей наклон':      'chest_upper delts_front / chest_lower triceps',
   'Жим лёжа':                 'chest_lower / chest_upper delts_front triceps',
+  'Жим лёжа в Смите':         'chest_lower / chest_upper delts_front triceps',
   'Жим над головой':          'delts_front delts_side / triceps traps_upper serratus',
   'Жим ногами':               `${Q3} glutes_max / hamstrings adductors`,
   'Жим штанги в наклоне':     'chest_upper delts_front / chest_lower triceps',
