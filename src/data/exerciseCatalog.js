@@ -54,6 +54,7 @@ export const EXERCISE_TYPE = {
   'Обратная гиперэкстензия':'bodyweight_plus',
   'Пуловер на блоке':'machine',
   'Приседания в Смите':'heavy',
+  'Жим лёжа в Смите':'heavy',
   'Румынская тяга с гантелями':'light',
   'Разгибание руки в наклоне':'light',
   'Фермерская прогулка':'timed',
@@ -125,6 +126,7 @@ export const EXERCISE_IMAGES = {
   'Обратная гиперэкстензия':'/images/reverse_hyper.webp',
   'Пуловер на блоке':'/images/straight_arm_pulldown.webp',
   'Приседания в Смите':'/images/smith_squat.webp',
+  'Жим лёжа в Смите':null, // /images/smith_bench.webp
   'Румынская тяга с гантелями':'/images/db_romanian_deadlift.webp',
   'Разгибание руки в наклоне':'/images/triceps_kickback.webp',
   'Фермерская прогулка':'/images/farmers_walk.webp',
@@ -249,6 +251,7 @@ export const EXERCISE_MUSCLES = {
   'Обратная гиперэкстензия': { primary: ['glutes'], secondary: ['hamstrings','lower_back'] },
   'Пуловер на блоке': { primary: ['lats'], secondary: ['triceps'] },
   'Приседания в Смите': { primary: ['quads','glutes'], secondary: ['hamstrings'] },
+  'Жим лёжа в Смите': { primary: ['chest'], secondary: ['triceps','shoulders'] },
   'Румынская тяга с гантелями': { primary: ['hamstrings','glutes'], secondary: ['lower_back'] },
   'Разгибание руки в наклоне': { primary: ['triceps'], secondary: [] },
   'Фермерская прогулка': { primary: ['forearms','traps'], secondary: ['abs','quads'] },
@@ -410,6 +413,18 @@ export const GRIP_MUSCLES = {
     'Молоток':     { primary: ['biceps','forearms'], secondary: [] },
     'Поочерёдно':  { primary: ['biceps'],   secondary: ['forearms'] },
   },
+  'Выпады': {
+    'Вперёд':      { primary: ['quads','glutes'], secondary: ['hamstrings'] },
+    'Назад':       { primary: ['glutes','quads'], secondary: ['hamstrings'] },
+  },
+  'Шраги': {
+    'Со штангой':  { primary: ['traps'], secondary: ['forearms'] },
+    'С гантелями': { primary: ['traps'], secondary: ['forearms'] },
+  },
+  'Жим ногами': {
+    'Двумя ногами':{ primary: ['quads','glutes'], secondary: ['hamstrings'] },
+    'Одной ногой': { primary: ['quads','glutes'], secondary: ['hamstrings','adductors'] },
+  },
   'Подъём штанги на бицепс': {
     'Прямой гриф': { primary: ['biceps'],   secondary: ['forearms'] },
     'EZ-гриф':     { primary: ['biceps'],   secondary: ['forearms'] },
@@ -429,7 +444,7 @@ export const GRIP_MUSCLES = {
 }
 
 // Упражнения, где выбор называется «Вариация», а не «Хват»
-export const VARIANT_EXERCISES = new Set(['Подъём гантелей на бицепс', 'Подъём штанги на бицепс', 'Сгибания на блоке', 'Колесо для пресса', 'Подъём на носки стоя', 'Зашагивания на тумбу', 'Скручивания на блоке', 'Пуловер на блоке', 'Разгибание руки в наклоне', 'Дровосек на блоке', 'Трастеры'])
+export const VARIANT_EXERCISES = new Set(['Выпады', 'Шраги', 'Жим ногами', 'Подъём гантелей на бицепс', 'Подъём штанги на бицепс', 'Сгибания на блоке', 'Колесо для пресса', 'Подъём на носки стоя', 'Зашагивания на тумбу', 'Скручивания на блоке', 'Пуловер на блоке', 'Разгибание руки в наклоне', 'Дровосек на блоке', 'Трастеры'])
 
 GRIP_EXERCISES.push(...VARIANT_EXERCISES)
 
@@ -838,6 +853,11 @@ export const EXERCISE_INFO = {
     desc: 'Встать у верхнего блока, руки почти прямые держат рукоять. Опустить рукоять дугой к бёдрам и вернуть вверх.',
     benefit: 'Изолирует широчайшие без участия бицепса — помогает «почувствовать» спину.',
     tips: 'Руки почти прямые всё движение. Корпус немного наклонён вперёд. Внизу сожми широчайшие.',
+  },
+  'Жим лёжа в Смите': {
+    desc: 'Лечь на скамью под гриф Смита, гриф над серединой груди. Снять гриф поворотом, опустить к груди и выжать вверх.',
+    benefit: 'Жим без страховки: гриф идёт по направляющим. Удобно добивать грудь и работать до отказа.',
+    tips: 'Поставь скамью так, чтобы гриф касался низа груди. Лопатки сведены, локти под углом 45°. Ставь гриф на крючки поворотом кисти.',
   },
   'Приседания в Смите': {
     desc: 'Встать под гриф Смита, гриф на трапециях, стопы чуть впереди. Присесть до параллели и встать.',
