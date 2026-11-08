@@ -96,17 +96,17 @@ export const EXERCISE_IMAGES = {
   'Гуд-морнинг':'/images/good_morning.webp',
   'Сгибания на наклонной скамье':'/images/incline_curl.webp',
   'Сгибания обратным хватом':'/images/reverse_curl.webp',
-  'Разгибание запястий':null, // /images/wrist_extension.webp
+  'Разгибание запястий':'/images/wrist_extension.webp',
   'Выпады в Смите':'/images/smith_lunge.webp',
   'Сисси-присед':'/images/sissy_squat.webp',
   'Нордические сгибания':'/images/nordic_curl.webp',
-  'Подъём на носки в жиме ногами':null, // /images/leg_press_calf_raise.webp
+  'Подъём на носки в жиме ногами':'/images/leg_press_calf_raise.webp',
   'Дровосек на блоке':'/images/cable_woodchop.webp',
   'Подъём ног лёжа':'/images/lying_leg_raise.webp',
   'Мёртвый жук':'/images/dead_bug.webp',
   'Трастеры':'/images/thrusters.webp',
   'Прыжки на тумбу':'/images/box_jump.webp',
-  'Турецкий подъём':null, // /images/turkish_get_up.webp
+  'Турецкий подъём':'/images/turkish_get_up.webp',
   // New exercises: picture not drawn yet (placeholder). Future file in the comment.
   'Бабочка':'/images/pec_deck.webp',
   'Сведение ног в тренажёре':'/images/hip_adduction.webp',
@@ -126,11 +126,11 @@ export const EXERCISE_IMAGES = {
   'Обратная гиперэкстензия':'/images/reverse_hyper.webp',
   'Пуловер на блоке':'/images/straight_arm_pulldown.webp',
   'Приседания в Смите':'/images/smith_squat.webp',
-  'Жим лёжа в Смите':null, // /images/smith_bench.webp
+  'Жим лёжа в Смите':'/images/smith_bench.webp',
   'Румынская тяга с гантелями':'/images/db_romanian_deadlift.webp',
   'Разгибание руки в наклоне':'/images/triceps_kickback.webp',
   'Фермерская прогулка':'/images/farmers_walk.webp',
-  'Бёрпи':null, // /images/burpee.webp
+  'Бёрпи':'/images/burpee.webp',
   // Кардио
   'Беговая дорожка':'/images/cardio/treadmill.webp',
   'Велотренажёр':'/images/cardio/stationary_bike.webp',
