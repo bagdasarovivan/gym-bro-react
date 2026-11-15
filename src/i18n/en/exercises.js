@@ -144,6 +144,7 @@ export const VARIANTS_EN = {
   'Обратный': 'Reverse',
   'Обычный': 'Regular',
   'Молоток': 'Hammer',
+  'Сидя': 'Seated',
   'Вперёд': 'Forward',
   'Назад': 'Reverse',
   'Со штангой': 'Barbell',
